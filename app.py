@@ -186,12 +186,12 @@ st.markdown(
     .ergo-hero .hero-logo {
         position: relative; z-index: 1;
         flex: 0 0 auto;
-        height: 90px;
+        height: 110px;
         width: auto;
-        max-width: 200px;
+        max-width: 220px;
         object-fit: contain;
-        filter: brightness(0) invert(1);   /* render in white over the teal gradient */
-        opacity: 0.95;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     }
     /* Hide illustration & shrink logo on narrow screens */
     @media (max-width: 768px) {
@@ -1349,10 +1349,10 @@ tab_ideal, tab_assessment, tab_osha, tab_angles, tab_summary = st.tabs([
 # Tab 1 — Ideal Workstation Setup (reference targets only)
 # --------------------------------------------------------------------
 with tab_ideal:
-    st.subheader("Reference targets — derived from subject's stature")
+    st.subheader("Ideal — Proposed Workstation Setup")
     st.caption(
-        "These are the *ideal* workstation dimensions for your body type, "
-        "computed from your stature using ANSUR I anthropometric ratios."
+        "Results are computed based on the personal data you provided "
+        "and standard anthropometric reference data."
     )
 
     m1, m2, m3 = st.columns(3)
