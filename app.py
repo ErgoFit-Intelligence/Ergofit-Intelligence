@@ -43,7 +43,8 @@ def _load_logo_b64():
 
 _logo_b64, _logo_ext = _load_logo_b64()
 if _logo_b64:
-    _mime = "image/svg+xml" if _logo_ext == "svg" else f"image/{_logo_ext}"
+    _ext_to_mime = {"svg": "image/svg+xml", "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png"}
+    _mime = _ext_to_mime.get(_logo_ext, f"image/{_logo_ext}")
     st.markdown(
         f"""
         <style>
