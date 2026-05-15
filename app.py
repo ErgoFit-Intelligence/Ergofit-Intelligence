@@ -182,10 +182,54 @@ st.markdown(
         max-width: 560px;
         line-height: 1.5;
     }
-    /* Hide illustration on narrow screens */
+    /* Logo on right side of hero */
+    .ergo-hero .hero-logo {
+        position: relative; z-index: 1;
+        flex: 0 0 auto;
+        height: 90px;
+        width: auto;
+        max-width: 200px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);   /* render in white over the teal gradient */
+        opacity: 0.95;
+    }
+    /* Hide illustration & shrink logo on narrow screens */
     @media (max-width: 768px) {
         .ergo-hero { flex-direction: column; align-items: flex-start; }
         .ergo-hero .hero-illustration { display: none; }
+        .ergo-hero .hero-logo { height: 60px; margin-top: 12px; }
+    }
+
+    /* ───────────────────── Green section divider above tabs ───────────────────── */
+    .tabs-divider {
+        margin: 26px 0 0;
+        padding: 14px 22px;
+        background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+        border: 1px solid #99f6e4;
+        border-bottom: none;
+        border-radius: 14px 14px 0 0;
+        color: #064e3b !important;
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .tabs-divider .brand-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #0d9488; box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.18);
+        flex-shrink: 0;
+    }
+    .tabs-divider + div .stTabs [data-baseweb="tab-list"] {
+        border-radius: 0 0 14px 14px;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+        background: #f0fdf4;
+        border-color: #99f6e4;
+        border-top: 0;
+        margin-top: 0;
     }
 
     /* ───────────────────── Section header ───────────────────── */
@@ -567,8 +611,14 @@ st.markdown(
 # ====================================================================
 # Hero header
 # ====================================================================
+_logo_img_html = ""
+if _logo_b64:
+    _logo_img_html = (
+        f'<img src="data:{_mime};base64,{_logo_b64}" alt="logo" class="hero-logo"/>'
+    )
+
 st.markdown(
-    """
+    f"""
     <div class="ergo-hero">
         <div class="hero-content">
             <div class="brand-row">
@@ -580,6 +630,7 @@ st.markdown(
                 The ergonomic tool that helps you work without pain.
             </div>
         </div>
+        {_logo_img_html}
     </div>
     """,
     unsafe_allow_html=True,
@@ -620,7 +671,6 @@ with st.container(border=True):
         sex = st.selectbox(
             "Sex",
             ["Female", "Male", "Combined average"],
-            help="Affects sex-specific risk multipliers and disables female-only fields if Male.",
         )
     with row2_h:
         height = st.selectbox(
@@ -640,32 +690,25 @@ with st.container(border=True):
     with row3_c:
         hours_computer = st.number_input(
             "Computer hours / day", min_value=0.0, max_value=16.0, value=8.0, step=0.5,
-            help="Office-worker meta-analysis: ≥4 h/d → CTS OR 1.34 (Shiri 2015)",
         )
     with row3_m:
         hours_mouse = st.number_input(
             "Mouse hours / day", min_value=0.0, max_value=16.0, value=4.0, step=0.5,
-            help="Heavy mouse use → CTS OR 1.93 (Shiri 2015)",
         )
     with row3_s:
         hours_sitting = st.number_input(
             "Total sitting hours / day", min_value=0.0, max_value=16.0, value=8.0, step=0.5,
-            help="Workplace sitting → LBP OR 1.47 (Dzakpasu 2021)",
         )
 
     # ---- Health & lifestyle ----
     st.markdown('<div class="subgroup-head">Health &amp; lifestyle</div>', unsafe_allow_html=True)
     row4_db, row4_sm = st.columns(2)
     with row4_db:
-        diabetes = st.checkbox(
-            "Diabetes mellitus",
-            help="Major independent risk factor for CTS, trigger finger, frozen shoulder.",
-        )
+        diabetes = st.checkbox("Diabetes mellitus")
     with row4_sm:
         smoking = st.selectbox(
             "Smoking status",
             ["Never", "Former", "Current"],
-            help="Current smoking elevates risk for LBP, tennis elbow, DVT.",
         )
 
     # ---- Prior musculoskeletal injuries by region ----
@@ -676,18 +719,18 @@ with st.container(border=True):
     )
     inj_row1 = st.columns(3)
     with inj_row1[0]:
-        inj_neck     = st.checkbox("Neck",                 help="Affects: cervical strain")
+        inj_neck     = st.checkbox("Neck")
     with inj_row1[1]:
-        inj_shoulder = st.checkbox("Shoulder",             help="Affects: rotator cuff disease")
+        inj_shoulder = st.checkbox("Shoulder")
     with inj_row1[2]:
-        inj_elbow    = st.checkbox("Elbow",                help="Affects: tennis elbow")
+        inj_elbow    = st.checkbox("Elbow")
     inj_row2 = st.columns(3)
     with inj_row2[0]:
-        inj_wrist    = st.checkbox("Wrist / hand",         help="Affects: carpal tunnel syndrome")
+        inj_wrist    = st.checkbox("Wrist / hand")
     with inj_row2[1]:
-        inj_back     = st.checkbox("Lower back / lumbar",  help="Affects: lower-back pain")
+        inj_back     = st.checkbox("Lower back / lumbar")
     with inj_row2[2]:
-        inj_leg      = st.checkbox("Leg / lower extremity",help="Affects: venous insufficiency, DVT")
+        inj_leg      = st.checkbox("Leg / lower extremity")
 
     injury_regions = {
         "neck":     inj_neck,
@@ -706,17 +749,9 @@ with st.container(border=True):
     )
     row5_p, row5_oc = st.columns(2)
     with row5_p:
-        pregnant = st.checkbox(
-            "Currently pregnant",
-            disabled=is_male,
-            help="Pregnancy elevates CTS risk ~2.5× and de Quervain risk.",
-        )
+        pregnant = st.checkbox("Currently pregnant", disabled=is_male)
     with row5_oc:
-        oral_contra = st.checkbox(
-            "Oral contraceptive use",
-            disabled=is_male,
-            help="Oral contraceptives elevate DVT risk; combined with prolonged sitting amplifies risk.",
-        )
+        oral_contra = st.checkbox("Oral contraceptive use", disabled=is_male)
 
 # ---- Backwards-compat alias used by ANSUR ratios block below ----
 # The ANSUR block expects "Female-typical" / "Male-typical" / "Combined average".
@@ -1289,32 +1324,56 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
 
 
 # ====================================================================
-# Tabs
+# Tabs — wrapped in a green "assessment sections" panel
 # ====================================================================
-tab_anthro, tab_osha, tab_angles, tab_summary = st.tabs([
-    "📐 Anthropometry & workstation",
-    "🪑 OSHA chair checklist",
-    "📏 Joint comfort angles",
+st.markdown(
+    """
+    <div class="tabs-divider">
+        <span class="brand-dot"></span>
+        <span>Assessment Sections</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+tab_ideal, tab_assessment, tab_osha, tab_angles, tab_summary = st.tabs([
+    "🪑 Ideal Workstation Setup",
+    "📐 Workstation Assessment",
+    "✅ OSHA Chair Checklist",
+    "📏 Joint Comfort Angles",
     "📋 Summary",
 ])
 
 
 # --------------------------------------------------------------------
-# Tab 1 — Anthropometry & workstation
+# Tab 1 — Ideal Workstation Setup (reference targets only)
 # --------------------------------------------------------------------
-with tab_anthro:
+with tab_ideal:
     st.subheader("Reference targets — derived from subject's stature")
+    st.caption(
+        "These are the *ideal* workstation dimensions for your body type, "
+        "computed from your stature using ANSUR I anthropometric ratios."
+    )
 
     m1, m2, m3 = st.columns(3)
-    m1.metric("Ideal chair seat", f"{ideal_chair} cm",
-              help="≈ popliteal height (back-of-knee level)")
-    m2.metric("Ideal desk height", f"{ideal_desk_target} cm",
-              help="chair seat + seated elbow rest")
-    m3.metric("Ideal monitor top", f"{ideal_mon_target} cm",
-              help="chair seat + seated eye height")
+    m1.metric("Ideal chair seat",  f"{ideal_chair} cm")
+    m2.metric("Ideal desk height", f"{ideal_desk_target} cm")
+    m3.metric("Ideal monitor top", f"{ideal_mon_target} cm")
 
-    st.divider()
+    st.markdown("")
+    st.markdown(
+        "*Chair seat = popliteal height (back of knee). "
+        "Desk = chair seat + seated elbow rest. "
+        "Monitor top = chair seat + seated eye height.*"
+    )
+
+
+# --------------------------------------------------------------------
+# Tab 2 — Workstation Assessment (measured + per-item evaluation)
+# --------------------------------------------------------------------
+with tab_assessment:
     st.subheader("Measured workstation")
+    st.caption("Enter the actual measurements of your current workstation.")
 
     chair_height = st.selectbox(
         "Chair seat height — floor to top of seat (cm)",
@@ -1337,11 +1396,17 @@ with tab_anthro:
     monitor_diff = monitor_height - monitor_for_actual_chair
 
     st.divider()
-    st.subheader("Workstation assessment")
+    st.subheader("Per-item evaluation")
 
+    # --- 1. Chair seat -------------------------------------------
     st.markdown("**1. Chair seat height**")
     st.write(f"Target: **{ideal_chair} cm** — measured: **{chair_height} cm** "
              f"(Δ {chair_diff:+.1f} cm)")
+    st.caption(
+        "**Tolerance ±2 cm** — the chair is considered ergonomically OK if "
+        "the difference (Δ) between measured and target seat height is within "
+        "±2 cm. Δ refers to *measured − target*."
+    )
     if abs(chair_diff) <= 2:
         st.success("Within comfortable range.")
     elif chair_diff > 2:
@@ -1349,10 +1414,17 @@ with tab_anthro:
     else:
         st.warning("Chair too LOW — knees rise above hips, lower-back load increases.")
 
+    st.markdown("")
+
+    # --- 2. Desk -------------------------------------------------
     st.markdown("**2. Desk height**")
     st.write(f"For *current* chair: **{desk_for_actual_chair} cm** — measured: "
              f"**{desk_height} cm** (Δ {desk_diff:+.1f} cm)")
     st.write(f"For *ideal* chair: **{ideal_desk_target} cm**")
+    st.caption(
+        "**Tolerance ±2 cm** — desk is OK if the difference between measured "
+        "and *for-current-chair* target is within ±2 cm. Δ = measured − target."
+    )
     if abs(desk_diff) <= 2:
         st.success("Well-matched to current chair.")
     elif desk_diff > 2:
@@ -1360,31 +1432,24 @@ with tab_anthro:
     else:
         st.warning("Desk too LOW — hunching forward, lower-back fatigue.")
 
+    st.markdown("")
+
+    # --- 3. Monitor ----------------------------------------------
     st.markdown("**3. Monitor top-edge height**")
     st.write(f"For *current* chair: **{monitor_for_actual_chair} cm** — measured: "
              f"**{monitor_height} cm** (Δ {monitor_diff:+.1f} cm)")
     st.write(f"For *ideal* chair: **{ideal_mon_target} cm**")
+    st.caption(
+        "**Tolerance ±4 cm** — monitor is OK if the difference between measured "
+        "and *for-current-chair* target is within ±4 cm. The tolerance here is "
+        "wider than chair/desk because head/eye position is naturally adjustable."
+    )
     if abs(monitor_diff) <= 4:
         st.success("Well placed.")
     elif monitor_diff > 4:
         st.warning("Monitor too HIGH — neck extension, dry-eye, upper-trap tension.")
     else:
         st.warning("Monitor too LOW — forward head posture, neck flexion, upper-back strain.")
-
-    with st.expander("Methodology"):
-        st.markdown(
-            """
-Ratios used (mean measurement ÷ mean stature):
-
-| Measurement | Female | Male | Combined |
-|---|---|---|---|
-| Popliteal height ÷ stature | 0.239 | 0.247 | 0.243 |
-| Seated elbow rest ÷ stature | 0.135 | 0.131 | 0.133 |
-| Seated eye height ÷ stature | 0.453 | 0.451 | 0.452 |
-
-Tolerances: ±2 cm for chair, ±2 cm for desk, ±4 cm for monitor top.
-"""
-        )
 
 
 # --------------------------------------------------------------------
