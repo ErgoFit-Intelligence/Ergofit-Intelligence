@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid meet">
+  <!--
+    Simplified placeholder for the ErgoFit Intelligence logo.
+    Replace this file with the original logo.png (or .jpg) when available.
+  -->
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   style="stop-color:#7a5e15"/>
+      <stop offset="45%"  style="stop-color:#d4af37"/>
+      <stop offset="55%"  style="stop-color:#f1d97a"/>
+      <stop offset="100%" style="stop-color:#8b6914"/>
+    </linearGradient>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   style="stop-color:#888"/>
+      <stop offset="50%"  style="stop-color:#e6e6e6"/>
+      <stop offset="100%" style="stop-color:#777"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Optional dark backdrop for the standalone SVG (does NOT affect background blur usage) -->
+  <rect x="0" y="0" width="800" height="1000" fill="#0a0a0a"/>
+
+  <!-- ===== Shield ===== -->
+  <g transform="translate(400, 360)">
+    <!-- Gold split shield -->
+    <path d="M -160,-220 L 160,-220 L 160,40 Q 160,200 0,260 Q -160,200 -160,40 Z"
+          fill="url(#goldGrad)"
+          stroke="#5a4410"
+          stroke-width="3"/>
+    <!-- Subtle inner divider line (vertical through middle) -->
+    <line x1="0" y1="-220" x2="0" y2="240" stroke="#5a4410" stroke-width="2" opacity="0.35"/>
+
+    <!-- Decorative antler/horn flourishes (silver) -->
+    <g fill="url(#silverGrad)" stroke="#444" stroke-width="0.8">
+      <!-- Left antler -->
+      <path d="M -160,-60
+               C -210,-30 -230,40 -200,90
+               C -230,80 -250,100 -240,140
+               C -260,130 -280,150 -270,180
+               C -240,170 -210,160 -190,140
+               C -210,110 -210,80 -180,60
+               C -200,30 -190,-10 -160,-30 Z"/>
+      <!-- Right antler (mirrored) -->
+      <path d="M 160,-60
+               C 210,-30 230,40 200,90
+               C 230,80 250,100 240,140
+               C 260,130 280,150 270,180
+               C 240,170 210,160 190,140
+               C 210,110 210,80 180,60
+               C 200,30 190,-10 160,-30 Z"/>
+    </g>
+
+    <!-- E and F letters -->
+    <text x="-72" y="40" font-family="Times New Roman, Times, serif"
+          font-size="140" font-weight="700" fill="#1a1a1a"
+          text-anchor="middle">E</text>
+    <text x="72"  y="40" font-family="Times New Roman, Times, serif"
+          font-size="140" font-weight="700" fill="#1a1a1a"
+          text-anchor="middle">F</text>
+
+    <!-- Stylised deer-head silhouette below the letters -->
+    <g fill="#8b6914" transform="translate(0, 200)">
+      <!-- Head triangle -->
+      <path d="M -28,-12 L 28,-12 L 0,38 Z"/>
+      <!-- Eyes -->
+      <circle cx="-12" cy="0" r="2.5" fill="#0a0a0a"/>
+      <circle cx="12"  cy="0" r="2.5" fill="#0a0a0a"/>
+      <!-- Snout -->
+      <ellipse cx="0" cy="22" rx="6" ry="4" fill="#5a4410"/>
+    </g>
+  </g>
+
+  <!-- ===== Wordmark ===== -->
+  <text x="400" y="780" text-anchor="middle"
+        font-family="Times New Roman, Times, serif"
+        font-size="86" font-weight="700"
+        fill="url(#goldGrad)"
+        letter-spacing="6">ErgoFit</text>
+  <text x="400" y="870" text-anchor="middle"
+        font-family="Times New Roman, Times, serif"
+        font-size="86" font-weight="700"
+        fill="url(#goldGrad)"
+        letter-spacing="6">Intelligence</text>
+  <text x="400" y="930" text-anchor="middle"
+        font-family="Arial, sans-serif"
+        font-size="20" font-weight="400"
+        fill="#c9a644"
+        letter-spacing="3"
+        opacity="0.9">TRANSFORMING WORK ENVIRONMENTS · PROMOTING WELLNESS</text>
+</svg>
