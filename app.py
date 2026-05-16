@@ -1660,17 +1660,22 @@ with tab_assessment:
             "and weight; chair, desk and monitor are drawn at their measured "
             "heights. Green = within tolerance · amber = mild deviation · red = significant."
         )
+        _svg_markup = render_posture_svg(
+            stature_cm=height,
+            weight_kg=weight,
+            chair_h=chair_height,
+            desk_h=desk_height,
+            monitor_h=monitor_height,
+            chair_diff=chair_diff,
+            desk_diff=desk_diff,
+            monitor_diff=monitor_diff,
+        )
+        # Encode as data URI so Streamlit's markdown sanitizer keeps it intact
+        _svg_b64 = base64.b64encode(_svg_markup.encode("utf-8")).decode("ascii")
         st.markdown(
-            render_posture_svg(
-                stature_cm=height,
-                weight_kg=weight,
-                chair_h=chair_height,
-                desk_h=desk_height,
-                monitor_h=monitor_height,
-                chair_diff=chair_diff,
-                desk_diff=desk_diff,
-                monitor_diff=monitor_diff,
-            ),
+            f'<img src="data:image/svg+xml;base64,{_svg_b64}" '
+            f'alt="posture preview" style="width:100%; height:auto; '
+            f'border:1px solid #99f6e4; border-radius:14px; background:#f0fdfa;"/>',
             unsafe_allow_html=True,
         )
 
