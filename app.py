@@ -558,6 +558,17 @@ st.markdown(
         color: #1e293b !important;
     }
 
+    /* ───────────────────── Hide Streamlit anchor links on headings ───────────────────── */
+    h1 > a, h2 > a, h3 > a, h4 > a, h5 > a, h6 > a,
+    .stMarkdown h1 > a, .stMarkdown h2 > a, .stMarkdown h3 > a,
+    .stMarkdown h4 > a, .stMarkdown h5 > a, .stMarkdown h6 > a,
+    [data-testid="stHeaderActionElements"],
+    [data-testid="stHeadingWithActionElements"] a,
+    .stHeadingAction,
+    a.anchor-link {
+        display: none !important;
+    }
+
     /* ───────────────────── Intake panel ───────────────────── */
     .subgroup-head {
         font-size: 11px;
