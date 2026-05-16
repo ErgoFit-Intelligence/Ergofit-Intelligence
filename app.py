@@ -183,16 +183,15 @@ st.markdown(
         max-width: 560px;
         line-height: 1.5;
     }
-    /* Logo on right side of hero */
+    /* Logo on right side of hero (transparent PNG over teal) */
     .ergo-hero .hero-logo {
         position: relative; z-index: 1;
         flex: 0 0 auto;
-        height: 110px;
+        height: 130px;
         width: auto;
-        max-width: 220px;
+        max-width: 260px;
         object-fit: contain;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
     }
     /* Hide illustration & shrink logo on narrow screens */
     @media (max-width: 768px) {
