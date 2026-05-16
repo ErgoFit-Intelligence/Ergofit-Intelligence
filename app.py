@@ -850,6 +850,187 @@ EQUIPMENT_SPECS = {
 }
 equip = EQUIPMENT_SPECS[bmi_band]
 
+
+# ====================================================================
+# Dynamic posture visualization (side-view SVG of worker at workstation)
+# ====================================================================
+def render_posture_svg(stature_cm, weight_kg,
+                       chair_h, desk_h, monitor_h,
+                       chair_diff, desk_diff, monitor_diff):
+    """Generate a side-view SVG of the seated worker.
+
+    Scales body proportions by stature_cm (Drillis & Contini ratios) and
+    body-width by weight (light visual cue for BMI). Chair / desk / monitor
+    are drawn at their measured heights. Each item is colour-coded:
+        green  → within tolerance
+        amber  → just outside (≤ 2× tolerance)
+        red    → significantly outside
+    Head tilts up/down for monitor too high/low; feet dangle if chair too high.
+    """
+    OK    = "#10b981"
+    WARN  = "#f59e0b"
+    BAD   = "#dc2626"
+    BODY  = "#1e293b"
+    SKIN  = "#fde6c8"
+    LINE  = "#94a3b8"
+    BG    = "#f0fdfa"
+    FLOOR = "#cbd5e1"
+
+    def col(diff, tol):
+        a = abs(diff)
+        if a <= tol:        return OK
+        if a <= tol * 2:    return WARN
+        return BAD
+
+    chair_c   = col(chair_diff,   2)
+    desk_c    = col(desk_diff,    2)
+    monitor_c = col(monitor_diff, 4)
+
+    # Body proportions (Drillis & Contini fractions of stature)
+    head_d    = 0.130 * stature_cm
+    trunk     = 0.288 * stature_cm
+    upper_arm = 0.186 * stature_cm
+    forearm   = 0.146 * stature_cm
+    thigh     = 0.245 * stature_cm
+
+    # Body width scales mildly with weight (visual hint only)
+    body_w = max(8, min(18, 8 + (weight_kg - 60) * 0.10))
+
+    # SVG layout: 560 × 520, 1 cm ≈ 1.7 svg units
+    scale   = 1.7
+    floor_y = 470
+
+    def y(cm): return floor_y - cm * scale
+
+    # Person sits at x = 170 (facing right toward desk)
+    pelvis_x = 170
+    pelvis_y = y(chair_h)
+    shoulder_x = pelvis_x
+    shoulder_y = pelvis_y - trunk * scale
+
+    head_r = (head_d * scale) / 2
+    head_cx = shoulder_x
+    head_cy = shoulder_y - head_r - 4
+
+    # Head tilt for monitor misalignment
+    head_tilt = 0
+    if   monitor_diff >  4: head_tilt = -15   # too high → look up
+    elif monitor_diff < -4: head_tilt =  18   # too low  → look down
+
+    # Thigh horizontal forward
+    knee_x = pelvis_x + thigh * scale
+    knee_y = pelvis_y
+    # Shin to floor (or dangling if chair too high)
+    foot_x = knee_x
+    foot_y = floor_y
+    feet_dangle = False
+    if chair_diff > 4:
+        feet_dangle = True
+        foot_y = pelvis_y + 0.246 * stature_cm * scale  # shin length below knee, possibly above floor
+
+    # Arms: shoulder → elbow → hand-at-desk
+    desk_y_svg = y(desk_h)
+    elbow_x = shoulder_x + upper_arm * scale * 0.45
+    elbow_y = shoulder_y + upper_arm * scale * 0.80
+    hand_x  = elbow_x + forearm * scale * 0.95
+    hand_y  = desk_y_svg
+
+    # Desk surface
+    desk_x_start = knee_x + 18
+    desk_w = 200
+
+    # Monitor (base on desk, top at monitor_h)
+    mon_top_y    = y(monitor_h)
+    mon_h_svg    = max(35, (monitor_h - desk_h) * scale * 0.55)
+    mon_w        = 90
+    mon_x        = desk_x_start + 50
+    mon_bot_y    = mon_top_y + mon_h_svg
+
+    # Build SVG
+    svg = f"""
+<svg viewBox="0 0 560 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="{BG}"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  <rect width="560" height="520" fill="url(#bg)" rx="14"/>
+
+  <!-- Floor -->
+  <line x1="20" y1="{floor_y}" x2="540" y2="{floor_y}" stroke="{FLOOR}" stroke-width="3"/>
+  <line x1="20" y1="{floor_y+1}" x2="540" y2="{floor_y+1}" stroke="{LINE}" stroke-width="1" stroke-dasharray="4 6" opacity="0.6"/>
+
+  <!-- Chair backrest -->
+  <rect x="{pelvis_x - 38}" y="{pelvis_y - 55}" width="9" height="55"
+        fill="{chair_c}" rx="2"/>
+  <!-- Chair seat -->
+  <rect x="{pelvis_x - 30}" y="{pelvis_y}" width="76" height="7"
+        fill="{chair_c}" rx="2"/>
+  <!-- Chair pedestal & base -->
+  <line x1="{pelvis_x + 8}" y1="{pelvis_y + 7}" x2="{pelvis_x + 8}" y2="{floor_y - 6}"
+        stroke="{LINE}" stroke-width="3"/>
+  <ellipse cx="{pelvis_x + 8}" cy="{floor_y - 4}" rx="32" ry="5" fill="{LINE}"/>
+
+  <!-- Desk -->
+  <rect x="{desk_x_start}" y="{desk_y_svg}" width="{desk_w}" height="7"
+        fill="{desk_c}" rx="2"/>
+  <line x1="{desk_x_start + desk_w - 6}" y1="{desk_y_svg + 7}"
+        x2="{desk_x_start + desk_w - 6}" y2="{floor_y}"
+        stroke="{LINE}" stroke-width="2.5"/>
+
+  <!-- Monitor -->
+  <rect x="{mon_x}" y="{mon_top_y}" width="{mon_w}" height="{mon_h_svg}"
+        fill="white" stroke="{monitor_c}" stroke-width="3" rx="4"/>
+  <line x1="{mon_x + mon_w/2}" y1="{mon_bot_y}" x2="{mon_x + mon_w/2}" y2="{desk_y_svg}"
+        stroke="{monitor_c}" stroke-width="2.5"/>
+  <line x1="{mon_x + mon_w/2 - 18}" y1="{desk_y_svg}" x2="{mon_x + mon_w/2 + 18}" y2="{desk_y_svg}"
+        stroke="{monitor_c}" stroke-width="2.5"/>
+
+  <!-- Spine -->
+  <line x1="{pelvis_x}" y1="{pelvis_y}" x2="{shoulder_x}" y2="{shoulder_y}"
+        stroke="{BODY}" stroke-width="{body_w/1.8}" stroke-linecap="round"/>
+  <!-- Trunk shading -->
+  <ellipse cx="{pelvis_x}" cy="{(pelvis_y+shoulder_y)/2}"
+           rx="{body_w/2 + 1}" ry="{(pelvis_y-shoulder_y)/2 - 4}"
+           fill="{BODY}" opacity="0.15"/>
+
+  <!-- Arms -->
+  <line x1="{shoulder_x}" y1="{shoulder_y}" x2="{elbow_x}" y2="{elbow_y}"
+        stroke="{BODY}" stroke-width="5" stroke-linecap="round"/>
+  <line x1="{elbow_x}" y1="{elbow_y}" x2="{hand_x}" y2="{hand_y}"
+        stroke="{BODY}" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="{hand_x}" cy="{hand_y}" r="4" fill="{BODY}"/>
+
+  <!-- Thigh + shin -->
+  <line x1="{pelvis_x}" y1="{pelvis_y}" x2="{knee_x}" y2="{knee_y}"
+        stroke="{BODY}" stroke-width="6" stroke-linecap="round"/>
+  <line x1="{knee_x}" y1="{knee_y}" x2="{foot_x}" y2="{foot_y}"
+        stroke="{BODY}" stroke-width="5" stroke-linecap="round"/>
+  {(f'<line x1="{foot_x-6}" y1="{foot_y}" x2="{foot_x+14}" y2="{foot_y}" stroke="{BODY}" stroke-width="4" stroke-linecap="round"/>') if not feet_dangle else ''}
+
+  <!-- Head -->
+  <g transform="rotate({head_tilt} {head_cx} {head_cy})">
+    <circle cx="{head_cx}" cy="{head_cy}" r="{head_r}"
+            fill="{SKIN}" stroke="{BODY}" stroke-width="2"/>
+    <!-- nose -->
+    <circle cx="{head_cx + head_r * 0.75}" cy="{head_cy + 2}" r="2" fill="{BODY}"/>
+  </g>
+
+  <!-- Labels -->
+  <text x="{pelvis_x - 80}" y="{pelvis_y - 65}" font-size="11" font-weight="700"
+        font-family="Inter, sans-serif" fill="{chair_c}">CHAIR {chair_h:.0f} cm</text>
+  <text x="{desk_x_start + 6}" y="{desk_y_svg - 8}" font-size="11" font-weight="700"
+        font-family="Inter, sans-serif" fill="{desk_c}">DESK {desk_h:.0f} cm</text>
+  <text x="{mon_x}" y="{mon_top_y - 6}" font-size="11" font-weight="700"
+        font-family="Inter, sans-serif" fill="{monitor_c}">MONITOR top {monitor_h:.0f} cm</text>
+
+  {(f'<text x="{foot_x - 30}" y="{floor_y + 18}" font-size="10" fill="{BAD}" font-weight="700" font-family="Inter, sans-serif">Feet do not reach floor</text>') if feet_dangle else ''}
+</svg>
+"""
+    return svg
+
+
 # BMI display row (compact card)
 st.markdown(
     f"""
@@ -1407,60 +1588,91 @@ with tab_assessment:
     monitor_diff = monitor_height - monitor_for_actual_chair
 
     st.divider()
-    st.subheader("Per-item evaluation")
 
-    # --- 1. Chair seat -------------------------------------------
-    st.markdown("**1. Chair seat height**")
-    st.write(f"Target: **{ideal_chair} cm** — measured: **{chair_height} cm** "
-             f"(Δ {chair_diff:+.1f} cm)")
-    st.caption(
-        "**Tolerance ±2 cm** — the chair is considered ergonomically OK if "
-        "the difference (Δ) between measured and target seat height is within "
-        "±2 cm. Δ refers to *measured − target*."
-    )
-    if abs(chair_diff) <= 2:
-        st.success("Within comfortable range.")
-    elif chair_diff > 2:
-        st.warning("Chair too HIGH — feet dangle, pressure under thighs, reduced circulation.")
-    else:
-        st.warning("Chair too LOW — knees rise above hips, lower-back load increases.")
+    eval_col, vis_col = st.columns([3, 2], gap="large")
 
-    st.markdown("")
+    # ============================================================
+    # LEFT — per-item evaluation
+    # ============================================================
+    with eval_col:
+        st.subheader("Per-item evaluation")
 
-    # --- 2. Desk -------------------------------------------------
-    st.markdown("**2. Desk height**")
-    st.write(f"For *current* chair: **{desk_for_actual_chair} cm** — measured: "
-             f"**{desk_height} cm** (Δ {desk_diff:+.1f} cm)")
-    st.write(f"For *ideal* chair: **{ideal_desk_target} cm**")
-    st.caption(
-        "**Tolerance ±2 cm** — desk is OK if the difference between measured "
-        "and *for-current-chair* target is within ±2 cm. Δ = measured − target."
-    )
-    if abs(desk_diff) <= 2:
-        st.success("Well-matched to current chair.")
-    elif desk_diff > 2:
-        st.warning("Desk too HIGH — shoulder shrugging, wrist extension, upper-trap tension.")
-    else:
-        st.warning("Desk too LOW — hunching forward, lower-back fatigue.")
+        # --- 1. Chair seat ---------------------------------------
+        st.markdown("**1. Chair seat height**")
+        st.write(f"Target: **{ideal_chair} cm** — measured: **{chair_height} cm** "
+                 f"(Δ {chair_diff:+.1f} cm)")
+        st.caption(
+            "**Tolerance ±2 cm** — the chair is considered ergonomically OK if "
+            "the difference (Δ) between measured and target seat height is within "
+            "±2 cm. Δ refers to *measured − target*."
+        )
+        if abs(chair_diff) <= 2:
+            st.success("Within comfortable range.")
+        elif chair_diff > 2:
+            st.warning("Chair too HIGH — feet dangle, pressure under thighs, reduced circulation.")
+        else:
+            st.warning("Chair too LOW — knees rise above hips, lower-back load increases.")
 
-    st.markdown("")
+        st.markdown("")
 
-    # --- 3. Monitor ----------------------------------------------
-    st.markdown("**3. Monitor top-edge height**")
-    st.write(f"For *current* chair: **{monitor_for_actual_chair} cm** — measured: "
-             f"**{monitor_height} cm** (Δ {monitor_diff:+.1f} cm)")
-    st.write(f"For *ideal* chair: **{ideal_mon_target} cm**")
-    st.caption(
-        "**Tolerance ±4 cm** — monitor is OK if the difference between measured "
-        "and *for-current-chair* target is within ±4 cm. The tolerance here is "
-        "wider than chair/desk because head/eye position is naturally adjustable."
-    )
-    if abs(monitor_diff) <= 4:
-        st.success("Well placed.")
-    elif monitor_diff > 4:
-        st.warning("Monitor too HIGH — neck extension, dry-eye, upper-trap tension.")
-    else:
-        st.warning("Monitor too LOW — forward head posture, neck flexion, upper-back strain.")
+        # --- 2. Desk ---------------------------------------------
+        st.markdown("**2. Desk height**")
+        st.write(f"For *current* chair: **{desk_for_actual_chair} cm** — measured: "
+                 f"**{desk_height} cm** (Δ {desk_diff:+.1f} cm)")
+        st.write(f"For *ideal* chair: **{ideal_desk_target} cm**")
+        st.caption(
+            "**Tolerance ±2 cm** — desk is OK if the difference between measured "
+            "and *for-current-chair* target is within ±2 cm. Δ = measured − target."
+        )
+        if abs(desk_diff) <= 2:
+            st.success("Well-matched to current chair.")
+        elif desk_diff > 2:
+            st.warning("Desk too HIGH — shoulder shrugging, wrist extension, upper-trap tension.")
+        else:
+            st.warning("Desk too LOW — hunching forward, lower-back fatigue.")
+
+        st.markdown("")
+
+        # --- 3. Monitor ------------------------------------------
+        st.markdown("**3. Monitor top-edge height**")
+        st.write(f"For *current* chair: **{monitor_for_actual_chair} cm** — measured: "
+                 f"**{monitor_height} cm** (Δ {monitor_diff:+.1f} cm)")
+        st.write(f"For *ideal* chair: **{ideal_mon_target} cm**")
+        st.caption(
+            "**Tolerance ±4 cm** — monitor is OK if the difference between measured "
+            "and *for-current-chair* target is within ±4 cm. The tolerance here is "
+            "wider than chair/desk because head/eye position is naturally adjustable."
+        )
+        if abs(monitor_diff) <= 4:
+            st.success("Well placed.")
+        elif monitor_diff > 4:
+            st.warning("Monitor too HIGH — neck extension, dry-eye, upper-trap tension.")
+        else:
+            st.warning("Monitor too LOW — forward head posture, neck flexion, upper-back strain.")
+
+    # ============================================================
+    # RIGHT — live posture visualization
+    # ============================================================
+    with vis_col:
+        st.subheader("Live posture preview")
+        st.caption(
+            "Side-view of your current setup. Body is scaled to your stature "
+            "and weight; chair, desk and monitor are drawn at their measured "
+            "heights. Green = within tolerance · amber = mild deviation · red = significant."
+        )
+        st.markdown(
+            render_posture_svg(
+                stature_cm=height,
+                weight_kg=weight,
+                chair_h=chair_height,
+                desk_h=desk_height,
+                monitor_h=monitor_height,
+                chair_diff=chair_diff,
+                desk_diff=desk_diff,
+                monitor_diff=monitor_diff,
+            ),
+            unsafe_allow_html=True,
+        )
 
 
 # --------------------------------------------------------------------
