@@ -11,12 +11,44 @@ into the same folder as this script.
 """
 
 import base64
-from datetime import date
+import json
+from datetime import date, datetime
 from pathlib import Path
 
 import altair as alt
 import pandas as pd
+import requests
 import streamlit as st
+
+
+# ====================================================================
+# Backend (Google Sheets via Apps Script webhook)
+# ====================================================================
+WEBHOOK_URL = (
+    "https://script.google.com/macros/s/"
+    "AKfycbyuPAK8E8fNt2OwetJixOVm_h8fCO6zMX7Mz3lp5Wepp1YTaDw0vMqw6u3Y636-NG1owA/exec"
+)
+
+def submit_to_backend(payload: dict) -> tuple[bool, str]:
+    """POST an assessment payload to the Google Apps Script webhook.
+    Returns (ok, message)."""
+    try:
+        r = requests.post(
+            WEBHOOK_URL,
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
+            timeout=15,
+            allow_redirects=True,
+        )
+        try:
+            data = r.json()
+        except Exception:
+            data = {"success": False, "error": r.text[:200]}
+        if data.get("success"):
+            return True, f"Row #{data.get('row', '?')} added."
+        return False, str(data.get("error", "Unknown error"))
+    except requests.exceptions.RequestException as e:
+        return False, f"Network error: {e}"
 
 
 # ====================================================================
@@ -200,36 +232,60 @@ st.markdown(
         .ergo-hero .hero-logo { height: 60px; margin-top: 12px; }
     }
 
-    /* ───────────────────── Green section divider above tabs ───────────────────── */
+    /* ───────────────────── Vibrant section divider above tabs ───────────────────── */
     .tabs-divider {
-        margin: 26px 0 0;
-        padding: 14px 22px;
-        background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-        border: 1px solid #99f6e4;
+        margin: 28px 0 0;
+        padding: 18px 26px;
+        background: linear-gradient(135deg, #0d9488 0%, #14b8a6 60%, #2dd4bf 100%);
+        border: 1.5px solid #0d9488;
         border-bottom: none;
-        border-radius: 14px 14px 0 0;
-        color: #064e3b !important;
-        font-weight: 700;
-        font-size: 12px;
-        letter-spacing: 0.16em;
+        border-radius: 16px 16px 0 0;
+        color: #ffffff !important;
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
+        box-shadow: 0 6px 20px rgba(13, 148, 136, 0.30);
+        position: relative;
+        overflow: hidden;
+    }
+    .tabs-divider * { color: #ffffff !important; }
+    .tabs-divider::after {
+        content: "";
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(255,255,255,0.20) 0%, transparent 60%);
+        border-radius: 50%;
+        pointer-events: none;
     }
     .tabs-divider .brand-dot {
-        width: 8px; height: 8px; border-radius: 50%;
-        background: #0d9488; box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.18);
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #fef3c7;
+        box-shadow: 0 0 0 5px rgba(254, 243, 199, 0.30);
         flex-shrink: 0;
+        position: relative; z-index: 1;
     }
     .tabs-divider + div .stTabs [data-baseweb="tab-list"] {
-        border-radius: 0 0 14px 14px;
-        border-top-left-radius: 0 !important;
-        border-top-right-radius: 0 !important;
-        background: #f0fdf4;
-        border-color: #99f6e4;
-        border-top: 0;
+        border-radius: 0 0 16px 16px !important;
+        background: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%) !important;
+        border: 1.5px solid #0d9488 !important;
+        border-top: 0 !important;
         margin-top: 0;
+        padding: 8px !important;
+    }
+    .tabs-divider + div .stTabs [data-baseweb="tab"] {
+        color: #064e3b !important;
+        font-weight: 600;
+    }
+    .tabs-divider + div .stTabs [aria-selected="true"] {
+        background: #ffffff !important;
+        color: #0d9488 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
     }
 
     /* ───────────────────── Section header ───────────────────── */
@@ -2404,6 +2460,83 @@ with tab_summary:
             "⚠️ The percentages are indicative ergonomic-risk estimates, not clinical "
             "probabilities. They serve as a planning tool to prioritise interventions."
         )
+
+    # ---- Send results to ErgoFit backend ------------------------
+    st.divider()
+    st.markdown("### 📤 Submit results")
+    st.caption(
+        "Submitting sends the anonymised assessment data to the ErgoFit "
+        "backend for aggregate analysis and quality control. Client name "
+        "(if provided) is included."
+    )
+
+    consent = st.checkbox(
+        "The subject has given consent for the assessment data to be transmitted "
+        "to the ErgoFit backend.",
+        value=False,
+        key="submit_consent",
+    )
+
+    if st.button("📤 Submit assessment to backend",
+                 disabled=not consent,
+                 type="primary"):
+        # Build payload — flatten all key fields for the Sheet
+        submission_payload = {
+            "tool":              "ErgoFit",
+            "timestamp_utc":     datetime.utcnow().isoformat(timespec="seconds"),
+            "client_code":       st.query_params.get("client", ""),
+            "subject_id":        sub_label,
+            "assessment_date":   assess_date.isoformat(),
+            # Demographics
+            "age":               age,
+            "sex":               sex,
+            "stature_cm":        height,
+            "weight_kg":         weight,
+            "bmi":               bmi,
+            "bmi_category":      bmi_cat,
+            # Occupational
+            "hours_computer":    hours_computer,
+            "hours_mouse":       hours_mouse,
+            "hours_sitting":     hours_sitting,
+            # Health / lifestyle
+            "diabetes":          diabetes,
+            "smoking":           smoking,
+            "pregnant":          pregnant,
+            "oral_contra":       oral_contra,
+            # Prior injuries per region
+            "injury_neck":       injury_regions.get("Neck", False),
+            "injury_shoulder":   injury_regions.get("Shoulder", False),
+            "injury_elbow":      injury_regions.get("Elbow", False),
+            "injury_wrist_hand": injury_regions.get("Wrist / hand", False),
+            "injury_lower_back": injury_regions.get("Lower back / lumbar", False),
+            "injury_leg":        injury_regions.get("Leg / lower extremity", False),
+            # Workstation measurements
+            "chair_height_cm":   chair_height,
+            "desk_height_cm":    desk_height,
+            "monitor_top_cm":    monitor_height,
+            "chair_diff_cm":     round(chair_diff, 1),
+            "desk_diff_cm":      round(desk_diff, 1),
+            "monitor_diff_cm":   round(monitor_diff, 1),
+            # Composite scores
+            "workstation_pct":   round(ws_pct, 1),
+            "osha_pct":          round(osha_pct, 1),
+            "angle_pct":         round(angle_pct, 1),
+            "overall_pct":       round(overall, 1),
+            "overall_band":      band_label,
+            # Risk profile (top conditions with personal pct)
+            "risk_conditions":   ", ".join(
+                f"{CONDITIONS[ck]['name_en']}({estimated_personal_pct(ck, ctx)}%)"
+                for ck in (all_condition_keys if risk_profile else [])
+            ),
+        }
+
+        with st.spinner("Sending to backend..."):
+            ok, msg = submit_to_backend(submission_payload)
+
+        if ok:
+            st.success(f"✅ Submitted successfully. {msg}")
+        else:
+            st.error(f"❌ Submission failed: {msg}")
 
     # ---- Footer -------------------------------------------------
     st.divider()
