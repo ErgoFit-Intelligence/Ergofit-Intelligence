@@ -1357,8 +1357,11 @@ def render_posture_svg(stature_cm, weight_kg,
     head_cy = shoulder_y - head_r - 6
 
     # Head tilt from monitor misalignment
+    # Stronger tilt so the visual clearly matches the recommendation text.
     head_tilt = 0
-    if   monitor_diff >  4: head_tilt = -14
+    if   monitor_diff >  8: head_tilt = -22
+    elif monitor_diff >  4: head_tilt = -14
+    elif monitor_diff < -8: head_tilt =  24
     elif monitor_diff < -4: head_tilt =  16
 
     # Thigh + knee + shin
@@ -1392,6 +1395,26 @@ def render_posture_svg(stature_cm, weight_kg,
     bezel = 3
     stand_top_y = mon_bot_y
     stand_bot_y = desk_y_svg
+
+    # ── Seated eye height + ideal monitor top marker ──────────────
+    # Anthropometric ratio: seated eye height ≈ 0.452 × stature
+    # (Drillis & Contini; matches r_eye_sit used elsewhere).
+    seated_eye_above_chair = 0.452 * stature_cm
+    eye_actual_cm = chair_h + seated_eye_above_chair       # ideal monitor-top height
+    eye_y_svg     = y(eye_actual_cm)                       # SVG y-coord of eye level
+
+    # Ideal monitor top = eye level. Ghost marker only if the measured
+    # monitor differs from ideal by more than the ±4 cm tolerance.
+    ideal_mon_top_cm = eye_actual_cm
+    ideal_mon_top_y  = y(ideal_mon_top_cm)
+    show_ideal_mon   = abs(monitor_h - ideal_mon_top_cm) > 4
+
+    # Downward-gaze indicator when monitor is too low
+    gaze_note = ""
+    if monitor_diff < -4:
+        gaze_note = "GAZE FORCED DOWN — head tilts forward"
+    elif monitor_diff > 4:
+        gaze_note = "GAZE FORCED UP — neck extended"
 
     # Coordinates for body silhouette path (torso)
     # Trapezoid-ish: wider at shoulder, narrower at pelvis, slight curve
@@ -1607,6 +1630,34 @@ def render_posture_svg(stature_cm, weight_kg,
           x2="{head_cx + head_r * 0.92}" y2="{head_cy + 7}"
           stroke="{SKIN_SHADE}" stroke-width="1.2" stroke-linecap="round"/>
   </g>
+
+  <!-- ── Eye-level reference line (dashed, horizontal) ── -->
+  <line x1="{head_cx + head_r + 4}" y1="{eye_y_svg}"
+        x2="{mon_x + mon_w + 30}"    y2="{eye_y_svg}"
+        stroke="#0d9488" stroke-width="1.2" stroke-dasharray="4,4"
+        opacity="0.75"/>
+  <text x="{mon_x + mon_w + 34}" y="{eye_y_svg + 3}" font-size="9"
+        font-family="Inter, sans-serif" fill="#0d9488"
+        font-weight="700" letter-spacing="0.6">EYE LEVEL · {eye_actual_cm:.0f} cm</text>
+
+  {(f'''<!-- Ideal monitor top marker (ghost) -->
+  <line x1="{mon_x - 4}" y1="{ideal_mon_top_y}"
+        x2="{mon_x + mon_w + 4}" y2="{ideal_mon_top_y}"
+        stroke="{OK}" stroke-width="2" stroke-dasharray="3,3" opacity="0.7"/>
+  <text x="{mon_x + mon_w / 2 - 22}" y="{ideal_mon_top_y - 4}" font-size="9"
+        font-family="Inter, sans-serif" fill="{OK}" font-weight="700"
+        letter-spacing="0.5">IDEAL TOP</text>
+  ''') if show_ideal_mon else ''}
+
+  {(f'''<!-- Gaze-line from eye to monitor centre -->
+  <line x1="{head_cx + head_r * 0.55}" y1="{head_cy - 1}"
+        x2="{mon_x + mon_w / 2}" y2="{mon_top_y + mon_h_svg / 2}"
+        stroke="{monitor_c}" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.85"/>
+  <text x="{(head_cx + mon_x + mon_w / 2) / 2 - 30}"
+        y="{(head_cy + mon_top_y + mon_h_svg / 2) / 2 - 6}" font-size="9"
+        font-family="Inter, sans-serif" fill="{monitor_c}" font-weight="700"
+        letter-spacing="0.4">{gaze_note}</text>
+  ''') if gaze_note else ''}
 
   <!-- ── Annotations ──────────────────────────────────── -->
   <text x="{pelvis_x - 95}" y="{pelvis_y - 85}" font-size="10.5" font-weight="700"
