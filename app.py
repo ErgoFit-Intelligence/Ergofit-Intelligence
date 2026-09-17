@@ -111,7 +111,7 @@ I18N = {
         "f_weight":        "Βάρος (kg)",
         "f_hrs_comp":      "Ώρες υπολογιστή / ημέρα",
         "f_hrs_mouse":     "Ώρες ποντικιού / ημέρα",
-        "f_hrs_sit":       "Ώρες συνολικά καθιστός / ημέρα",
+        "f_hrs_sit":       "Ώρες καθιστός στη δουλειά / ημέρα",
         "f_diabetes":      "Σακχαρώδης διαβήτης",
         "f_smoking":       "Κάπνισμα",
         "f_pregnant":      "Εγκυμοσύνη τώρα",
@@ -237,7 +237,7 @@ I18N = {
         "f_weight":        "Weight (kg)",
         "f_hrs_comp":      "Computer hours / day",
         "f_hrs_mouse":     "Mouse hours / day",
-        "f_hrs_sit":       "Total sitting hours / day",
+        "f_hrs_sit":       "Workplace sitting hours / day",
         "f_diabetes":      "Diabetes",
         "f_smoking":       "Smoking",
         "f_pregnant":      "Currently pregnant",
@@ -1097,8 +1097,18 @@ with st.container(border=True):
             t["f_hrs_mouse"], min_value=0.0, max_value=16.0, value=4.0, step=0.5,
         )
     with row3_s:
+        _sit_help = (
+            "Μόνο οι ώρες που κάθεται στη δουλειά — όχι το σύνολο της ημέρας. "
+            "Ο πολλαπλασιαστής κινδύνου βασίζεται σε meta-analysis "
+            "εργασιακού καθίσματος (Dzakpasu 2021)."
+            if lang == "el" else
+            "Only workplace sitting hours — not total daily sitting. "
+            "The risk multiplier is based on a workplace-sitting "
+            "meta-analysis (Dzakpasu 2021)."
+        )
         hours_sitting = st.number_input(
             t["f_hrs_sit"], min_value=0.0, max_value=16.0, value=8.0, step=0.5,
+            help=_sit_help,
         )
 
     # ---- Health & lifestyle ----
