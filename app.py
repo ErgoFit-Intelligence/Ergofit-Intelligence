@@ -82,7 +82,7 @@ I18N = {
 - Δεν είναι **προγνωστικό εργαλείο** — δεν σας λέει την πιθανότητα να πάθετε κάτι.
 - Δεν αντικαθιστά **εξέταση από γιατρό**.
 
-**Πάνω σε τι βασίζεται.** Ευρωπαϊκά πρότυπα για καρέκλες γραφείου (EN 1335), σχεδιασμό θέσης εργασίας (ISO 9241-5), και την Ευρωπαϊκή Οδηγία 90/270/ΕΟΚ για οθόνες. Οι μετρήσεις σώματος βασίζονται σε γνωστές αναλογίες (Drillis & Contini 1966), αλλά υπερισχύουν αν πάρετε **άμεσες** μετρήσεις.
+**Πάνω σε τι βασίζεται.** Ευρωπαϊκά πρότυπα για καρέκλες γραφείου (EN 1335-1:2020), σχεδιασμό θέσης εργασίας (ISO 9241-5:2024), και την Ευρωπαϊκή Οδηγία 90/270/ΕΟΚ για οθόνες. Οι εκτιμήσεις σωματομετρικών διαστάσεων προέρχονται από ανθρωπομετρικά δεδομένα (Panero & Zelnik, NASA STD-3000), αλλά υπερισχύουν οι **άμεσες** μετρήσεις όταν καταχωρηθούν.
 
 **Προστασία δεδομένων.** Το εργαλείο συλλέγει και δεδομένα υγείας (τραυματισμοί, διαβήτης κ.λπ.). Πριν στείλετε οτιδήποτε, πρέπει να πάρετε ρητή συγκατάθεση από τον εργαζόμενο. Τα δεδομένα διαγράφονται όποτε τα ζητήσετε.
 """,
@@ -211,7 +211,7 @@ I18N = {
 - Not a **prediction tool** — it does not tell you the chance of getting a condition.
 - Not a **substitute for seeing a doctor**.
 
-**What it is based on.** European standards for office chairs (EN 1335), workstation layout (ISO 9241-5), and the EU Directive 90/270/EEC for screens. Body measurements use known ratios (Drillis & Contini 1966), but direct measurements — when you take them — take priority.
+**What it is based on.** European standards for office chairs (EN 1335-1:2020), workstation layout (ISO 9241-5:2024), and EU Directive 90/270/EEC for screens. Estimated body dimensions come from anthropometric datasets (Panero & Zelnik, NASA STD-3000); direct measurements — when entered — take priority.
 
 **Data protection.** The tool collects some health data (past injuries, diabetes, etc.). Before you submit anything, you need explicit consent from the person. The data can be deleted whenever they ask.
 """,
@@ -1161,7 +1161,7 @@ with st.container(border=True):
     with row5_oc:
         oral_contra = st.checkbox(t["f_oral_contra"], disabled=is_male)
 
-    # ---- Direct anthropometry (optional — overrides Drillis & Contini) ----
+    # ---- Direct anthropometry (optional — overrides stature-based estimates) ----
     st.markdown(
         f'<div class="subgroup-head">{t["sp_anthro"]}</div>',
         unsafe_allow_html=True,
@@ -1332,7 +1332,10 @@ def render_posture_svg(stature_cm, weight_kg,
     desk_c    = col(desk_diff,    2)
     monitor_c = col(monitor_diff, 4)
 
-    # ── Body proportions (Drillis & Contini × stature) ───────────
+    # ── Body segment proportions (Drillis & Contini 1966 — body segment
+    # PARAMETERS for kinematics; head/trunk/limb length fractions of stature).
+    # These are correctly attributed here: they concern segment lengths for
+    # drawing the silhouette, not seated ergonomic dimensions. ───────
     head_d    = 0.130 * stature_cm
     trunk     = 0.288 * stature_cm
     upper_arm = 0.186 * stature_cm
@@ -1721,8 +1724,15 @@ st.markdown(
 
 
 # ====================================================================
-# Anthropometric ratios (Drillis & Contini 1966, ANSUR I fallback)
+# Seated anthropometric ratios for workstation dimensioning.
+# Sources: Panero & Zelnik (Human Dimensions & Interior Space, 1979);
+#          NASA STD-3000 (Man-Systems Integration Standards);
+#          ANSUR I / ANSUR II US Army anthropometry.
 # Direct measurements — when supplied — override height-based estimates.
+#
+# NOTE: Drillis & Contini 1966 is a DIFFERENT dataset that gives body
+# segment PARAMETERS (mass, moment of inertia, segment length fractions)
+# — used in the SVG silhouette code, not for seated ergonomic sizing.
 # ====================================================================
 if sex_anthro == "Female-typical":
     r_popliteal, r_elbow_sit, r_eye_sit = 0.239, 0.135, 0.453
@@ -1737,7 +1747,7 @@ if popliteal_h_direct > 0:
     _chair_source        = "direct"
 else:
     ideal_chair          = round(r_popliteal * height, 1)
-    _chair_source        = "estimate (Drillis & Contini)"
+    _chair_source        = "estimate (Panero & Zelnik / ANSUR)"
 
 # Ideal desk = chair + seated-elbow gap (direct if supplied)
 if seated_elbow_h_direct > 0:
@@ -2418,12 +2428,12 @@ with tab_osha:
         ("adjust",       "Παρέχει εύκολες ρυθμίσεις"),
         ("back_tilt",    "Κλίση πλάτης ρυθμιζόμενη (συνιστώμενο εύρος 90°–120°)"),
         ("back_lock",    "Η πλάτη σταθεροποιείται σε κάθε επιλεγμένη θέση"),
-        ("back_height",  "Το ύψος της πλάτης είναι κατάλληλο για τη χρήση (~23 cm χαμηλή πλάτη για ελευθερία κίνησης / ~64.5 cm μεσαία πλάτη / ~90 cm υψηλή πλάτη για πλήρη υποστήριξη)"),
+        ("back_height",  "Το ύψος της πλάτης είναι κατάλληλο (EN 1335: χαμηλή ≤ 40 cm, μεσαία ≤ 50 cm, υψηλή > 50 cm — μετρημένο από την έδρα προς τα πάνω)"),
         ("back_width",   "Το πλάτος της πλάτης της καρέκλας είναι ≥ 31 cm"),
         ("lumbar",       "Η πλάτη της καρέκλας υποστηρίζει την φυσική κυρτότητα της οσφυϊκής χώρας (lumbar support)"),
         ("back_angle",   "Η γωνία μεταξύ καθίσματος και πλάτης της καρέκλας είναι 90°–120°"),
         ("rounded",      "Τα άκρα της πλάτης και της έδρας είναι περιμετρικά στρογγυλεμένα"),
-        ("seat_height",  "Το ύψος της έδρας είναι ρυθμιζόμενο (συνιστώμενο εύρος 42.4–52.3 cm από το έδαφος)"),
+        ("seat_height",  "Το ύψος της έδρας είναι ρυθμιζόμενο (EN 1335-1: 40–51 cm από το έδαφος)"),
         ("seat_depth",   "Το βάθος της έδρας είναι ρυθμιζόμενο (συνιστώμενο εύρος 38–45 cm)"),
         ("seat_width",   "Το πλάτος της έδρας είναι ≥ 45 cm"),
         ("seat_tilt",    "Η έδρα έχει κλίση 0°–7° σε σχέση με το οριζόντιο επίπεδο"),
@@ -2484,7 +2494,7 @@ with tab_angles:
         ("shin_foot",      "4. Κνήμη — πέλμα (γωνία ποδοκνημικής)",                                    90, 110, 100),
         ("upper_frontal",  "5. Βραχίονας — κατακόρυφος, μετωπιαίο επίπεδο (απαγωγή ώμου)",              0,  30, 10),
         ("upper_sagittal", "6. Βραχίονας — κατακόρυφος, προσθοπίσθιο επίπεδο (κάμψη ώμου)",            10,  35, 20),
-        ("upper_lower",    "7. Βραχίονας — αντιβράχιο (γωνία αγκώνα)",                                 80, 160, 100),
+        ("upper_lower",    "7. Βραχίονας — αντιβράχιο (γωνία αγκώνα, ISO 11226 / RULA)",              90, 120, 100),
         # Added 2026 — wrist assessment was missing per adversarial peer review.
         # Ranges: ISO 11226 & Occupational Biomechanics (Chaffin et al.).
         ("wrist_ext",      "8. Καρπός — έκταση/κάμψη (0° = ουδέτερο, θετικό = έκταση)",              -15,  15, 0),
