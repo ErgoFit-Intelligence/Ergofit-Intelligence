@@ -15,8 +15,6 @@ import json
 from datetime import date, datetime
 from pathlib import Path
 
-import altair as alt
-import pandas as pd
 import requests
 import streamlit as st
 
@@ -711,6 +709,45 @@ st.markdown(
 
 
 # ====================================================================
+# Intended purpose & GDPR notice (top of app, before intake)
+# ====================================================================
+with st.expander(
+    "ℹ️ Intended purpose · Data protection · Non-medical device statement",
+    expanded=False,
+):
+    st.markdown(
+        """
+        **Intended purpose.** ErgoFit Intelligence is occupational-ergonomics
+        **decision-support software** for use by qualified ergonomists during
+        workstation assessments. It supports the ergonomist in identifying
+        risk factors and comparing measured workstation dimensions against
+        published anthropometric and chair standards.
+
+        **What this tool is NOT.**
+
+        - Not a **medical device** as defined in Regulation (EU) 2017/745
+        - Not a **diagnostic instrument** — findings do not diagnose disease
+        - Not a **personal risk calculator** — no individual probability of
+          developing a condition is estimated
+        - Not a **substitute for clinical assessment** where indicated
+
+        **Reference standards.** EN 1335-1:2020+A1:2022 (office chair
+        dimensions and safety), ISO 9241-5:2024 (workstation layout and
+        postural requirements), Council Directive 90/270/EEC (display
+        screen equipment). Anthropometric baseline: Drillis & Contini
+        (1966), used as fallback when direct anthropometry is unavailable.
+
+        **Data protection (GDPR).** This tool collects **special-category
+        health data** (Article 9). Before any submission to the backend
+        database, the ergonomist must obtain the subject's explicit,
+        informed consent (Article 9(2)(a)). Data is stored under a defined
+        retention period and may be deleted upon request. See the full
+        Privacy Policy and Data Processing Agreement in the accompanying
+        Tool Documentation folder.
+        """
+    )
+
+# ====================================================================
 # Subject — comprehensive intake panel (above tabs, always visible)
 # ====================================================================
 st.markdown(
@@ -825,6 +862,67 @@ with st.container(border=True):
         pregnant = st.checkbox("Currently pregnant", disabled=is_male)
     with row5_oc:
         oral_contra = st.checkbox("Oral contraceptive use", disabled=is_male)
+
+    # ---- Direct anthropometry (optional — overrides Drillis & Contini) ----
+    st.markdown(
+        '<div class="subgroup-head">Direct anthropometry (optional)</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Directly-measured dimensions are more accurate than height-based "
+        "estimates and account for individual body proportions. Leave at 0 "
+        "to use Drillis & Contini (1966) height-based estimates as fallback."
+    )
+    row_a1, row_a2, row_a3 = st.columns(3)
+    with row_a1:
+        popliteal_h_direct = st.number_input(
+            "Popliteal height (cm, seated)", min_value=0.0, max_value=70.0,
+            value=0.0, step=0.5,
+            help="Distance from floor to back of knee while seated. Used to "
+                 "set ideal chair seat height. Leave 0 for estimate.",
+        )
+    with row_a2:
+        seated_elbow_h_direct = st.number_input(
+            "Seated elbow rest height (cm)", min_value=0.0, max_value=40.0,
+            value=0.0, step=0.5,
+            help="Distance from seat surface to bottom of elbow while sitting "
+                 "with upper arm relaxed. Used to set ideal desk height.",
+        )
+    with row_a3:
+        seated_eye_h_direct = st.number_input(
+            "Seated eye height (cm)", min_value=0.0, max_value=90.0,
+            value=0.0, step=0.5,
+            help="Distance from seat surface to eye level while sitting "
+                 "upright. Used to set ideal monitor top-edge height.",
+        )
+
+    # ---- Psychosocial workload (Karasek Job Demand-Control-Support) ----
+    st.markdown(
+        '<div class="subgroup-head">Psychosocial workload (Karasek JDCS)</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Adverse psychosocial factors are independently associated with "
+        "musculoskeletal disorders (Landsbergis 2020; systematic reviews "
+        "2023-2025). This 3-item screen mirrors the Job Demand-Control-Support "
+        "model (Karasek & Theorell, 1990)."
+    )
+    row_ps1, row_ps2, row_ps3 = st.columns(3)
+    with row_ps1:
+        psy_demand = st.select_slider(
+            "Job demand (workload, deadlines, mental effort)",
+            options=["Low", "Moderate", "High"], value="Moderate",
+        )
+    with row_ps2:
+        psy_control = st.select_slider(
+            "Job control (autonomy, decision latitude)",
+            options=["Low", "Moderate", "High"], value="Moderate",
+        )
+    with row_ps3:
+        psy_support = st.select_slider(
+            "Social support at work (colleagues, supervisor)",
+            options=["Low", "Moderate", "High"], value="Moderate",
+        )
 
 # ---- Backwards-compat alias used by ANSUR ratios block below ----
 # The ANSUR block expects "Female-typical" / "Male-typical" / "Combined average".
@@ -1274,7 +1372,8 @@ st.markdown(
 
 
 # ====================================================================
-# Anthropometric ratios from ANSUR I
+# Anthropometric ratios (Drillis & Contini 1966, ANSUR I fallback)
+# Direct measurements — when supplied — override height-based estimates.
 # ====================================================================
 if sex_anthro == "Female-typical":
     r_popliteal, r_elbow_sit, r_eye_sit = 0.239, 0.135, 0.453
@@ -1283,11 +1382,31 @@ elif sex_anthro == "Male-typical":
 else:
     r_popliteal, r_elbow_sit, r_eye_sit = 0.243, 0.133, 0.452
 
-ideal_chair       = round(r_popliteal * height, 1)
-seated_elbow_gap  = round(r_elbow_sit  * height, 1)
-seated_eye_gap    = round(r_eye_sit    * height, 1)
-ideal_desk_target = round(ideal_chair + seated_elbow_gap, 1)
-ideal_mon_target  = round(ideal_chair + seated_eye_gap,   1)
+# Ideal chair seat = measured popliteal height, OR estimated from stature
+if popliteal_h_direct > 0:
+    ideal_chair          = round(popliteal_h_direct, 1)
+    _chair_source        = "direct"
+else:
+    ideal_chair          = round(r_popliteal * height, 1)
+    _chair_source        = "estimate (Drillis & Contini)"
+
+# Ideal desk = chair + seated-elbow gap (direct if supplied)
+if seated_elbow_h_direct > 0:
+    seated_elbow_gap     = round(seated_elbow_h_direct, 1)
+    _desk_source         = "direct"
+else:
+    seated_elbow_gap     = round(r_elbow_sit * height, 1)
+    _desk_source         = "estimate"
+ideal_desk_target        = round(ideal_chair + seated_elbow_gap, 1)
+
+# Ideal monitor top = chair + seated-eye gap (direct if supplied)
+if seated_eye_h_direct > 0:
+    seated_eye_gap       = round(seated_eye_h_direct, 1)
+    _mon_source          = "direct"
+else:
+    seated_eye_gap       = round(r_eye_sit * height, 1)
+    _mon_source          = "estimate"
+ideal_mon_target         = round(ideal_chair + seated_eye_gap,   1)
 
 
 # ====================================================================
@@ -1308,8 +1427,8 @@ CONDITION_INJURY_REGIONS = {
     "tendinitis_shoulder":  ["shoulder"],
     "epicondylitis_lat":    ["elbow"],
     "venous_insufficiency": ["leg"],
-    "dvt":                  ["leg"],
-    "sleep_apnea":          [],   # injury-based factor not applicable
+    # NOTE: DVT and Obstructive Sleep Apnea removed — out of scope for an
+    # office-ergonomics screening tool per adversarial peer review 2026.
 }
 CONDITIONS = {
     # ----- 1. Carpal Tunnel Syndrome ---------------------------------
@@ -1438,28 +1557,11 @@ CONDITIONS = {
         ],
     },
 
-    # ----- 6. Obstructive sleep apnea --------------------------------
-    "sleep_apnea": {
-        "name_en": "Obstructive sleep apnea (OSA)",
-        "name_gr": "Σύνδρομο υπνικής άπνοιας",
-        "description": (
-            "Repeated airway collapse during sleep; reduces daytime alertness "
-            "and worsens posture/ergonomics at workstation. Strongly tied to BMI, "
-            "less so to sex (female obesity carries higher relative risk)."
-        ),
-        "base_pct": 14.0,                            # adult community prevalence (moderate AHI threshold)
-        "factors": {
-            "bmi":            {"normal": 1.0, "overweight": 2.18, "obese": 4.84},  # Esmaeili 2025 IPD meta
-            "age_over_60":     1.50,
-            "sex_male":        1.50,                                               # men more affected overall
-        },
-        "sources": [
-            ("Esmaeili et al., 2025 — IPD meta-analysis of 12,860 adults",
-             "10.1016/j.eclinm.2025.103221"),
-        ],
-    },
+    # NOTE: Obstructive Sleep Apnea removed 2026 — out of scope for an
+    # office-ergonomics screening tool. OSA screening belongs in primary
+    # care / sleep medicine, not ergonomic assessment.
 
-    # ----- 7. Chronic venous insufficiency ---------------------------
+    # ----- 6. Chronic venous insufficiency ---------------------------
     "venous_insufficiency": {
         "name_en": "Chronic venous insufficiency",
         "name_gr": "Χρόνια φλεβική ανεπάρκεια",
@@ -1483,29 +1585,10 @@ CONDITIONS = {
         ],
     },
 
-    # ----- 8. Deep Vein Thrombosis (DVT) -----------------------------
-    "dvt": {
-        "name_en": "Deep vein thrombosis (DVT)",
-        "name_gr": "Εν τω βάθει φλεβική θρόμβωση",
-        "description": (
-            "Blood clot formation in deep leg veins from prolonged "
-            "immobility, BMI, oral contraceptives, smoking. Can be "
-            "life-threatening if dislodged (pulmonary embolism)."
-        ),
-        "base_pct": 0.5,                             # annual incidence general population is low
-        "factors": {
-            "bmi":                {"normal": 1.0, "overweight": 1.50, "obese": 2.50},
-            "sitting_hours_high":  2.00,                                               # "e-thrombosis" risk
-            "smoking_current":     1.30,
-            "oral_contra":         3.00,
-            "pregnancy":           4.00,
-            "age_over_60":         2.00,
-        },
-        "sources": [
-            ("Ramaswamy & Patra, 2023 — e-Thrombosis review (prolonged sitting)",
-             "10.1007/s12024-023-00704-4"),
-        ],
-    },
+    # NOTE: Deep Vein Thrombosis (DVT) removed 2026 — out of scope for an
+    # office-ergonomics screening tool. The 0.5% baseline came from a
+    # narrative review (not systematic), and personalised DVT probability
+    # is a clinical decision requiring haematology consultation.
 }
 
 
@@ -1529,52 +1612,105 @@ def estimated_personal_pct(condition_key, ctx):
         pregnant:        bool   (effectively False if Male)
         oral_contra:     bool   (effectively False if Male)
     """
+    """DEPRECATED — kept for backward compatibility. Use `elevated_factors`
+    below. The multiplication of independently-derived odds ratios does
+    NOT produce a valid individual probability estimate (Zhang & Yu 1998).
+    """
+    count, _ = elevated_factors(condition_key, ctx)
+    return count
+
+
+def elevated_factors(condition_key, ctx):
+    """Return (count, [factor_labels]) — a list of *evidence-linked* risk
+    factors that are actually present for this subject and this condition.
+
+    This replaces the previous `baseline_prevalence × Π(multipliers)`
+    approach, which was statistically invalid: (a) multipliers were often
+    ORs that cannot be treated as RRs when outcomes are common, (b) the
+    independence assumption is not tenable (age, BMI, sitting hours are
+    correlated), (c) the result exceeded 100 % for many realistic
+    profiles and had to be clipped arbitrarily.
+
+    The output is a **risk-factor profile** — a qualitative summary of
+    how many literature-supported risk factors are elevated in this
+    person — not a personal disease probability.
+    """
     c = CONDITIONS[condition_key]
-    risk = float(c["base_pct"])
     f = c.get("factors", {})
+    factors_found = []
 
     # --- BMI ---------------------------------------------------------
     if "bmi" in f:
-        risk *= f["bmi"].get(ctx.get("bmi_band", "normal"), 1.0)
+        band = ctx.get("bmi_band", "normal")
+        if band != "normal" and f["bmi"].get(band, 1.0) > 1.0:
+            bmi_val = ctx.get("bmi_value")
+            label = f"Elevated BMI ({band}"
+            if bmi_val is not None:
+                label += f", {bmi_val} kg/m²"
+            label += ")"
+            factors_found.append(label)
 
     # --- Occupational exposure ---------------------------------------
     if "computer_hours_high" in f and ctx.get("hours_computer", 0) >= 4:
-        risk *= f["computer_hours_high"]
+        factors_found.append(
+            f"Prolonged computer use ({ctx.get('hours_computer')}h/day)"
+        )
     if "mouse_hours_high" in f and ctx.get("hours_mouse", 0) >= 4:
-        risk *= f["mouse_hours_high"]
+        factors_found.append(
+            f"Prolonged mouse use ({ctx.get('hours_mouse')}h/day)"
+        )
     if "sitting_hours_high" in f and ctx.get("hours_sitting", 0) >= 6:
-        risk *= f["sitting_hours_high"]
+        factors_found.append(
+            f"Prolonged sitting ({ctx.get('hours_sitting')}h/day)"
+        )
 
     # --- Sex ---------------------------------------------------------
     if "sex_female" in f and ctx.get("sex") == "Female":
-        risk *= f["sex_female"]
+        factors_found.append("Female sex (population-level association)")
     if "sex_male"   in f and ctx.get("sex") == "Male":
-        risk *= f["sex_male"]
+        factors_found.append("Male sex (population-level association)")
 
     # --- Age ---------------------------------------------------------
     age = ctx.get("age", 35)
-    if "age_over_30"   in f and age > 30: risk *= f["age_over_30"]
-    if "age_over_45"   in f and age > 45: risk *= f["age_over_45"]
-    if "age_over_60"   in f and age > 60: risk *= f["age_over_60"]
-    if "age_35_to_54"  in f and 35 <= age <= 54: risk *= f["age_35_to_54"]
+    if "age_over_30"  in f and age > 30: factors_found.append(f"Age > 30 ({age})")
+    if "age_over_45"  in f and age > 45: factors_found.append(f"Age > 45 ({age})")
+    if "age_over_60"  in f and age > 60: factors_found.append(f"Age > 60 ({age})")
+    if "age_35_to_54" in f and 35 <= age <= 54:
+        factors_found.append(f"Peak-incidence age band 35–54 ({age})")
 
     # --- Comorbidities & lifestyle -----------------------------------
-    if "diabetes"        in f and ctx.get("diabetes", False):                 risk *= f["diabetes"]
-    if "smoking_current" in f and ctx.get("smoking")  == "Current":           risk *= f["smoking_current"]
+    if "diabetes"        in f and ctx.get("diabetes", False):
+        factors_found.append("Diabetes mellitus")
+    if "smoking_current" in f and ctx.get("smoking") == "Current":
+        factors_found.append("Current smoker")
 
     # --- Prior injury — region-specific ------------------------------
     if "prior_injury" in f:
-        regions   = ctx.get("injury_regions", {}) or {}
-        relevant  = CONDITION_INJURY_REGIONS.get(condition_key, [])
-        if any(regions.get(r, False) for r in relevant):
-            risk *= f["prior_injury"]
+        regions  = ctx.get("injury_regions", {}) or {}
+        relevant = CONDITION_INJURY_REGIONS.get(condition_key, [])
+        matching = [r for r in relevant if regions.get(r, False)]
+        if matching:
+            factors_found.append(
+                f"Prior injury/pain in relevant region(s): {', '.join(matching)}"
+            )
 
     # --- Female-only -------------------------------------------------
     is_female = (ctx.get("sex") == "Female")
-    if "pregnancy"  in f and is_female and ctx.get("pregnant",   False):      risk *= f["pregnancy"]
-    if "oral_contra" in f and is_female and ctx.get("oral_contra", False):    risk *= f["oral_contra"]
+    if "pregnancy"  in f and is_female and ctx.get("pregnant",   False):
+        factors_found.append("Current pregnancy")
+    if "oral_contra" in f and is_female and ctx.get("oral_contra", False):
+        factors_found.append("Oral contraceptive use")
 
-    return min(round(risk, 1), 95.0)
+    return len(factors_found), factors_found
+
+
+def risk_status(count):
+    """Map factor count → qualitative category + color + label."""
+    if count == 0:
+        return ("No elevated factors", "#10b981")
+    if count <= 2:
+        return ("Some elevated factors", "#f59e0b")
+    return ("Multiple elevated factors", "#ef4444")
 
 
 def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
@@ -1627,7 +1763,7 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
     # --- Chair compliance --------------------------------------------
     if osha_pct < 0.6:
         profile.append((
-            f"Chair fails > 40% of OSHA design criteria — overall poor seating",
+            f"Chair fails > 40% of EN 1335 / ISO 9241-5 design criteria — overall poor seating",
             ["back_pain", "neck_strain"],
         ))
 
@@ -1662,7 +1798,7 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
         profile.append((
             f"Prolonged sitting ({ctx['hours_sitting']:.1f} h/day) — "
             "circulatory stagnation, lumbar load, neck strain",
-            ["back_pain", "neck_strain", "venous_insufficiency", "dvt"],
+            ["back_pain", "neck_strain", "venous_insufficiency"],
         ))
 
     # --- Comorbidities & lifestyle -----------------------------------
@@ -1673,8 +1809,8 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
         ))
     if ctx.get("smoking") == "Current":
         profile.append((
-            "Current smoking — elevates LBP, tendinopathy, and DVT risk",
-            ["back_pain", "epicondylitis_lat", "dvt"],
+            "Current smoking — elevates LBP and tendinopathy risk",
+            ["back_pain", "epicondylitis_lat"],
         ))
     # Region-specific prior injuries
     regions = ctx.get("injury_regions", {}) or {}
@@ -1689,8 +1825,8 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
                      ["cts"]),
         "back":     ("Prior lower-back injury — elevated chronic LBP risk",
                      ["back_pain"]),
-        "leg":      ("Prior leg / lower-extremity injury — elevated venous and DVT risk",
-                     ["venous_insufficiency", "dvt"]),
+        "leg":      ("Prior leg / lower-extremity injury — elevated venous risk",
+                     ["venous_insufficiency"]),
     }
     for region, (label, conds) in region_to_label_conds.items():
         if regions.get(region, False):
@@ -1700,26 +1836,44 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
     if ctx.get("sex") == "Female":
         if ctx.get("pregnant", False):
             profile.append((
-                "Pregnancy — elevated CTS, de Quervain, venous insufficiency, DVT risk",
-                ["cts", "venous_insufficiency", "dvt"],
+                "Pregnancy — elevated CTS, de Quervain, and venous insufficiency risk",
+                ["cts", "venous_insufficiency"],
             ))
         if ctx.get("oral_contra", False):
             profile.append((
-                "Oral contraceptive use — combined with prolonged sitting amplifies DVT risk",
-                ["dvt", "venous_insufficiency"],
+                "Oral contraceptive use — combined with prolonged sitting elevates venous risk",
+                ["venous_insufficiency"],
             ))
 
     # --- BMI-related risk factors ------------------------------------
     if bmi_band == "overweight":
         profile.append((
             f"Overweight body composition{bmi_label} — elevated load on spine, joints, wrists",
-            ["back_pain", "cts", "tendinitis_shoulder", "venous_insufficiency", "sleep_apnea"],
+            ["back_pain", "cts", "tendinitis_shoulder", "venous_insufficiency"],
         ))
     elif bmi_band == "obese":
         profile.append((
             f"Obese body composition{bmi_label} — substantially elevated load on spine, joints, circulatory system",
-            ["back_pain", "cts", "tendinitis_shoulder",
-             "venous_insufficiency", "dvt", "sleep_apnea"],
+            ["back_pain", "cts", "tendinitis_shoulder", "venous_insufficiency"],
+        ))
+
+    # --- Psychosocial (Karasek Job Demand-Control-Support) -----------
+    # High demand + low control ("job strain") is independently associated
+    # with MSK disorders — see Landsbergis 2020, Nguyen 2023.
+    ps_demand  = ctx.get("psy_demand",  "Moderate")
+    ps_control = ctx.get("psy_control", "Moderate")
+    ps_support = ctx.get("psy_support", "Moderate")
+    if ps_demand == "High" and ps_control == "Low":
+        profile.append((
+            "**Job strain** (high demand + low control) — independently linked "
+            "to elevated musculoskeletal symptom risk",
+            ["back_pain", "neck_strain"],
+        ))
+    if ps_support == "Low":
+        profile.append((
+            "Low workplace social support — additive risk factor for MSK "
+            "symptoms per Karasek Iso-Strain model",
+            ["back_pain", "neck_strain"],
         ))
 
     return profile
@@ -1741,7 +1895,7 @@ st.markdown(
 tab_ideal, tab_assessment, tab_osha, tab_angles, tab_summary = st.tabs([
     "🪑 Ideal Workstation Setup",
     "📐 Workstation Assessment",
-    "✅ OSHA Chair Checklist",
+    "✅ Chair Assessment (EN 1335 / ISO 9241-5)",
     "📏 Joint Comfort Angles",
     "📋 Summary",
 ])
@@ -1895,7 +2049,12 @@ with tab_assessment:
 # --------------------------------------------------------------------
 with tab_osha:
     st.subheader("Chair design checklist")
-    st.caption("Tick each item the chair satisfies.")
+    st.caption(
+        "Based on **EN 1335-1:2020+A1:2022** (office chair dimensions & safety) "
+        "and **ISO 9241-5:2024** (workstation layout & postural requirements), "
+        "with additional evidence-based ergonomic guidance. "
+        "Tick each item the chair satisfies."
+    )
 
     OSHA_ITEMS = [
         ("adjust",       "Παρέχει εύκολες ρυθμίσεις"),
@@ -1968,6 +2127,10 @@ with tab_angles:
         ("upper_frontal",  "5. Βραχίονας — κατακόρυφος, μετωπιαίο επίπεδο (απαγωγή ώμου)",              0,  30, 10),
         ("upper_sagittal", "6. Βραχίονας — κατακόρυφος, προσθοπίσθιο επίπεδο (κάμψη ώμου)",            10,  35, 20),
         ("upper_lower",    "7. Βραχίονας — αντιβράχιο (γωνία αγκώνα)",                                 80, 160, 100),
+        # Added 2026 — wrist assessment was missing per adversarial peer review.
+        # Ranges: ISO 11226 & Occupational Biomechanics (Chaffin et al.).
+        ("wrist_ext",      "8. Καρπός — έκταση/κάμψη (0° = ουδέτερο, θετικό = έκταση)",              -15,  15, 0),
+        ("wrist_uln",      "9. Καρπός — ωλένια απόκλιση (0° = ουδέτερο)",                            -10,  15, 5),
     ]
 
     angle_results = {}
@@ -1977,9 +2140,11 @@ with tab_angles:
             st.write(f"**{label}**")
             st.caption(f"Comfort range: {lo}° – {hi}°")
         with c_input:
+            # Wrist angles allow negative values (flexion / radial deviation)
+            _min = -30 if key.startswith("wrist") else 0
             angle = st.number_input(
                 "Angle (°)",
-                min_value=0, max_value=180, value=default, step=5,
+                min_value=_min, max_value=180, value=default, step=5,
                 key=f"angle_{key}",
                 label_visibility="collapsed",
             )
@@ -2010,7 +2175,11 @@ with tab_summary:
 
     sub_label = subject_id.strip() if subject_id.strip() else "Unidentified subject"
 
-    # ---- Compute composite scoring -------------------------------
+    # ---- Component-wise findings (NO composite score) -----------
+    # An aggregate percentage was removed 2026: an arithmetic mean of
+    # three unequally-weighted sub-scores has no scientific basis, and
+    # arbitrary "Excellent/Good" bands imply validated cut-offs that do
+    # not exist. Each domain is now reported descriptively.
     ws_pass = sum([
         abs(chair_diff)   <= 2,
         abs(desk_diff)    <= 2,
@@ -2019,21 +2188,17 @@ with tab_summary:
     ws_pct    = ws_pass / 3 * 100
     osha_pct  = (n_pass / n_total) * 100
     angle_pct = (n_ok / n_total_angles) * 100
-    overall   = (ws_pct + osha_pct + angle_pct) / 3
 
-    if   overall >= 90: band_color, band_label = "#10b981", "Excellent"
-    elif overall >= 75: band_color, band_label = "#84cc16", "Good"
-    elif overall >= 60: band_color, band_label = "#f59e0b", "Needs improvement"
-    else:               band_color, band_label = "#ef4444", "Significant issues"
+    def _domain_label(passed, total, high_bar):
+        """Descriptive category, no percentages presented as a validated grade."""
+        ratio = passed / total if total else 0
+        if ratio >= high_bar: return ("All key criteria met", "#10b981")
+        if ratio >= 0.6:      return ("Some criteria not met", "#f59e0b")
+        return ("Many criteria not met", "#ef4444")
 
-    def _quad_color(pct, good_thr, warn_thr):
-        if pct >= good_thr: return "#10b981"
-        if pct >= warn_thr: return "#f59e0b"
-        return "#ef4444"
-
-    ws_color    = _quad_color(ws_pct,    67, 33)
-    osha_color  = _quad_color(osha_pct,  85, 60)
-    angle_color = _quad_color(angle_pct, 71, 43)
+    ws_label,    ws_color    = _domain_label(ws_pass,   3,               2/3)
+    osha_label,  osha_color  = _domain_label(n_pass,    n_total,         0.85)
+    angle_label, angle_color = _domain_label(n_ok,      n_total_angles,  5/6)
 
     # ---- Top banner ---------------------------------------------
     st.markdown(
@@ -2050,21 +2215,17 @@ with tab_summary:
         unsafe_allow_html=True,
     )
 
-    # ---- Big overall score card ---------------------------------
-    st.markdown(
-        f"""
-        <div class="score-card" style="border-left: 8px solid {band_color};">
-            <div>
-                <div class="score-number" style="color: {band_color};">{overall:.0f}<span style="font-size: 32px;">%</span></div>
-                <div class="score-label">Overall ergonomic compliance</div>
-            </div>
-            <div class="score-band" style="background: {band_color};">{band_label}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # ---- Intended-purpose / non-medical disclaimer (top of summary)
+    st.info(
+        "**Intended purpose.** ErgoFit Intelligence is an occupational "
+        "**ergonomic screening and decision-support tool** for use by qualified "
+        "ergonomists. It is **not a medical device**, does not diagnose disease, "
+        "and does not estimate individual probabilities of developing any "
+        "specific condition. Findings identify **evidence-linked risk factors** "
+        "that inform ergonomic intervention priorities."
     )
 
-    # ---- Three quadrant cards -----------------------------------
+    # ---- Three domain cards (no overall composite) --------------
     q1, q2, q3 = st.columns(3)
 
     def _quad(title, value, subtitle, color):
@@ -2077,97 +2238,54 @@ with tab_summary:
         """
 
     q1.markdown(_quad("Anthropometric fit", f"{ws_pass}/3",
-                      "Chair · Desk · Monitor", ws_color),
+                      f"Chair · Desk · Monitor · {ws_label}", ws_color),
                 unsafe_allow_html=True)
-    q2.markdown(_quad("OSHA chair compliance", f"{n_pass}/{n_total}",
-                      f"{osha_pct:.0f}% of criteria met", osha_color),
+    q2.markdown(_quad("Chair (EN 1335 / ISO 9241-5)", f"{n_pass}/{n_total}",
+                      f"{osha_label}", osha_color),
                 unsafe_allow_html=True)
     q3.markdown(_quad("Joint comfort angles", f"{n_ok}/{n_total_angles}",
-                      "joints in comfort range", angle_color),
+                      f"{angle_label}", angle_color),
                 unsafe_allow_html=True)
 
     st.write("")
 
-    # ---- Biomechanical load multipliers (BMI-adjusted) ----------
-    st.markdown("### ⚖️ Biomechanical load multipliers (BMI-adjusted)")
+    # ---- BMI-related ergonomic considerations (qualitative) -----
+    # Previously this section reported numerical multipliers (e.g. "×1.44
+    # L4/L5 disc load") which risked being read as a personalised
+    # biomechanical measurement. Per adversarial peer review 2026, these
+    # multipliers are now presented as qualitative ergonomic considerations,
+    # not as fabricated per-subject numeric loads.
+    st.markdown("### ⚖️ BMI-related ergonomic considerations")
 
     if bmi_band == "normal":
         st.markdown(
             f'<div class="finding-ok">✓ BMI is in the normal range '
-            f'({bmi} kg/m² — {bmi_cat}). No load amplification factors applied.</div>',
+            f'({bmi} kg/m² — {bmi_cat}). No BMI-related load considerations flagged.</div>',
             unsafe_allow_html=True,
         )
     else:
         st.caption(
-            f"BMI {bmi} kg/m² ({bmi_cat}) — the following multipliers are applied to baseline "
-            "biomechanical loads for the assessed individual."
+            f"BMI {bmi} kg/m² ({bmi_cat}). The following ergonomic considerations "
+            "are commonly discussed in the biomechanical literature for overweight "
+            "and obese populations (e.g. Nachemson intradiscal pressure studies, "
+            "McGill spinal biomechanics). They are **qualitative guidance**, not "
+            "individual measurements."
         )
-
-        def _factor_color(f):
-            if f >= 1.20: return "#ef4444"   # red
-            if f >= 1.10: return "#f59e0b"   # amber
-            if f >  1.00: return "#84cc16"   # lime
-            return "#10b981"                  # green
-
-        def _factor_card(title, factor, subtitle):
-            color = _factor_color(factor)
-            pct = (factor - 1.0) * 100
-            return f"""
-            <div style="
-                padding: 14px 12px; background: white; border-radius: 10px;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-                text-align: center; height: 100%;
-                border-top: 4px solid {color};
-            ">
-                <div style="font-size: 10px; color: #6b7280;
-                            text-transform: uppercase; letter-spacing: 0.5px;
-                            font-weight: 600;">{title}</div>
-                <div style="font-size: 26px; font-weight: 700; color: {color};
-                            margin: 4px 0 2px;">×{factor:.2f}</div>
-                <div style="font-size: 11px; color: #4b5563;">+{pct:.0f}% vs baseline</div>
-                <div style="font-size: 11px; color: #6b7280; margin-top: 4px;
-                            font-style: italic;">{subtitle}</div>
-            </div>
-            """
-
-        f1, f2, f3, f4, f5 = st.columns(5)
-        f1.markdown(_factor_card("Spine (L4/L5)",
-                                 load["spine_l4l5"],
-                                 "Disc compressive load"),
-                    unsafe_allow_html=True)
-        f2.markdown(_factor_card("Neck / trapezius",
-                                 load["neck_fatigue"],
-                                 "Sustained muscle fatigue"),
-                    unsafe_allow_html=True)
-        f3.markdown(_factor_card("Seat pressure",
-                                 load["seat_pressure"],
-                                 "Ischial pressure concentration"),
-                    unsafe_allow_html=True)
-        f4.markdown(_factor_card("Shoulder load",
-                                 load["shoulder_load"],
-                                 "Elevated reach demand"),
-                    unsafe_allow_html=True)
-        f5.markdown(_factor_card("Edema risk",
-                                 load["edema_risk"],
-                                 "Lower-limb fluid retention"),
-                    unsafe_allow_html=True)
-
-        # Spatial adjustments + recommended break frequency
-        st.markdown("")
-        info_lines = [
-            f"📏 **Reach envelope adjustment:** +{load['reach_extra_cm']} cm extra clearance "
-            "from desk edge (abdominal mass).",
-            f"⏱️ **Recommended microbreak frequency:** every **{load['break_minutes']} minutes** "
-            "(vs 60 min baseline).",
+        considerations = [
+            "**Lumbar disc load** is typically elevated in seated postures at "
+            "higher body mass — favour chairs with strong lumbar support and "
+            "encourage short standing/walking breaks.",
+            "**Sustained neck/trapezius activity** may be increased with forward "
+            "head posture — verify monitor height and viewing distance carefully.",
+            "**Seat contact pressure** distribution is affected by body mass — "
+            "ensure adequate cushioning, seat depth, and a waterfall front edge.",
+            "**Overhead / forward reach envelope** is reduced by abdominal mass — "
+            "keep keyboard, mouse, and frequently-used items within a shorter reach.",
+            "**Lower-limb circulation** during prolonged sitting may benefit from "
+            "more frequent postural changes and calf-pump exercises.",
         ]
-        if "com_forward_pct" in load:
-            info_lines.append(
-                f"⚖️ **Centre of mass:** shifted forward by ≈ {load['com_forward_pct']}% of "
-                "trunk height — increases postural muscle work."
-            )
-
-        for line in info_lines:
-            st.markdown(line)
+        for line in considerations:
+            st.markdown(f"- {line}")
 
     st.write("")
 
@@ -2235,7 +2353,7 @@ with tab_summary:
 
     failed_osha_items = [label for label, ok in osha_results.items() if not ok]
     if failed_osha_items:
-        findings.append(f"{len(failed_osha_items)} OSHA chair criteria not met "
+        findings.append(f"{len(failed_osha_items)} EN 1335 / ISO 9241-5 chair criteria not met "
                         f"({len(failed_osha_items)/n_total*100:.0f}% of the checklist).")
 
     bad_angles = [(label, val, lo, hi) for label, (status, val, (lo, hi))
@@ -2271,7 +2389,7 @@ with tab_summary:
         )
 
     if failed_osha_items:
-        with st.expander(f"🪑 OSHA items not met ({len(failed_osha_items)})", expanded=False):
+        with st.expander(f"🪑 Chair criteria not met ({len(failed_osha_items)})", expanded=False):
             for item in failed_osha_items:
                 st.markdown(f"- {item}")
 
@@ -2303,38 +2421,41 @@ with tab_summary:
         recs.append(f"Raise the monitor (stand or stack of books) to bring the top edge to **{ideal_mon_target} cm**.")
 
     if failed_osha_items:
-        recs.append(f"Address the {len(failed_osha_items)} OSHA chair criteria not met — see detail above. "
+        recs.append(f"Address the {len(failed_osha_items)} EN 1335 / ISO 9241-5 chair criteria not met — see detail above. "
                     "Highest-impact items are usually backrest tilt/lock, lumbar support, and seat depth.")
 
     if bad_angles:
         recs.append("Re-evaluate posture for joints flagged out of range. Often these are knock-on effects "
                     "of incorrect chair/desk height, so fix those first and re-check.")
 
-    # BMI-aware break frequency
+    # Break frequency guidance (evidence-based, not fabricated numbers)
     if bmi_band == "obese":
         recs.append(
-            f"**[BMI-adjusted]** Schedule a microbreak every **{load['break_minutes']} minutes** "
-            "(more frequent than baseline) due to elevated edema and circulatory risk — "
-            "stand, walk, calf pumps, look 6 m away for 20 sec (20-20-20)."
+            "**[BMI-related]** Consider **more frequent postural changes** than "
+            "the general 60-minute baseline — the biomechanical and circulatory "
+            "literature supports shorter sit intervals in obese populations. "
+            "Adopt the 20-20-20 visual rest rule (every 20 min look 6 m away "
+            "for 20 sec)."
         )
         recs.append(
-            "**[BMI-adjusted]** Footrest is **mandatory** to relieve thigh pressure; "
-            "use a chair with **reinforced lumbar support**; "
-            "consider a **sit-stand desk** with limited standing periods."
+            "**[BMI-related]** A **footrest** is often needed to relieve thigh "
+            "pressure; prefer a chair with **strong lumbar support**; a "
+            "**sit-stand desk** with modest standing periods may help."
         )
     elif bmi_band == "overweight":
         recs.append(
-            f"**[BMI-adjusted]** Schedule a microbreak every **{load['break_minutes']} minutes** — "
-            "stand, walk, look 6 m away for 20 sec (20-20-20)."
+            "**[BMI-related]** Schedule regular postural changes (roughly every "
+            "45 minutes) — stand, walk, and apply the 20-20-20 visual rest rule."
         )
         recs.append(
-            "**[BMI-adjusted]** Allow **2-4 cm extra clearance** between abdomen and desk edge "
-            "to maintain neutral wrist/shoulder posture."
+            "**[BMI-related]** Allow modest extra clearance (~2–4 cm) between "
+            "abdomen and desk edge so wrists and shoulders can stay neutral."
         )
     else:
         recs.append(
-            "Schedule a microbreak every 30 minutes — stand, walk a few steps, "
-            "look at something at least 6 m away for 20 seconds (20-20-20 rule)."
+            "Take a microbreak roughly every 30 minutes — stand, walk a few "
+            "steps, and apply the 20-20-20 visual rest rule (every 20 min look "
+            "6 m away for 20 sec)."
         )
 
     for r in recs:
@@ -2359,6 +2480,10 @@ with tab_summary:
         "injury_regions": injury_regions,
         "pregnant":       pregnant       and (sex == "Female"),
         "oral_contra":    oral_contra    and (sex == "Female"),
+        # Psychosocial (Karasek Job Demand-Control-Support)
+        "psy_demand":     psy_demand,
+        "psy_control":    psy_control,
+        "psy_support":    psy_support,
     }
 
     risk_profile = compute_risk_profile(
@@ -2378,13 +2503,15 @@ with tab_summary:
             unsafe_allow_html=True,
         )
     else:
-        # Disclaimer first — important framing
+        # Disclaimer first — important framing (aligned with intended-purpose)
         st.info(
-            "**How to read this section.** Percentages below are **indicative personal estimates** "
-            "computed from your intake answers (age, sex, BMI, daily hours of computer / mouse / sitting, "
-            "diabetes, smoking, prior injury, pregnancy, oral contraceptives), multiplying the "
-            "general-population baseline prevalence by the relative risks reported in the cited "
-            "meta-analyses. They are NOT a clinical diagnosis."
+            "**How to read this section.** For each condition linked to the "
+            "identified ergonomic and personal risk factors, the tool reports "
+            "**how many evidence-linked risk factors are elevated** in this "
+            "subject — not a probability of developing the condition. The "
+            "risk-factor labels below reflect published meta-analytic "
+            "associations; they do not constitute individual disease prediction "
+            "or medical diagnosis."
         )
 
         # Aggregate unique conditions for a top-of-section summary
@@ -2395,8 +2522,9 @@ with tab_summary:
                     all_condition_keys.append(c)
 
         st.markdown(
-            f"**{len(risk_profile)} risk factor(s)** identified, linked to "
-            f"**{len(all_condition_keys)} condition(s)** in the literature."
+            f"**{len(risk_profile)} ergonomic/personal risk indicator(s)** "
+            f"identified, associated in the literature with "
+            f"**{len(all_condition_keys)} musculoskeletal condition(s)**."
         )
 
         # Per-risk-factor breakdown
@@ -2404,81 +2532,70 @@ with tab_summary:
             with st.expander(f"⚠ {risk_label}", expanded=True):
                 for ck in condition_keys:
                     c = CONDITIONS[ck]
-                    personal_pct = estimated_personal_pct(ck, ctx)
+                    n_factors, factor_list = elevated_factors(ck, ctx)
+                    status_label, status_color = risk_status(n_factors)
                     st.markdown(
-                        f"**{c['name_en']}** &nbsp;·&nbsp; *{c['name_gr']}*\n\n"
-                        f"{c['description']}\n\n"
-                        f"📊 General-population baseline: **{c['base_pct']}%**  \n"
-                        f"🎯 Indicative personal-risk estimate (multi-factor): "
-                        f"**≈ {personal_pct}%**"
+                        f"**{c['name_en']}** &nbsp;·&nbsp; *{c['name_gr']}*  \n"
+                        f"{c['description']}"
                     )
+                    st.markdown(
+                        f"<div style='display:inline-block; padding:6px 12px; "
+                        f"border-radius:8px; background:{status_color}; color:white; "
+                        f"font-weight:700; font-size:13px; letter-spacing:.03em; "
+                        f"margin-top:6px;'>"
+                        f"{status_label} — {n_factors} of the literature-linked "
+                        f"factors are present</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if factor_list:
+                        st.markdown(
+                            "**Elevated factors for this subject:**\n"
+                            + "\n".join(f"- {ff}" for ff in factor_list)
+                        )
                     st.markdown("")
 
-        # Optional consolidated condition list at the end
-        with st.expander("All linked conditions (consolidated list)", expanded=False):
-            for ck in all_condition_keys:
-                c = CONDITIONS[ck]
-                personal_pct = estimated_personal_pct(ck, ctx)
-                st.markdown(
-                    f"- **{c['name_en']}** ({c['name_gr']}) — "
-                    f"baseline {c['base_pct']}% · personal estimate **≈ {personal_pct}%**"
-                )
-
-        # ---- Pie chart of indicative personal risks --------------
+        # Compact consolidated view (replaces the old pie chart)
         st.markdown("")
-        st.markdown("#### 🥧 Indicative personal-risk distribution")
+        st.markdown("#### Risk-factor summary by condition")
         st.caption(
-            "Each segment represents one condition associated with the assessment "
-            "findings. Segment size reflects the indicative personal-risk percentage "
-            "(BMI-adjusted)."
+            "For each condition, the number of evidence-linked risk factors "
+            "elevated in this subject. This is **not** a probability of disease."
         )
-
-        chart_rows = []
         for ck in all_condition_keys:
             c = CONDITIONS[ck]
-            chart_rows.append({
-                "Condition": c["name_en"],
-                "Greek":     c["name_gr"],
-                "Risk %":    estimated_personal_pct(ck, ctx),
-            })
-        chart_df = pd.DataFrame(chart_rows)
-
-        pie = (
-            alt.Chart(chart_df)
-            .mark_arc(innerRadius=60, stroke="#fff", strokeWidth=2)
-            .encode(
-                theta=alt.Theta(field="Risk %", type="quantitative"),
-                color=alt.Color(
-                    field="Condition", type="nominal",
-                    legend=alt.Legend(title="Conditions", orient="right"),
-                ),
-                tooltip=[
-                    alt.Tooltip("Condition:N", title="Condition"),
-                    alt.Tooltip("Greek:N",     title="Ελληνικά"),
-                    alt.Tooltip("Risk %:Q",    title="Indicative risk", format=".1f"),
-                ],
+            n_factors, _ = elevated_factors(ck, ctx)
+            status_label, status_color = risk_status(n_factors)
+            st.markdown(
+                f"<div style='display:flex; align-items:center; gap:12px; "
+                f"padding:10px 14px; margin-bottom:6px; background:white; "
+                f"border-radius:10px; border-left:6px solid {status_color};'>"
+                f"<div style='flex:1;'><b>{c['name_en']}</b> "
+                f"&nbsp;·&nbsp; <i style='color:#64748b;'>{c['name_gr']}</i></div>"
+                f"<div style='background:{status_color}; color:white; "
+                f"padding:4px 10px; border-radius:6px; font-size:12px; "
+                f"font-weight:700;'>{n_factors} factor(s)</div></div>",
+                unsafe_allow_html=True,
             )
-            .properties(height=380)
-        )
-        st.altair_chart(pie, use_container_width=True)
-
-        st.caption(
-            "⚠️ The percentages are indicative ergonomic-risk estimates, not clinical "
-            "probabilities. They serve as a planning tool to prioritise interventions."
-        )
 
     # ---- Send results to ErgoFit backend ------------------------
     st.divider()
     st.markdown("### 📤 Submit results")
-    st.caption(
-        "Submitting sends the anonymised assessment data to the ErgoFit "
-        "backend for aggregate analysis and quality control. Client name "
-        "(if provided) is included."
+    st.markdown(
+        "**Data protection notice (GDPR Art. 9).** Submission transmits the "
+        "assessment data listed in this report — **including special-category "
+        "health data** (diabetes, prior injuries, pregnancy, oral "
+        "contraceptive use where applicable) — to the ErgoFit backend for "
+        "aggregate quality analysis, service improvement, and (in "
+        "collaborative mode) linking with the subject's Ergolite assessment. "
+        "Data is stored in a Google-hosted spreadsheet under a controller "
+        "(ErgoFit) with a defined retention period. The subject may withdraw "
+        "consent and request deletion at any time by contacting the ergonomist."
     )
 
     consent = st.checkbox(
-        "The subject has given consent for the assessment data to be transmitted "
-        "to the ErgoFit backend.",
+        "☑ I confirm that the subject has been informed of the above and has "
+        "given **explicit, informed consent (GDPR Art. 9(2)(a))** for the "
+        "assessment data to be transmitted and stored.",
         value=False,
         key="submit_consent",
     )
@@ -2516,6 +2633,14 @@ with tab_summary:
             "injury_wrist_hand": injury_regions.get("Wrist / hand", False),
             "injury_lower_back": injury_regions.get("Lower back / lumbar", False),
             "injury_leg":        injury_regions.get("Leg / lower extremity", False),
+            # Direct anthropometry (0 = not measured, using estimate)
+            "popliteal_direct_cm":     popliteal_h_direct,
+            "seated_elbow_direct_cm":  seated_elbow_h_direct,
+            "seated_eye_direct_cm":    seated_eye_h_direct,
+            # Psychosocial (Karasek JDCS)
+            "psy_demand":        psy_demand,
+            "psy_control":       psy_control,
+            "psy_support":       psy_support,
             # Workstation measurements
             "chair_height_cm":   chair_height,
             "desk_height_cm":    desk_height,
@@ -2523,15 +2648,17 @@ with tab_summary:
             "chair_diff_cm":     round(chair_diff, 1),
             "desk_diff_cm":      round(desk_diff, 1),
             "monitor_diff_cm":   round(monitor_diff, 1),
-            # Composite scores
-            "workstation_pct":   round(ws_pct, 1),
-            "osha_pct":          round(osha_pct, 1),
-            "angle_pct":         round(angle_pct, 1),
-            "overall_pct":       round(overall, 1),
-            "overall_band":      band_label,
-            # Risk profile (top conditions with personal pct)
+            # Component scores (kept as raw counts, no arbitrary composite)
+            "workstation_pass":  ws_pass,
+            "workstation_total": 3,
+            "chair_pass":        n_pass,
+            "chair_total":       n_total,
+            "angles_pass":       n_ok,
+            "angles_total":      n_total_angles,
+            # Risk-factor profile — condition → count of elevated factors
             "risk_conditions":   ", ".join(
-                f"{CONDITIONS[ck]['name_en']}({estimated_personal_pct(ck, ctx)}%)"
+                f"{CONDITIONS[ck]['name_en']}("
+                f"{elevated_factors(ck, ctx)[0]} factors)"
                 for ck in (all_condition_keys if risk_profile else [])
             ),
         }
@@ -2549,4 +2676,16 @@ with tab_summary:
     st.caption(
         f"Report generated {assess_date.strftime('%d %b %Y')} · "
         "Save as PDF: Ctrl+P → 'Save as PDF'."
+    )
+    st.caption(
+        "**Intended purpose & regulatory status.** ErgoFit Intelligence is "
+        "occupational-ergonomics decision-support software for use by qualified "
+        "ergonomists. It is **not a medical device** as defined in Regulation "
+        "(EU) 2017/745 — it does not diagnose, prevent, monitor, treat, alleviate, "
+        "or predict any specific disease in any individual. Baseline population "
+        "prevalence data is provided as scientific context for identified risk "
+        "factors and is **not** a personalised probability. Assessment against "
+        "**EN 1335-1:2020+A1:2022** (office chair) and **ISO 9241-5:2024** "
+        "(workstation layout). Legal baseline: Council Directive 90/270/EEC "
+        "(display screen equipment)."
     )
