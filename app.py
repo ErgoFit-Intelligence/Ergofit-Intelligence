@@ -56,13 +56,323 @@ def submit_to_backend(payload: dict) -> tuple[bool, str]:
 
 
 # ====================================================================
+# Internationalisation (EL / EN)
+# ====================================================================
+# All user-visible strings live here in plain, everyday language —
+# no jargon, no academic framing. Both languages should be equally
+# readable by a non-specialist (an employee, not just an ergonomist).
+I18N = {
+    "el": {
+        # ---- Language selector label ----
+        "lang_label":  "🌐 Γλώσσα / Language",
+
+        # ---- Hero ----
+        "hero_brand":  "ERGOFIT · INTELLIGENCE",
+        "hero_title":  "Εργαλείο εργονομικής αξιολόγησης",
+        "hero_sub":    "Το εργαλείο που σας βοηθά να δουλεύετε χωρίς πόνο.",
+
+        # ---- Intended purpose expander ----
+        "ip_expander": "ℹ️ Σε τι χρησιμεύει αυτό το εργαλείο · Προστασία δεδομένων",
+        "ip_body": """
+**Σε τι χρησιμεύει.** Το ErgoFit βοηθά τον εργονόμο να αξιολογήσει τη θέση εργασίας ενός εργαζομένου. Εντοπίζει τι δεν πάει καλά (καρέκλα, γραφείο, οθόνη, στάση σώματος) και δείχνει ποιοι παράγοντες κινδύνου υπάρχουν για μυοσκελετικά προβλήματα.
+
+**Τι δεν είναι.**
+
+- Δεν είναι **ιατρικό μηχάνημα** — δεν κάνει διάγνωση.
+- Δεν είναι **προγνωστικό εργαλείο** — δεν σας λέει την πιθανότητα να πάθετε κάτι.
+- Δεν αντικαθιστά **εξέταση από γιατρό**.
+
+**Πάνω σε τι βασίζεται.** Ευρωπαϊκά πρότυπα για καρέκλες γραφείου (EN 1335), σχεδιασμό θέσης εργασίας (ISO 9241-5), και την Ευρωπαϊκή Οδηγία 90/270/ΕΟΚ για οθόνες. Οι μετρήσεις σώματος βασίζονται σε γνωστές αναλογίες (Drillis & Contini 1966), αλλά υπερισχύουν αν πάρετε **άμεσες** μετρήσεις.
+
+**Προστασία δεδομένων.** Το εργαλείο συλλέγει και δεδομένα υγείας (τραυματισμοί, διαβήτης κ.λπ.). Πριν στείλετε οτιδήποτε, πρέπει να πάρετε ρητή συγκατάθεση από τον εργαζόμενο. Τα δεδομένα διαγράφονται όποτε τα ζητήσετε.
+""",
+
+        # ---- Subject profile block ----
+        "sp_head":         "Στοιχεία του εργαζομένου",
+        "sp_identity":     "Ταυτότητα",
+        "sp_demographics": "Δημογραφικά",
+        "sp_occup":        "Επαγγελματική έκθεση",
+        "sp_health":       "Υγεία & τρόπος ζωής",
+        "sp_injuries":     "Προηγούμενοι τραυματισμοί (ανά περιοχή σώματος)",
+        "sp_injuries_hint":"Επιλέξτε κάθε περιοχή όπου υπάρχει προηγούμενος τραυματισμός, διάστρεμμα ή χρόνιος πόνος. Ο κίνδυνος επανεμφάνισης είναι υψηλότερος στη συγκεκριμένη περιοχή.",
+        "sp_female":       "Ειδικά για γυναίκες",
+        "sp_female_hint":  "Τα πεδία απενεργοποιούνται αυτόματα για άντρες.",
+        "sp_anthro":       "Άμεσες μετρήσεις σώματος (προαιρετικά)",
+        "sp_anthro_hint":  "Οι πραγματικές μετρήσεις είναι πιο ακριβείς από τις εκτιμήσεις με βάση το ύψος. Αφήστε 0 για να χρησιμοποιηθεί η εκτίμηση.",
+        "sp_psy":          "Ψυχοκοινωνικοί παράγοντες",
+        "sp_psy_hint":     "Το άγχος στη δουλειά και ο έλεγχος πάνω στην εργασία επηρεάζουν τον κίνδυνο μυοσκελετικών προβλημάτων.",
+
+        # ---- Fields ----
+        "f_subject_id":    "Όνομα ή κωδικός εργαζομένου (προαιρετικό)",
+        "f_date":          "Ημερομηνία αξιολόγησης",
+        "f_age":           "Ηλικία (χρόνια)",
+        "f_sex":           "Φύλο",
+        "f_stature":       "Ύψος (cm)",
+        "f_weight":        "Βάρος (kg)",
+        "f_hrs_comp":      "Ώρες υπολογιστή / ημέρα",
+        "f_hrs_mouse":     "Ώρες ποντικιού / ημέρα",
+        "f_hrs_sit":       "Ώρες συνολικά καθιστός / ημέρα",
+        "f_diabetes":      "Σακχαρώδης διαβήτης",
+        "f_smoking":       "Κάπνισμα",
+        "f_pregnant":      "Εγκυμοσύνη τώρα",
+        "f_oral_contra":   "Χρήση αντισυλληπτικών",
+        "f_inj_neck":      "Αυχένας",
+        "f_inj_shoulder":  "Ώμος",
+        "f_inj_elbow":     "Αγκώνας",
+        "f_inj_wrist":     "Καρπός / χέρι",
+        "f_inj_back":      "Μέση / οσφύς",
+        "f_inj_leg":       "Πόδι / κάτω άκρα",
+        "f_popliteal":     "Ύψος πίσω γόνατο σε καθιστή θέση (cm)",
+        "f_elbow_h":       "Ύψος αγκώνα από την έδρα (cm)",
+        "f_eye_h":         "Ύψος ματιών από την έδρα (cm)",
+        "f_psy_demand":    "Πίεση εργασίας (φόρτος, deadlines)",
+        "f_psy_control":   "Έλεγχος στη δουλειά σας (αυτονομία)",
+        "f_psy_support":   "Υποστήριξη από συναδέλφους/προϊστάμενο",
+
+        # ---- Select options ----
+        "opt_female":      "Γυναίκα",
+        "opt_male":        "Άντρας",
+        "opt_avg":         "Μέσος όρος",
+        "opt_never":       "Ποτέ",
+        "opt_former":      "Πρώην καπνιστής",
+        "opt_current":     "Ενεργός καπνιστής",
+        "opt_low":         "Χαμηλή",
+        "opt_moderate":    "Μέτρια",
+        "opt_high":        "Υψηλή",
+
+        # ---- Tabs ----
+        "tab_1":           "🪑 Ιδανική θέση εργασίας",
+        "tab_2":           "📐 Πραγματικές μετρήσεις",
+        "tab_3":           "✅ Έλεγχος καρέκλας (EN 1335 / ISO 9241-5)",
+        "tab_4":           "📏 Γωνίες αρθρώσεων",
+        "tab_5":           "📋 Σύνοψη",
+
+        # ---- Assessment sections divider ----
+        "sections_label":  "Ενότητες αξιολόγησης",
+
+        # ---- Summary tab ----
+        "sum_report_title":"Αναφορά εργονομικής αξιολόγησης",
+        "sum_intended":    "**Σε τι χρησιμεύει.** Αυτό είναι εργαλείο υποστήριξης αποφάσεων για εργονόμους. **Δεν είναι ιατρικό μηχάνημα**, δεν κάνει διάγνωση, και δεν σας λέει την πιθανότητα να πάθετε κάποια πάθηση. Δείχνει ποιοι παράγοντες κινδύνου υπάρχουν, για να ξέρετε πού να επέμβετε.",
+        "sum_card_ws":     "Θέση εργασίας",
+        "sum_card_chair":  "Καρέκλα (EN 1335 / ISO 9241-5)",
+        "sum_card_angles": "Γωνίες σώματος",
+        "sum_ws_sub":      "Καρέκλα · Γραφείο · Οθόνη",
+
+        # ---- Domain labels ----
+        "dl_all_met":      "Όλα τα βασικά κριτήρια καλύπτονται",
+        "dl_some_not":     "Κάποια κριτήρια δεν καλύπτονται",
+        "dl_many_not":     "Πολλά κριτήρια δεν καλύπτονται",
+
+        # ---- Risk profile section ----
+        "risk_head":       "🩺 Παράγοντες κινδύνου — τι μπορεί να επηρεάσει την υγεία",
+        "risk_no_factors": "✓ Δεν βρέθηκαν σημαντικοί παράγοντες κινδύνου που να σχετίζονται με συγκεκριμένες μυοσκελετικές παθήσεις.",
+        "risk_how_read":   """**Πώς να διαβάσετε αυτή την ενότητα.** Για κάθε πάθηση που σχετίζεται με τους παράγοντες κινδύνου που βρήκαμε, το εργαλείο σας λέει **πόσοι από τους γνωστούς παράγοντες κινδύνου είναι παρόντες** σε αυτόν τον άνθρωπο. Αυτό **δεν** είναι πρόβλεψη ότι θα πάθει την πάθηση. Είναι απλά ένας τρόπος να δούμε πού πρέπει να δώσουμε προσοχή.""",
+        "risk_summary_line": "Βρέθηκαν **{n_risks}** παράγοντες κινδύνου, που στη βιβλιογραφία συνδέονται με **{n_conds}** μυοσκελετικές παθήσεις.",
+        "risk_status_none":  "Καμία επιβαρυντική συνθήκη",
+        "risk_status_some":  "Κάποιες επιβαρυντικές συνθήκες",
+        "risk_status_many":  "Πολλές επιβαρυντικές συνθήκες",
+        "risk_factors_present": "Παράγοντες που ισχύουν για αυτό το άτομο:",
+        "risk_summary_head":    "Σύνοψη ανά πάθηση",
+        "risk_summary_caption": "Για κάθε πάθηση, βλέπετε πόσοι παράγοντες κινδύνου είναι παρόντες. **Δεν** είναι πιθανότητα να πάθει κανείς την πάθηση.",
+        "risk_factors_count":   "παράγοντες",
+
+        # ---- Findings & recommendations ----
+        "findings_head":       "Ευρήματα",
+        "findings_none":       "✓ Δεν βρέθηκαν σημαντικά προβλήματα εργονομίας. Η θέση εργασίας ταιριάζει καλά στον εργαζόμενο.",
+        "recs_head":           "Συστάσεις",
+        "ws_measurements":     "📐 Μετρήσεις θέσης εργασίας — λεπτομέρειες",
+        "bmi_head":            "⚖️ Θέματα εργονομίας που σχετίζονται με το BMI",
+        "bmi_normal":          "✓ Το BMI είναι στα φυσιολογικά όρια ({bmi} kg/m² — {cat}). Δεν χρειάζονται ιδιαίτερες προσαρμογές λόγω βάρους.",
+
+        # ---- Submit section ----
+        "submit_head":         "📤 Υποβολή αποτελεσμάτων",
+        "submit_notice":       """**Ενημέρωση για τα δεδομένα (GDPR, Άρθρο 9).** Πατώντας υποβολή, στέλνετε τα στοιχεία της αξιολόγησης — **συμπεριλαμβανομένων δεδομένων υγείας** (διαβήτη, τραυματισμών, εγκυμοσύνης) — στη βάση δεδομένων του ErgoFit. Χρησιμοποιούνται μόνο για ανάλυση ποιότητας και σύνδεση με την αξιολόγηση Ergolite (αν υπάρχει). Ο εργαζόμενος μπορεί να ανακαλέσει τη συγκατάθεση και να ζητήσει διαγραφή οποτεδήποτε.""",
+        "submit_consent":      "☑ Επιβεβαιώνω ότι ο εργαζόμενος ενημερώθηκε και έδωσε **ρητή, ενημερωμένη συγκατάθεση** (GDPR Άρθρο 9(2)(a)) για την αποστολή των δεδομένων.",
+        "submit_btn":          "📤 Υποβολή αξιολόγησης",
+        "submit_ok":           "✅ Επιτυχής υποβολή. {msg}",
+        "submit_fail":         "❌ Αποτυχία υποβολής: {msg}",
+
+        # ---- Footer ----
+        "footer_report":       "Η αναφορά δημιουργήθηκε {date} · Για αποθήκευση ως PDF: Ctrl+P → 'Αποθήκευση ως PDF'.",
+        "footer_legal":        "**Σε τι χρησιμεύει το εργαλείο.** Το ErgoFit είναι λογισμικό υποστήριξης αποφάσεων για εργονόμους. **Δεν είναι ιατρικό μηχάνημα** κατά τον Κανονισμό (ΕΕ) 2017/745 — δεν κάνει διάγνωση, δεν προβλέπει νόσους, δεν αντικαθιστά γιατρό. Οι αξιολογήσεις γίνονται με βάση τα πρότυπα **EN 1335-1** (καρέκλες γραφείου), **ISO 9241-5** (θέση εργασίας) και την **Οδηγία 90/270/ΕΟΚ** (οθόνες).",
+    },
+    "en": {
+        "lang_label":  "🌐 Γλώσσα / Language",
+        "hero_brand":  "ERGOFIT · INTELLIGENCE",
+        "hero_title":  "Ergonomic Assessment Tool",
+        "hero_sub":    "A tool that helps you work without pain.",
+        "ip_expander": "ℹ️ What this tool does · Data protection",
+        "ip_body": """
+**What this tool does.** ErgoFit helps the ergonomist check how well someone's workstation fits them. It finds what's wrong (chair, desk, monitor, posture) and shows which risk factors for muscle/joint problems are present.
+
+**What it is NOT.**
+
+- Not a **medical device** — it does not diagnose.
+- Not a **prediction tool** — it does not tell you the chance of getting a condition.
+- Not a **substitute for seeing a doctor**.
+
+**What it is based on.** European standards for office chairs (EN 1335), workstation layout (ISO 9241-5), and the EU Directive 90/270/EEC for screens. Body measurements use known ratios (Drillis & Contini 1966), but direct measurements — when you take them — take priority.
+
+**Data protection.** The tool collects some health data (past injuries, diabetes, etc.). Before you submit anything, you need explicit consent from the person. The data can be deleted whenever they ask.
+""",
+        "sp_head":         "About the person",
+        "sp_identity":     "Identity",
+        "sp_demographics": "Basic info",
+        "sp_occup":        "Work exposure",
+        "sp_health":       "Health & lifestyle",
+        "sp_injuries":     "Past injuries (by body region)",
+        "sp_injuries_hint":"Tick every region where the person has had a past injury, sprain, or chronic pain. Risk of recurrence is higher in that specific region.",
+        "sp_female":       "For women only",
+        "sp_female_hint":  "These fields are disabled automatically for men.",
+        "sp_anthro":       "Direct body measurements (optional)",
+        "sp_anthro_hint":  "Actual measurements are more accurate than height-based estimates. Leave at 0 to use the estimate.",
+        "sp_psy":          "Work stress and control",
+        "sp_psy_hint":     "Work stress and how much control you have over your job affect the risk of muscle/joint problems.",
+
+        "f_subject_id":    "Person's name or ID (optional)",
+        "f_date":          "Assessment date",
+        "f_age":           "Age (years)",
+        "f_sex":           "Sex",
+        "f_stature":       "Height (cm)",
+        "f_weight":        "Weight (kg)",
+        "f_hrs_comp":      "Computer hours / day",
+        "f_hrs_mouse":     "Mouse hours / day",
+        "f_hrs_sit":       "Total sitting hours / day",
+        "f_diabetes":      "Diabetes",
+        "f_smoking":       "Smoking",
+        "f_pregnant":      "Currently pregnant",
+        "f_oral_contra":   "Uses oral contraceptives",
+        "f_inj_neck":      "Neck",
+        "f_inj_shoulder":  "Shoulder",
+        "f_inj_elbow":     "Elbow",
+        "f_inj_wrist":     "Wrist / hand",
+        "f_inj_back":      "Lower back",
+        "f_inj_leg":       "Leg / lower body",
+        "f_popliteal":     "Behind-knee height when seated (cm)",
+        "f_elbow_h":       "Elbow height from seat (cm)",
+        "f_eye_h":         "Eye height from seat (cm)",
+        "f_psy_demand":    "Job demand (workload, deadlines)",
+        "f_psy_control":   "Control over your work (autonomy)",
+        "f_psy_support":   "Support from colleagues/supervisor",
+
+        "opt_female":      "Female",
+        "opt_male":        "Male",
+        "opt_avg":         "Combined average",
+        "opt_never":       "Never",
+        "opt_former":      "Former smoker",
+        "opt_current":     "Current smoker",
+        "opt_low":         "Low",
+        "opt_moderate":    "Moderate",
+        "opt_high":        "High",
+
+        "tab_1":           "🪑 Ideal Workstation Setup",
+        "tab_2":           "📐 Workstation Assessment",
+        "tab_3":           "✅ Chair Check (EN 1335 / ISO 9241-5)",
+        "tab_4":           "📏 Joint Angles",
+        "tab_5":           "📋 Summary",
+
+        "sections_label":  "Assessment Sections",
+
+        "sum_report_title":"Ergonomic Assessment Report",
+        "sum_intended":    "**What this tool does.** This is a decision-support tool for ergonomists. **It is not a medical device**, it does not diagnose, and it does not tell you the chance of getting any specific condition. It shows which risk factors are present, so you know where to act.",
+        "sum_card_ws":     "Workstation fit",
+        "sum_card_chair":  "Chair (EN 1335 / ISO 9241-5)",
+        "sum_card_angles": "Body angles",
+        "sum_ws_sub":      "Chair · Desk · Monitor",
+
+        "dl_all_met":      "All key criteria met",
+        "dl_some_not":     "Some criteria not met",
+        "dl_many_not":     "Many criteria not met",
+
+        "risk_head":       "🩺 Risk factors — what might affect health",
+        "risk_no_factors": "✓ No significant risk factors were found that are linked to specific muscle/joint conditions.",
+        "risk_how_read":   """**How to read this section.** For each condition linked to the risk factors we found, the tool tells you **how many of the known risk factors are present** in this person. This is **not** a prediction that they will get the condition. It's simply a way to see where to focus attention.""",
+        "risk_summary_line": "Found **{n_risks}** risk factors, which the literature links to **{n_conds}** muscle/joint conditions.",
+        "risk_status_none":  "No aggravating factors",
+        "risk_status_some":  "Some aggravating factors",
+        "risk_status_many":  "Many aggravating factors",
+        "risk_factors_present": "Factors present for this person:",
+        "risk_summary_head":    "Summary by condition",
+        "risk_summary_caption": "For each condition, you see how many risk factors are present. This is **not** a probability of getting the condition.",
+        "risk_factors_count":   "factor(s)",
+
+        "findings_head":       "Findings",
+        "findings_none":       "✓ No significant ergonomic problems found. The workstation fits this person well.",
+        "recs_head":           "Recommendations",
+        "ws_measurements":     "📐 Workstation measurements — details",
+        "bmi_head":            "⚖️ BMI-related ergonomic considerations",
+        "bmi_normal":          "✓ BMI is in the normal range ({bmi} kg/m² — {cat}). No BMI-related considerations flagged.",
+
+        "submit_head":         "📤 Submit results",
+        "submit_notice":       """**Data protection notice (GDPR, Article 9).** By submitting, you send the assessment data — **including health data** (diabetes, injuries, pregnancy) — to the ErgoFit database. Used only for quality analysis and for linking with the Ergolite assessment (if any). The person can withdraw consent and request deletion at any time.""",
+        "submit_consent":      "☑ I confirm that the person has been informed and has given **explicit, informed consent** (GDPR Article 9(2)(a)) for the data to be sent.",
+        "submit_btn":          "📤 Submit assessment",
+        "submit_ok":           "✅ Submitted successfully. {msg}",
+        "submit_fail":         "❌ Submission failed: {msg}",
+
+        "footer_report":       "Report generated {date} · Save as PDF: Ctrl+P → 'Save as PDF'.",
+        "footer_legal":        "**What this tool does.** ErgoFit is decision-support software for ergonomists. **It is not a medical device** under Regulation (EU) 2017/745 — it does not diagnose, does not predict disease, does not replace a doctor. Assessments use **EN 1335-1** (office chairs), **ISO 9241-5** (workstation layout), and **Directive 90/270/EEC** (display screens).",
+
+        # Tab-specific extras (EN)
+        "chair_tab_head":  "Chair check",
+        "chair_tab_cap":   "Based on **EN 1335-1:2020+A1:2022** (office chair dimensions & safety) and **ISO 9241-5:2024** (workstation layout & postural requirements). Tick every item the chair satisfies.",
+        "chair_score":     "Compliance score",
+        "angles_tab_head": "Joint comfort angles (sitting / driving posture)",
+        "angles_tab_cap":  "Enter the observed angles; the comfort range is shown next to each.",
+        "angles_score":    "Joints in comfort range",
+        "angles_out":      "Joints out of range",
+        "ideal_head":      "Ideal workstation setup",
+        "ideal_cap":       "Target values calculated from body measurements. Direct measurements — if provided — take priority over height-based estimates.",
+        "assess_head":     "Workstation assessment — enter the actual measurements",
+        "assess_cap":      "Compare the measured values with the ideal values from the previous tab.",
+    },
+}
+
+# --- Add matching Greek strings to complete the pair ---
+I18N["el"].update({
+    "chair_tab_head":  "Έλεγχος καρέκλας",
+    "chair_tab_cap":   "Βασίζεται στα πρότυπα **EN 1335-1:2020+A1:2022** (διαστάσεις & ασφάλεια καρέκλας γραφείου) και **ISO 9241-5:2024** (σχεδιασμός θέσης εργασίας). Επιλέξτε κάθε στοιχείο που πληροί η καρέκλα.",
+    "chair_score":     "Βαθμολογία συμμόρφωσης",
+    "angles_tab_head": "Γωνίες αρθρώσεων (καθιστή / στάση οδήγησης)",
+    "angles_tab_cap":  "Καταχωρίστε τις γωνίες που παρατηρήθηκαν· δίπλα σε κάθε μία εμφανίζεται το εύρος άνεσης.",
+    "angles_score":    "Αρθρώσεις εντός εύρους άνεσης",
+    "angles_out":      "Αρθρώσεις εκτός εύρους",
+    "ideal_head":      "Ιδανική θέση εργασίας",
+    "ideal_cap":       "Τα ιδανικά μεγέθη υπολογίζονται από τις σωματικές διαστάσεις. Οι άμεσες μετρήσεις — αν συμπληρωθούν — υπερισχύουν των εκτιμήσεων.",
+    "assess_head":     "Πραγματικές μετρήσεις θέσης εργασίας",
+    "assess_cap":      "Συγκρίνετε τις πραγματικές τιμές με τις ιδανικές τιμές από την προηγούμενη καρτέλα.",
+})
+# (re-cache local t after update — safe since t was set before this block executed as literal;
+#  no-op at runtime because t is re-read at every rerun.)
+
+
+# ====================================================================
 # Page setup
 # ====================================================================
 st.set_page_config(
-    page_title="Ergonomic Assessment Tool",
+    page_title="ErgoFit Intelligence",
     page_icon="🪑",
     layout="wide",
 )
+
+
+# ====================================================================
+# Language selector — top of sidebar, persists across reruns
+# ====================================================================
+if "lang" not in st.session_state:
+    st.session_state["lang"] = "el"   # default: Greek
+
+with st.sidebar:
+    st.session_state["lang"] = st.radio(
+        I18N[st.session_state["lang"]]["lang_label"],
+        options=["el", "en"],
+        format_func=lambda x: "🇬🇷 Ελληνικά" if x == "el" else "🇬🇧 English",
+        horizontal=True,
+        index=0 if st.session_state["lang"] == "el" else 1,
+    )
+
+lang = st.session_state["lang"]
+t = I18N[lang]
 
 
 # ====================================================================
@@ -694,11 +1004,11 @@ st.markdown(
         <div class="hero-content">
             <div class="brand-row">
                 <span class="brand-dot"></span>
-                <span>ErgoFit&nbsp;·&nbsp;Intelligence</span>
+                <span>{t["hero_brand"]}</span>
             </div>
-            <h1>Ergonomic Assessment Tool</h1>
+            <h1>{t["hero_title"]}</h1>
             <div class="subtitle">
-                The ergonomic tool that helps you work without pain.
+                {t["hero_sub"]}
             </div>
         </div>
         {_logo_img_html}
@@ -711,136 +1021,114 @@ st.markdown(
 # ====================================================================
 # Intended purpose & GDPR notice (top of app, before intake)
 # ====================================================================
-with st.expander(
-    "ℹ️ Intended purpose · Data protection · Non-medical device statement",
-    expanded=False,
-):
-    st.markdown(
-        """
-        **Intended purpose.** ErgoFit Intelligence is occupational-ergonomics
-        **decision-support software** for use by qualified ergonomists during
-        workstation assessments. It supports the ergonomist in identifying
-        risk factors and comparing measured workstation dimensions against
-        published anthropometric and chair standards.
-
-        **What this tool is NOT.**
-
-        - Not a **medical device** as defined in Regulation (EU) 2017/745
-        - Not a **diagnostic instrument** — findings do not diagnose disease
-        - Not a **personal risk calculator** — no individual probability of
-          developing a condition is estimated
-        - Not a **substitute for clinical assessment** where indicated
-
-        **Reference standards.** EN 1335-1:2020+A1:2022 (office chair
-        dimensions and safety), ISO 9241-5:2024 (workstation layout and
-        postural requirements), Council Directive 90/270/EEC (display
-        screen equipment). Anthropometric baseline: Drillis & Contini
-        (1966), used as fallback when direct anthropometry is unavailable.
-
-        **Data protection (GDPR).** This tool collects **special-category
-        health data** (Article 9). Before any submission to the backend
-        database, the ergonomist must obtain the subject's explicit,
-        informed consent (Article 9(2)(a)). Data is stored under a defined
-        retention period and may be deleted upon request. See the full
-        Privacy Policy and Data Processing Agreement in the accompanying
-        Tool Documentation folder.
-        """
-    )
+with st.expander(t["ip_expander"], expanded=False):
+    st.markdown(t["ip_body"])
 
 # ====================================================================
 # Subject — comprehensive intake panel (above tabs, always visible)
 # ====================================================================
 st.markdown(
-    """
+    f"""
     <div class="section-head">
         <div class="icon-pill">👤</div>
-        <div class="label">Subject profile</div>
+        <div class="label">{t["sp_head"]}</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
+# Options that must map to the same internal keys regardless of language
+_SEX_OPTS      = ["Female", "Male", "Combined average"]
+_SMOKING_OPTS  = ["Never", "Former", "Current"]
+_PSY_OPTS      = ["Low", "Moderate", "High"]
+
+def _sex_label(x):
+    return {"Female": t["opt_female"], "Male": t["opt_male"],
+            "Combined average": t["opt_avg"]}[x]
+
+def _smoke_label(x):
+    return {"Never": t["opt_never"], "Former": t["opt_former"],
+            "Current": t["opt_current"]}[x]
+
+def _psy_label(x):
+    return {"Low": t["opt_low"], "Moderate": t["opt_moderate"],
+            "High": t["opt_high"]}[x]
+
 with st.container(border=True):
 
     # ---- Identity ----
-    st.markdown('<div class="subgroup-head">Identity</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subgroup-head">{t["sp_identity"]}</div>', unsafe_allow_html=True)
     row1_id, row1_date = st.columns([3, 1])
     with row1_id:
-        subject_id = st.text_input("Subject ID / name (optional)", value="")
+        subject_id = st.text_input(t["f_subject_id"], value="")
     with row1_date:
-        assess_date = st.date_input("Assessment date", value=date.today())
+        assess_date = st.date_input(t["f_date"], value=date.today())
 
     # ---- Demographics ----
-    st.markdown('<div class="subgroup-head">Demographics</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subgroup-head">{t["sp_demographics"]}</div>', unsafe_allow_html=True)
     row2_age, row2_sex, row2_h, row2_w = st.columns(4)
     with row2_age:
         age = st.number_input(
-            "Age (years)", min_value=18, max_value=100, value=35, step=1,
+            t["f_age"], min_value=18, max_value=100, value=35, step=1,
         )
     with row2_sex:
-        sex = st.selectbox(
-            "Sex",
-            ["Female", "Male", "Combined average"],
-        )
+        sex = st.selectbox(t["f_sex"], _SEX_OPTS, format_func=_sex_label)
     with row2_h:
         height = st.selectbox(
-            "Stature (cm)", options=list(range(140, 211)), index=30,
+            t["f_stature"], options=list(range(140, 211)), index=30,
         )
     with row2_w:
         weight = st.selectbox(
-            "Weight (kg)", options=list(range(40, 181)), index=30,
+            t["f_weight"], options=list(range(40, 181)), index=30,
         )
 
     is_male   = (sex == "Male")
     is_female = (sex == "Female")
 
     # ---- Occupational exposure ----
-    st.markdown('<div class="subgroup-head">Occupational exposure</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subgroup-head">{t["sp_occup"]}</div>', unsafe_allow_html=True)
     row3_c, row3_m, row3_s = st.columns(3)
     with row3_c:
         hours_computer = st.number_input(
-            "Computer hours / day", min_value=0.0, max_value=16.0, value=8.0, step=0.5,
+            t["f_hrs_comp"], min_value=0.0, max_value=16.0, value=8.0, step=0.5,
         )
     with row3_m:
         hours_mouse = st.number_input(
-            "Mouse hours / day", min_value=0.0, max_value=16.0, value=4.0, step=0.5,
+            t["f_hrs_mouse"], min_value=0.0, max_value=16.0, value=4.0, step=0.5,
         )
     with row3_s:
         hours_sitting = st.number_input(
-            "Total sitting hours / day", min_value=0.0, max_value=16.0, value=8.0, step=0.5,
+            t["f_hrs_sit"], min_value=0.0, max_value=16.0, value=8.0, step=0.5,
         )
 
     # ---- Health & lifestyle ----
-    st.markdown('<div class="subgroup-head">Health &amp; lifestyle</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="subgroup-head">{t["sp_health"]}</div>', unsafe_allow_html=True)
     row4_db, row4_sm = st.columns(2)
     with row4_db:
-        diabetes = st.checkbox("Diabetes mellitus")
+        diabetes = st.checkbox(t["f_diabetes"])
     with row4_sm:
-        smoking = st.selectbox(
-            "Smoking status",
-            ["Never", "Former", "Current"],
-        )
+        smoking = st.selectbox(t["f_smoking"], _SMOKING_OPTS, format_func=_smoke_label)
 
     # ---- Prior musculoskeletal injuries by region ----
     st.markdown(
-        '<div class="subgroup-head">Prior musculoskeletal injuries (by region)</div>'
-        '<div class="female-only-hint">Tick every region where you have had a previous injury, sprain, or chronic pain. Recurrence and chronic-pain risk is elevated for that specific region.</div>',
+        f'<div class="subgroup-head">{t["sp_injuries"]}</div>'
+        f'<div class="female-only-hint">{t["sp_injuries_hint"]}</div>',
         unsafe_allow_html=True,
     )
     inj_row1 = st.columns(3)
     with inj_row1[0]:
-        inj_neck     = st.checkbox("Neck")
+        inj_neck     = st.checkbox(t["f_inj_neck"])
     with inj_row1[1]:
-        inj_shoulder = st.checkbox("Shoulder")
+        inj_shoulder = st.checkbox(t["f_inj_shoulder"])
     with inj_row1[2]:
-        inj_elbow    = st.checkbox("Elbow")
+        inj_elbow    = st.checkbox(t["f_inj_elbow"])
     inj_row2 = st.columns(3)
     with inj_row2[0]:
-        inj_wrist    = st.checkbox("Wrist / hand")
+        inj_wrist    = st.checkbox(t["f_inj_wrist"])
     with inj_row2[1]:
-        inj_back     = st.checkbox("Lower back / lumbar")
+        inj_back     = st.checkbox(t["f_inj_back"])
     with inj_row2[2]:
-        inj_leg      = st.checkbox("Leg / lower extremity")
+        inj_leg      = st.checkbox(t["f_inj_leg"])
 
     injury_regions = {
         "neck":     inj_neck,
@@ -853,75 +1141,60 @@ with st.container(border=True):
 
     # ---- Female-only ----
     st.markdown(
-        '<div class="subgroup-head">Female-specific</div>'
-        '<div class="female-only-hint">These fields are automatically disabled for males.</div>',
+        f'<div class="subgroup-head">{t["sp_female"]}</div>'
+        f'<div class="female-only-hint">{t["sp_female_hint"]}</div>',
         unsafe_allow_html=True,
     )
     row5_p, row5_oc = st.columns(2)
     with row5_p:
-        pregnant = st.checkbox("Currently pregnant", disabled=is_male)
+        pregnant = st.checkbox(t["f_pregnant"], disabled=is_male)
     with row5_oc:
-        oral_contra = st.checkbox("Oral contraceptive use", disabled=is_male)
+        oral_contra = st.checkbox(t["f_oral_contra"], disabled=is_male)
 
     # ---- Direct anthropometry (optional — overrides Drillis & Contini) ----
     st.markdown(
-        '<div class="subgroup-head">Direct anthropometry (optional)</div>',
+        f'<div class="subgroup-head">{t["sp_anthro"]}</div>',
         unsafe_allow_html=True,
     )
-    st.caption(
-        "Directly-measured dimensions are more accurate than height-based "
-        "estimates and account for individual body proportions. Leave at 0 "
-        "to use Drillis & Contini (1966) height-based estimates as fallback."
-    )
+    st.caption(t["sp_anthro_hint"])
     row_a1, row_a2, row_a3 = st.columns(3)
     with row_a1:
         popliteal_h_direct = st.number_input(
-            "Popliteal height (cm, seated)", min_value=0.0, max_value=70.0,
+            t["f_popliteal"], min_value=0.0, max_value=70.0,
             value=0.0, step=0.5,
-            help="Distance from floor to back of knee while seated. Used to "
-                 "set ideal chair seat height. Leave 0 for estimate.",
         )
     with row_a2:
         seated_elbow_h_direct = st.number_input(
-            "Seated elbow rest height (cm)", min_value=0.0, max_value=40.0,
+            t["f_elbow_h"], min_value=0.0, max_value=40.0,
             value=0.0, step=0.5,
-            help="Distance from seat surface to bottom of elbow while sitting "
-                 "with upper arm relaxed. Used to set ideal desk height.",
         )
     with row_a3:
         seated_eye_h_direct = st.number_input(
-            "Seated eye height (cm)", min_value=0.0, max_value=90.0,
+            t["f_eye_h"], min_value=0.0, max_value=90.0,
             value=0.0, step=0.5,
-            help="Distance from seat surface to eye level while sitting "
-                 "upright. Used to set ideal monitor top-edge height.",
         )
 
     # ---- Psychosocial workload (Karasek Job Demand-Control-Support) ----
     st.markdown(
-        '<div class="subgroup-head">Psychosocial workload (Karasek JDCS)</div>',
+        f'<div class="subgroup-head">{t["sp_psy"]}</div>',
         unsafe_allow_html=True,
     )
-    st.caption(
-        "Adverse psychosocial factors are independently associated with "
-        "musculoskeletal disorders (Landsbergis 2020; systematic reviews "
-        "2023-2025). This 3-item screen mirrors the Job Demand-Control-Support "
-        "model (Karasek & Theorell, 1990)."
-    )
+    st.caption(t["sp_psy_hint"])
     row_ps1, row_ps2, row_ps3 = st.columns(3)
     with row_ps1:
         psy_demand = st.select_slider(
-            "Job demand (workload, deadlines, mental effort)",
-            options=["Low", "Moderate", "High"], value="Moderate",
+            t["f_psy_demand"],
+            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
         )
     with row_ps2:
         psy_control = st.select_slider(
-            "Job control (autonomy, decision latitude)",
-            options=["Low", "Moderate", "High"], value="Moderate",
+            t["f_psy_control"],
+            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
         )
     with row_ps3:
         psy_support = st.select_slider(
-            "Social support at work (colleagues, supervisor)",
-            options=["Low", "Moderate", "High"], value="Moderate",
+            t["f_psy_support"],
+            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
         )
 
 # ---- Backwards-compat alias used by ANSUR ratios block below ----
@@ -1705,12 +1978,14 @@ def elevated_factors(condition_key, ctx):
 
 
 def risk_status(count):
-    """Map factor count → qualitative category + color + label."""
+    """Map factor count → qualitative category + color + label.
+    Uses module-level `t` for translations (set from language selector).
+    """
     if count == 0:
-        return ("No elevated factors", "#10b981")
+        return (t["risk_status_none"], "#10b981")
     if count <= 2:
-        return ("Some elevated factors", "#f59e0b")
-    return ("Multiple elevated factors", "#ef4444")
+        return (t["risk_status_some"], "#f59e0b")
+    return (t["risk_status_many"], "#ef4444")
 
 
 def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
@@ -1883,21 +2158,17 @@ def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
 # Tabs — wrapped in a green "assessment sections" panel
 # ====================================================================
 st.markdown(
-    """
+    f"""
     <div class="tabs-divider">
         <span class="brand-dot"></span>
-        <span>Assessment Sections</span>
+        <span>{t["sections_label"]}</span>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 tab_ideal, tab_assessment, tab_osha, tab_angles, tab_summary = st.tabs([
-    "🪑 Ideal Workstation Setup",
-    "📐 Workstation Assessment",
-    "✅ Chair Assessment (EN 1335 / ISO 9241-5)",
-    "📏 Joint Comfort Angles",
-    "📋 Summary",
+    t["tab_1"], t["tab_2"], t["tab_3"], t["tab_4"], t["tab_5"],
 ])
 
 
@@ -2048,13 +2319,8 @@ with tab_assessment:
 # Tab 2 — OSHA chair design checklist
 # --------------------------------------------------------------------
 with tab_osha:
-    st.subheader("Chair design checklist")
-    st.caption(
-        "Based on **EN 1335-1:2020+A1:2022** (office chair dimensions & safety) "
-        "and **ISO 9241-5:2024** (workstation layout & postural requirements), "
-        "with additional evidence-based ergonomic guidance. "
-        "Tick each item the chair satisfies."
-    )
+    st.subheader(t["chair_tab_head"])
+    st.caption(t["chair_tab_cap"])
 
     OSHA_ITEMS = [
         ("adjust",       "Παρέχει εύκολες ρυθμίσεις"),
@@ -2093,7 +2359,7 @@ with tab_osha:
     n_total = len(OSHA_ITEMS)
     pct     = n_pass / n_total
 
-    st.metric("Compliance score", f"{n_pass} / {n_total}",
+    st.metric(t["chair_score"], f"{n_pass} / {n_total}",
               delta=f"{pct*100:.0f}%")
 
     if pct == 1.0:
@@ -2116,8 +2382,8 @@ with tab_osha:
 # Tab 3 — Joint comfort angles
 # --------------------------------------------------------------------
 with tab_angles:
-    st.subheader("Joint comfort angles (sitting / driving posture)")
-    st.caption("Enter observed angles; comfort range shown next to each.")
+    st.subheader(t["angles_tab_head"])
+    st.caption(t["angles_tab_cap"])
 
     JOINT_ITEMS = [
         ("trunk_vert",     "1. Κορμός — κατακόρυφος άξονας (γωνία κλίσης κορμού)",                     10,  20, 15),
@@ -2159,10 +2425,10 @@ with tab_angles:
     st.divider()
     n_ok = sum(1 for v in angle_results.values() if v[0] == "ok")
     n_total_angles = len(angle_results)
-    st.metric("Joints in comfort range", f"{n_ok} / {n_total_angles}")
+    st.metric(t["angles_score"], f"{n_ok} / {n_total_angles}")
 
     if n_ok < n_total_angles:
-        with st.expander("Joints out of range", expanded=False):
+        with st.expander(t["angles_out"], expanded=False):
             for label, (status, val, (lo, hi)) in angle_results.items():
                 if status == "warn":
                     st.write(f"- {label}: **{val}°** (target {lo}°–{hi}°)")
@@ -2173,7 +2439,9 @@ with tab_angles:
 # --------------------------------------------------------------------
 with tab_summary:
 
-    sub_label = subject_id.strip() if subject_id.strip() else "Unidentified subject"
+    sub_label = subject_id.strip() if subject_id.strip() else (
+        "Χωρίς όνομα" if lang == "el" else "Unidentified subject"
+    )
 
     # ---- Component-wise findings (NO composite score) -----------
     # An aggregate percentage was removed 2026: an arithmetic mean of
@@ -2192,9 +2460,9 @@ with tab_summary:
     def _domain_label(passed, total, high_bar):
         """Descriptive category, no percentages presented as a validated grade."""
         ratio = passed / total if total else 0
-        if ratio >= high_bar: return ("All key criteria met", "#10b981")
-        if ratio >= 0.6:      return ("Some criteria not met", "#f59e0b")
-        return ("Many criteria not met", "#ef4444")
+        if ratio >= high_bar: return (t["dl_all_met"],  "#10b981")
+        if ratio >= 0.6:      return (t["dl_some_not"], "#f59e0b")
+        return (t["dl_many_not"], "#ef4444")
 
     ws_label,    ws_color    = _domain_label(ws_pass,   3,               2/3)
     osha_label,  osha_color  = _domain_label(n_pass,    n_total,         0.85)
@@ -2204,11 +2472,11 @@ with tab_summary:
     st.markdown(
         f"""
         <div class="summary-banner">
-            <h2>Ergonomic Assessment Report</h2>
+            <h2>{t["sum_report_title"]}</h2>
             <div class="meta">
                 <strong>{sub_label}</strong> &nbsp;·&nbsp; {assess_date.strftime("%d %b %Y")}
-                &nbsp;·&nbsp; Stature {height} cm &nbsp;·&nbsp; Weight {weight} kg
-                &nbsp;·&nbsp; BMI {bmi} ({bmi_cat}) &nbsp;·&nbsp; {sex}
+                &nbsp;·&nbsp; {t["f_stature"]}: {height} cm &nbsp;·&nbsp; {t["f_weight"]}: {weight} kg
+                &nbsp;·&nbsp; BMI {bmi} ({bmi_cat}) &nbsp;·&nbsp; {_sex_label(sex)}
             </div>
         </div>
         """,
@@ -2216,14 +2484,7 @@ with tab_summary:
     )
 
     # ---- Intended-purpose / non-medical disclaimer (top of summary)
-    st.info(
-        "**Intended purpose.** ErgoFit Intelligence is an occupational "
-        "**ergonomic screening and decision-support tool** for use by qualified "
-        "ergonomists. It is **not a medical device**, does not diagnose disease, "
-        "and does not estimate individual probabilities of developing any "
-        "specific condition. Findings identify **evidence-linked risk factors** "
-        "that inform ergonomic intervention priorities."
-    )
+    st.info(t["sum_intended"])
 
     # ---- Three domain cards (no overall composite) --------------
     q1, q2, q3 = st.columns(3)
@@ -2237,13 +2498,13 @@ with tab_summary:
         </div>
         """
 
-    q1.markdown(_quad("Anthropometric fit", f"{ws_pass}/3",
-                      f"Chair · Desk · Monitor · {ws_label}", ws_color),
+    q1.markdown(_quad(t["sum_card_ws"], f"{ws_pass}/3",
+                      f"{t['sum_ws_sub']} · {ws_label}", ws_color),
                 unsafe_allow_html=True)
-    q2.markdown(_quad("Chair (EN 1335 / ISO 9241-5)", f"{n_pass}/{n_total}",
+    q2.markdown(_quad(t["sum_card_chair"], f"{n_pass}/{n_total}",
                       f"{osha_label}", osha_color),
                 unsafe_allow_html=True)
-    q3.markdown(_quad("Joint comfort angles", f"{n_ok}/{n_total_angles}",
+    q3.markdown(_quad(t["sum_card_angles"], f"{n_ok}/{n_total_angles}",
                       f"{angle_label}", angle_color),
                 unsafe_allow_html=True)
 
@@ -2255,12 +2516,13 @@ with tab_summary:
     # biomechanical measurement. Per adversarial peer review 2026, these
     # multipliers are now presented as qualitative ergonomic considerations,
     # not as fabricated per-subject numeric loads.
-    st.markdown("### ⚖️ BMI-related ergonomic considerations")
+    st.markdown(f"### {t['bmi_head']}")
 
     if bmi_band == "normal":
         st.markdown(
-            f'<div class="finding-ok">✓ BMI is in the normal range '
-            f'({bmi} kg/m² — {bmi_cat}). No BMI-related load considerations flagged.</div>',
+            f'<div class="finding-ok">'
+            + t["bmi_normal"].format(bmi=bmi, cat=bmi_cat)
+            + '</div>',
             unsafe_allow_html=True,
         )
     else:
@@ -2463,7 +2725,7 @@ with tab_summary:
 
     # ---- Risk profile (NEW) ------------------------------------
     st.divider()
-    st.markdown("### 🩺 Risk profile — conditions linked to identified risk factors")
+    st.markdown(f"### {t['risk_head']}")
 
     # Build subject context dict — passed to risk model so that all
     # answers in the intake form actually drive the estimates.
@@ -2496,23 +2758,18 @@ with tab_summary:
         ctx=ctx,
     )
 
+    # Helper: use Greek name when in EL mode, English otherwise
+    def _cond_name(c):
+        return c["name_gr"] if lang == "el" else c["name_en"]
+
     if not risk_profile:
         st.markdown(
-            '<div class="finding-ok">✓ No major risk factors identified that are linked '
-            'to specific musculoskeletal conditions for this assessment.</div>',
+            f'<div class="finding-ok">{t["risk_no_factors"]}</div>',
             unsafe_allow_html=True,
         )
     else:
-        # Disclaimer first — important framing (aligned with intended-purpose)
-        st.info(
-            "**How to read this section.** For each condition linked to the "
-            "identified ergonomic and personal risk factors, the tool reports "
-            "**how many evidence-linked risk factors are elevated** in this "
-            "subject — not a probability of developing the condition. The "
-            "risk-factor labels below reflect published meta-analytic "
-            "associations; they do not constitute individual disease prediction "
-            "or medical diagnosis."
-        )
+        # Disclaimer first — plain language, no jargon
+        st.info(t["risk_how_read"])
 
         # Aggregate unique conditions for a top-of-section summary
         all_condition_keys = []
@@ -2522,9 +2779,10 @@ with tab_summary:
                     all_condition_keys.append(c)
 
         st.markdown(
-            f"**{len(risk_profile)} ergonomic/personal risk indicator(s)** "
-            f"identified, associated in the literature with "
-            f"**{len(all_condition_keys)} musculoskeletal condition(s)**."
+            t["risk_summary_line"].format(
+                n_risks=len(risk_profile),
+                n_conds=len(all_condition_keys),
+            )
         )
 
         # Per-risk-factor breakdown
@@ -2534,33 +2792,27 @@ with tab_summary:
                     c = CONDITIONS[ck]
                     n_factors, factor_list = elevated_factors(ck, ctx)
                     status_label, status_color = risk_status(n_factors)
-                    st.markdown(
-                        f"**{c['name_en']}** &nbsp;·&nbsp; *{c['name_gr']}*  \n"
-                        f"{c['description']}"
-                    )
+                    st.markdown(f"**{_cond_name(c)}**")
                     st.markdown(
                         f"<div style='display:inline-block; padding:6px 12px; "
                         f"border-radius:8px; background:{status_color}; color:white; "
                         f"font-weight:700; font-size:13px; letter-spacing:.03em; "
                         f"margin-top:6px;'>"
-                        f"{status_label} — {n_factors} of the literature-linked "
-                        f"factors are present</div>",
+                        f"{status_label} · {n_factors} {t['risk_factors_count']}"
+                        f"</div>",
                         unsafe_allow_html=True,
                     )
                     if factor_list:
                         st.markdown(
-                            "**Elevated factors for this subject:**\n"
+                            f"**{t['risk_factors_present']}**\n"
                             + "\n".join(f"- {ff}" for ff in factor_list)
                         )
                     st.markdown("")
 
         # Compact consolidated view (replaces the old pie chart)
         st.markdown("")
-        st.markdown("#### Risk-factor summary by condition")
-        st.caption(
-            "For each condition, the number of evidence-linked risk factors "
-            "elevated in this subject. This is **not** a probability of disease."
-        )
+        st.markdown(f"#### {t['risk_summary_head']}")
+        st.caption(t["risk_summary_caption"])
         for ck in all_condition_keys:
             c = CONDITIONS[ck]
             n_factors, _ = elevated_factors(ck, ctx)
@@ -2569,40 +2821,25 @@ with tab_summary:
                 f"<div style='display:flex; align-items:center; gap:12px; "
                 f"padding:10px 14px; margin-bottom:6px; background:white; "
                 f"border-radius:10px; border-left:6px solid {status_color};'>"
-                f"<div style='flex:1;'><b>{c['name_en']}</b> "
-                f"&nbsp;·&nbsp; <i style='color:#64748b;'>{c['name_gr']}</i></div>"
+                f"<div style='flex:1;'><b>{_cond_name(c)}</b></div>"
                 f"<div style='background:{status_color}; color:white; "
                 f"padding:4px 10px; border-radius:6px; font-size:12px; "
-                f"font-weight:700;'>{n_factors} factor(s)</div></div>",
+                f"font-weight:700;'>{n_factors} {t['risk_factors_count']}</div></div>",
                 unsafe_allow_html=True,
             )
 
     # ---- Send results to ErgoFit backend ------------------------
     st.divider()
-    st.markdown("### 📤 Submit results")
-    st.markdown(
-        "**Data protection notice (GDPR Art. 9).** Submission transmits the "
-        "assessment data listed in this report — **including special-category "
-        "health data** (diabetes, prior injuries, pregnancy, oral "
-        "contraceptive use where applicable) — to the ErgoFit backend for "
-        "aggregate quality analysis, service improvement, and (in "
-        "collaborative mode) linking with the subject's Ergolite assessment. "
-        "Data is stored in a Google-hosted spreadsheet under a controller "
-        "(ErgoFit) with a defined retention period. The subject may withdraw "
-        "consent and request deletion at any time by contacting the ergonomist."
-    )
+    st.markdown(f"### {t['submit_head']}")
+    st.markdown(t["submit_notice"])
 
     consent = st.checkbox(
-        "☑ I confirm that the subject has been informed of the above and has "
-        "given **explicit, informed consent (GDPR Art. 9(2)(a))** for the "
-        "assessment data to be transmitted and stored.",
+        t["submit_consent"],
         value=False,
         key="submit_consent",
     )
 
-    if st.button("📤 Submit assessment to backend",
-                 disabled=not consent,
-                 type="primary"):
+    if st.button(t["submit_btn"], disabled=not consent, type="primary"):
         # Build payload — flatten all key fields for the Sheet
         submission_payload = {
             "tool":              "ErgoFit",
@@ -2626,13 +2863,13 @@ with tab_summary:
             "smoking":           smoking,
             "pregnant":          pregnant,
             "oral_contra":       oral_contra,
-            # Prior injuries per region
-            "injury_neck":       injury_regions.get("Neck", False),
-            "injury_shoulder":   injury_regions.get("Shoulder", False),
-            "injury_elbow":      injury_regions.get("Elbow", False),
-            "injury_wrist_hand": injury_regions.get("Wrist / hand", False),
-            "injury_lower_back": injury_regions.get("Lower back / lumbar", False),
-            "injury_leg":        injury_regions.get("Leg / lower extremity", False),
+            # Prior injuries per region (internal keys — not translated)
+            "injury_neck":       injury_regions.get("neck", False),
+            "injury_shoulder":   injury_regions.get("shoulder", False),
+            "injury_elbow":      injury_regions.get("elbow", False),
+            "injury_wrist_hand": injury_regions.get("wrist", False),
+            "injury_lower_back": injury_regions.get("back", False),
+            "injury_leg":        injury_regions.get("leg", False),
             # Direct anthropometry (0 = not measured, using estimate)
             "popliteal_direct_cm":     popliteal_h_direct,
             "seated_elbow_direct_cm":  seated_elbow_h_direct,
@@ -2663,29 +2900,16 @@ with tab_summary:
             ),
         }
 
-        with st.spinner("Sending to backend..."):
+        _spinner_txt = "Αποστολή..." if lang == "el" else "Sending..."
+        with st.spinner(_spinner_txt):
             ok, msg = submit_to_backend(submission_payload)
 
         if ok:
-            st.success(f"✅ Submitted successfully. {msg}")
+            st.success(t["submit_ok"].format(msg=msg))
         else:
-            st.error(f"❌ Submission failed: {msg}")
+            st.error(t["submit_fail"].format(msg=msg))
 
     # ---- Footer -------------------------------------------------
     st.divider()
-    st.caption(
-        f"Report generated {assess_date.strftime('%d %b %Y')} · "
-        "Save as PDF: Ctrl+P → 'Save as PDF'."
-    )
-    st.caption(
-        "**Intended purpose & regulatory status.** ErgoFit Intelligence is "
-        "occupational-ergonomics decision-support software for use by qualified "
-        "ergonomists. It is **not a medical device** as defined in Regulation "
-        "(EU) 2017/745 — it does not diagnose, prevent, monitor, treat, alleviate, "
-        "or predict any specific disease in any individual. Baseline population "
-        "prevalence data is provided as scientific context for identified risk "
-        "factors and is **not** a personalised probability. Assessment against "
-        "**EN 1335-1:2020+A1:2022** (office chair) and **ISO 9241-5:2024** "
-        "(workstation layout). Legal baseline: Council Directive 90/270/EEC "
-        "(display screen equipment)."
-    )
+    st.caption(t["footer_report"].format(date=assess_date.strftime("%d %b %Y")))
+    st.caption(t["footer_legal"])
