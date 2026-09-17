@@ -31,19 +31,25 @@ WEBHOOK_URL = (
 
 def submit_to_backend(payload: dict) -> tuple[bool, str]:
     """POST an assessment payload to the Google Apps Script webhook.
-    Returns (ok, message)."""
+
+    Sends the body as text/plain to avoid the Apps Script CORS/preflight
+    quirk that returns Google's login HTML for application/json POSTs.
+    Apps Script reads the raw body from e.postData.contents regardless
+    of Content-Type.
+    """
     try:
         r = requests.post(
             WEBHOOK_URL,
-            data=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
-            timeout=15,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "text/plain;charset=utf-8"},
+            timeout=30,
             allow_redirects=True,
         )
         try:
             data = r.json()
         except Exception:
-            data = {"success": False, "error": r.text[:200]}
+            snippet = r.text[:250].replace("\n", " ")
+            return False, f"Non-JSON response ({r.status_code}): {snippet}"
         if data.get("success"):
             return True, f"Row #{data.get('row', '?')} added."
         return False, str(data.get("error", "Unknown error"))
