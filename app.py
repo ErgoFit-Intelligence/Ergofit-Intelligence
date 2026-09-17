@@ -145,7 +145,32 @@ I18N = {
         "tab_2":           "📐 Πραγματικές μετρήσεις",
         "tab_3":           "✅ Έλεγχος καρέκλας (EN 1335 / ISO 9241-5)",
         "tab_4":           "📏 Γωνίες αρθρώσεων",
+        "tab_rosa":        "🎯 ROSA Assessment",
         "tab_5":           "📋 Σύνοψη",
+
+        # ROSA labels
+        "rosa_title":      "ROSA — Rapid Office Strain Assessment",
+        "rosa_intro":      "Validated instrument (Sonne, Villalta & Andrews 2012, *Applied Ergonomics* 43:98-108). Ο εργονόμος παρατηρεί τη θέση εργασίας και επιλέγει τι ισχύει. Το εργαλείο υπολογίζει σκορ 1-10 και επίπεδο κινδύνου.",
+        "rosa_sec_a":      "Ενότητα A — Καρέκλα",
+        "rosa_a1":         "A.1 Ύψος καρέκλας",
+        "rosa_a2":         "A.2 Βάθος έδρας",
+        "rosa_a3":         "A.3 Υποβραχιόνια",
+        "rosa_a4":         "A.4 Στήριξη πλάτης",
+        "rosa_sec_b":      "Ενότητα B — Οθόνη & Τηλέφωνο",
+        "rosa_b1":         "B.1 Οθόνη",
+        "rosa_b2":         "B.2 Τηλέφωνο",
+        "rosa_sec_c":      "Ενότητα C — Ποντίκι & Πληκτρολόγιο",
+        "rosa_c1":         "C.1 Ποντίκι",
+        "rosa_c2":         "C.2 Πληκτρολόγιο",
+        "rosa_duration":   "Διάρκεια χρήσης",
+        "rosa_dur_low":    "< 30 min συνεχόμενα ή < 1h/ημέρα (−1)",
+        "rosa_dur_mid":    "30 min – 1h συνεχόμενα ή 1–4h/ημέρα (0)",
+        "rosa_dur_high":   "> 1h συνεχόμενα ή > 4h/ημέρα (+1)",
+        "rosa_chair_score":"Chair ROSA Score",
+        "rosa_monperi":    "Monitor & Peripherals ROSA",
+        "rosa_final":      "ROSA FINAL SCORE",
+        "rosa_action":     "Επίπεδο κινδύνου",
+        "rosa_check_all":  "Επιλέξτε ό,τι ισχύει (base = 1 πάντα, οι επιλογές προσθέτουν πόντους)",
 
         # ---- Assessment sections divider ----
         "sections_label":  "Ενότητες αξιολόγησης",
@@ -269,7 +294,32 @@ I18N = {
         "tab_2":           "📐 Workstation Assessment",
         "tab_3":           "✅ Chair Check (EN 1335 / ISO 9241-5)",
         "tab_4":           "📏 Joint Angles",
+        "tab_rosa":        "🎯 ROSA Assessment",
         "tab_5":           "📋 Summary",
+
+        # ROSA labels
+        "rosa_title":      "ROSA — Rapid Office Strain Assessment",
+        "rosa_intro":      "Validated instrument (Sonne, Villalta & Andrews 2012, *Applied Ergonomics* 43:98-108). The ergonomist observes the workstation and ticks what applies. The tool computes a 1-10 score and risk action level.",
+        "rosa_sec_a":      "Section A — Chair",
+        "rosa_a1":         "A.1 Chair height",
+        "rosa_a2":         "A.2 Pan depth",
+        "rosa_a3":         "A.3 Armrests",
+        "rosa_a4":         "A.4 Back support",
+        "rosa_sec_b":      "Section B — Monitor & Telephone",
+        "rosa_b1":         "B.1 Monitor",
+        "rosa_b2":         "B.2 Telephone",
+        "rosa_sec_c":      "Section C — Mouse & Keyboard",
+        "rosa_c1":         "C.1 Mouse",
+        "rosa_c2":         "C.2 Keyboard",
+        "rosa_duration":   "Duration of use",
+        "rosa_dur_low":    "< 30 min continuous or < 1h/day (−1)",
+        "rosa_dur_mid":    "30 min – 1h continuous or 1–4h/day (0)",
+        "rosa_dur_high":   "> 1h continuous or > 4h/day (+1)",
+        "rosa_chair_score":"Chair ROSA Score",
+        "rosa_monperi":    "Monitor & Peripherals ROSA",
+        "rosa_final":      "ROSA FINAL SCORE",
+        "rosa_action":     "Risk level",
+        "rosa_check_all":  "Tick what applies (base = 1 always; each option adds points)",
 
         "sections_label":  "Assessment Sections",
 
@@ -2086,6 +2136,155 @@ def risk_status(count):
     return (t["risk_status_many"], "#ef4444")
 
 
+# ====================================================================
+# ROSA — Rapid Office Strain Assessment
+# Source: Sonne, Villalta & Andrews (2012), Applied Ergonomics 43:98-108
+# Worksheet reference: TuMeke Ergonomics ROSA worksheet (public).
+# ====================================================================
+
+# --- Section A: Chair combination table (Y = A.1+A.2, X = A.3+A.4) ---
+# Rows = Y (Chair-height + Pan-depth), Cols = X (Armrest + Back-support)
+ROSA_CHAIR = {
+    #      X: 2  3  4  5  6  7  8  9
+    2:    [   1, 2, 3, 4, 5, 6, 7, 8 ],
+    3:    [   2, 2, 3, 4, 5, 6, 7, 8 ],
+    4:    [   3, 3, 3, 4, 5, 6, 7, 8 ],
+    5:    [   4, 4, 4, 4, 5, 6, 7, 8 ],
+    6:    [   5, 5, 5, 5, 6, 7, 8, 9 ],
+    7:    [   6, 6, 6, 7, 7, 8, 8, 9 ],
+    8:    [   7, 7, 7, 8, 8, 9, 9, 9 ],
+}
+
+# --- Section B: Monitor + Phone combination table ---
+# Rows = B.2 (Phone), Cols = B.1 (Monitor)
+ROSA_SECTION_B = {
+    #      B.1:  0  1  2  3  4  5  6  7
+    0:    [   1, 1, 1, 2, 3, 4, 5, 6 ],
+    1:    [   1, 1, 2, 2, 3, 4, 5, 6 ],
+    2:    [   1, 2, 2, 3, 3, 4, 6, 7 ],
+    3:    [   2, 2, 3, 3, 4, 5, 6, 8 ],
+    4:    [   3, 3, 4, 4, 5, 6, 7, 8 ],
+    5:    [   4, 4, 5, 5, 6, 7, 8, 9 ],
+    6:    [   5, 5, 6, 7, 8, 8, 9, 9 ],
+}
+
+# --- Section C: Mouse + Keyboard combination table ---
+# Rows = C.2 (Keyboard), Cols = C.1 (Mouse)
+ROSA_SECTION_C = {
+    #      C.1:  0  1  2  3  4  5  6  7
+    0:    [   1, 1, 1, 2, 3, 4, 5, 6 ],
+    1:    [   1, 1, 2, 3, 4, 5, 6, 7 ],
+    2:    [   1, 2, 2, 3, 4, 5, 6, 7 ],
+    3:    [   2, 3, 3, 3, 5, 6, 7, 8 ],
+    4:    [   3, 4, 4, 5, 5, 6, 7, 8 ],
+    5:    [   4, 5, 5, 6, 6, 7, 8, 9 ],
+    6:    [   5, 6, 6, 7, 7, 8, 8, 9 ],
+    7:    [   6, 7, 7, 8, 8, 9, 9, 9 ],
+}
+
+# --- Monitor & Peripherals ROSA = Section B × Section C ---
+# Rows = Section B, Cols = Section C
+ROSA_MON_PERI = {
+    #        C:  1  2  3  4  5  6  7  8  9
+    1:    [   1, 2, 3, 4, 5, 6, 7, 8, 9 ],
+    2:    [   2, 2, 3, 4, 5, 6, 7, 8, 9 ],
+    3:    [   3, 3, 3, 4, 5, 6, 7, 8, 9 ],
+    4:    [   4, 4, 4, 4, 5, 6, 7, 8, 9 ],
+    5:    [   5, 5, 5, 5, 5, 6, 7, 8, 9 ],
+    6:    [   6, 6, 6, 6, 6, 6, 7, 8, 9 ],
+    7:    [   7, 7, 7, 7, 7, 7, 7, 8, 9 ],
+    8:    [   8, 8, 8, 8, 8, 8, 8, 8, 9 ],
+    9:    [   9, 9, 9, 9, 9, 9, 9, 9, 9 ],
+}
+
+# --- ROSA FINAL = Chair ROSA × Monitor & Peripherals ROSA ---
+# Rows = Chair ROSA (1-10), Cols = Monitor & Peripherals ROSA (1-10)
+ROSA_FINAL = {
+    #        MP:  1  2  3  4  5  6  7  8  9 10
+    1:    [   1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],
+    2:    [   2, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],
+    3:    [   3, 3, 3, 4, 5, 6, 7, 8, 9, 10 ],
+    4:    [   4, 4, 4, 4, 5, 6, 7, 8, 9, 10 ],
+    5:    [   5, 5, 5, 5, 5, 6, 7, 8, 9, 10 ],
+    6:    [   6, 6, 6, 6, 6, 6, 7, 8, 9, 10 ],
+    7:    [   7, 7, 7, 7, 7, 7, 7, 8, 9, 10 ],
+    8:    [   8, 8, 8, 8, 8, 8, 8, 8, 9, 10 ],
+    9:    [   9, 9, 9, 9, 9, 9, 9, 9, 9, 10 ],
+    10:   [  10,10,10,10,10,10,10,10,10, 10 ],
+}
+
+
+def _rosa_lookup(table, row, col, row_offset=None, col_offset=None):
+    """Safe lookup with clamping to table bounds."""
+    rows_available = sorted(table.keys())
+    row_c = max(rows_available[0], min(rows_available[-1], row))
+    cols_len = len(table[row_c])
+    # Column index: shift if table has non-zero starting column
+    if col_offset is None:
+        col_offset = 0
+    idx = max(0, min(cols_len - 1, col - col_offset))
+    return table[row_c][idx]
+
+
+def rosa_final_score(a1, a2, a3, a4, duration_chair,
+                     b1, b2, duration_mon, duration_phone,
+                     c1, c2, duration_mouse, duration_kbd):
+    """Compute full ROSA score from sub-component scores.
+
+    Each sub-score (a1..c2) is the raw sum of "1 + adjustments"
+    already computed from the user's checkbox selections.
+    Duration values are -1, 0, or +1.
+
+    Returns a dict with chair, mon_peri, final scores and action level.
+    """
+    # --- Section A: Chair ---
+    y_axis = a1 + a2                          # Chair height + Pan depth
+    x_axis = a3 + a4                          # Armrests + Back support
+    chair_raw = _rosa_lookup(
+        ROSA_CHAIR, row=y_axis, col=x_axis,
+        col_offset=2,       # X axis starts at 2
+    )
+    chair_rosa = max(1, min(10, chair_raw + duration_chair))
+
+    # --- Section B: Monitor + Phone ---
+    b1_score = max(0, b1 + duration_mon)
+    b2_score = max(0, b2 + duration_phone)
+    section_b = _rosa_lookup(ROSA_SECTION_B, row=b2_score, col=b1_score,
+                             col_offset=0)
+
+    # --- Section C: Mouse + Keyboard ---
+    c1_score = max(0, c1 + duration_mouse)
+    c2_score = max(0, c2 + duration_kbd)
+    section_c = _rosa_lookup(ROSA_SECTION_C, row=c2_score, col=c1_score,
+                             col_offset=0)
+
+    # --- Monitor & Peripherals ROSA ---
+    mon_peri = _rosa_lookup(ROSA_MON_PERI, row=section_b, col=section_c,
+                            col_offset=1)
+
+    # --- ROSA FINAL ---
+    final = _rosa_lookup(ROSA_FINAL, row=chair_rosa, col=mon_peri,
+                         col_offset=1)
+
+    # Action level per Sonne 2012
+    if final <= 2:
+        action, action_color = "Low risk — no further assessment required", "#10b981"
+    elif final <= 4:
+        action, action_color = "Moderate — reassess in 6 months", "#f59e0b"
+    else:
+        action, action_color = "High risk — immediate intervention needed", "#ef4444"
+
+    return {
+        "chair_rosa":  chair_rosa,
+        "section_b":   section_b,
+        "section_c":   section_c,
+        "mon_peri":    mon_peri,
+        "final":       final,
+        "action":      action,
+        "action_color":action_color,
+    }
+
+
 def compute_risk_profile(chair_diff, desk_diff, monitor_diff,
                          osha_pct, angle_results, n_total_osha,
                          ctx):
@@ -2265,8 +2464,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_ideal, tab_assessment, tab_osha, tab_angles, tab_summary = st.tabs([
-    t["tab_1"], t["tab_2"], t["tab_3"], t["tab_4"], t["tab_5"],
+tab_ideal, tab_assessment, tab_osha, tab_angles, tab_rosa, tab_summary = st.tabs([
+    t["tab_1"], t["tab_2"], t["tab_3"], t["tab_4"], t["tab_rosa"], t["tab_5"],
 ])
 
 
@@ -2537,7 +2736,283 @@ with tab_angles:
 
 
 # --------------------------------------------------------------------
-# Tab 4 — Polished Summary
+# Tab 5 — ROSA Assessment (validated instrument, ergonomist-only)
+# --------------------------------------------------------------------
+with tab_rosa:
+    st.subheader(t["rosa_title"])
+    st.caption(t["rosa_intro"])
+    st.info(t["rosa_check_all"])
+
+    # Bilingual option labels for ROSA sub-items
+    _ROSA_L = {
+        "el": {
+            # A.1 Chair height
+            "a1_base":   "Γόνατα σε 90° (βασικό, δεν προσθέτει)",
+            "a1_low":    "Πολύ χαμηλή (γόνατο <90°) +2",
+            "a1_high":   "Πολύ ψηλή (γόνατο >90°) +2",
+            "a1_nofoot": "Τα πέλματα δεν πατούν στο έδαφος +3",
+            "a1_cramp":  "Δεν χωράνε τα πόδια κάτω από το γραφείο +1",
+            "a1_nonadj": "Μη ρυθμιζόμενη +1",
+            # A.2 Pan depth
+            "a2_base":   "~3 δάχτυλα χώρος πίσω από το γόνατο (βασικό)",
+            "a2_long":   "Πολύ μακρύ βάθος έδρας (<3 δάχτυλα χώρος) +2",
+            "a2_short":  "Πολύ κοντό βάθος έδρας (>3 δάχτυλα χώρος) +2",
+            "a2_nonadj": "Μη ρυθμιζόμενο +1",
+            # A.3 Armrests
+            "a3_base":   "Αγκώνες στηριγμένοι, στη σειρά με ώμο, ώμοι χαλαροί (βασικό)",
+            "a3_high":   "Πολύ ψηλά (ώμοι σηκωμένοι) ή χαμηλά (χωρίς στήριξη) +2",
+            "a3_hard":   "Σκληρή/κατεστραμμένη επιφάνεια +1",
+            "a3_wide":   "Πολύ μακριά μεταξύ τους +1",
+            "a3_nonadj": "Μη ρυθμιζόμενα +1",
+            # A.4 Back support
+            "a4_base":   "Καλή στήριξη οσφύος, κλίση 95°–110° (βασικό)",
+            "a4_nolumb": "Δεν υπάρχει lumbar support ή είναι σε λάθος θέση +2",
+            "a4_angle":  "Πλάτη κεκλιμένη >110° ή <95° +2",
+            "a4_noback": "Χωρίς πλάτη (σκαμπό) ή κύψη προς τα εμπρός +3",
+            "a4_hidesk": "Επιφάνεια εργασίας πολύ ψηλή (ώμοι σηκωμένοι) +1",
+            "a4_nonadj": "Πλάτη μη ρυθμιζόμενη +1",
+            # B.1 Monitor
+            "b1_base":   "Απόσταση μπράτσου (40–75 cm), στο ύψος ματιών (βασικό)",
+            "b1_low":    "Πολύ χαμηλά (>30° κάτω) +2",
+            "b1_far":    "Πολύ μακριά +1",
+            "b1_high":   "Πολύ ψηλά (έκταση αυχένα) +3",
+            "b1_twist":  "Στροφή αυχένα >30° +1",
+            "b1_glare":  "Αντανάκλαση στην οθόνη +1",
+            "b1_docs":   "Έγγραφα χωρίς βάση/document holder +1",
+            # B.2 Phone
+            "b2_base":   "Headset ή ένα χέρι + ουδέτερη στάση αυχένα (βασικό)",
+            "b2_far":    "Πολύ μακριά (πάνω από 30 cm) +2",
+            "b2_hold":   "Το κρατά ανάμεσα σε αυχένα και ώμο +2",
+            "b2_nohnd":  "Χωρίς hands-free επιλογή +1",
+            # C.1 Mouse
+            "c1_base":   "Ποντίκι στη σειρά με τον ώμο (βασικό)",
+            "c1_reach":  "Πρέπει να τεντώνεται για να το φτάσει +2",
+            "c1_diff":   "Ποντίκι/πληκτρολόγιο σε διαφορετικές επιφάνειες +2",
+            "c1_pinch":  "Πιάσιμο με τσιμπίδα (pinch grip) +1",
+            "c1_palm":   "Palmrest μπροστά από το ποντίκι +1",
+            # C.2 Keyboard
+            "c2_base":   "Καρποί ίσιοι, ώμοι χαλαροί (βασικό)",
+            "c2_ext":    "Καρποί σε έκταση >15° / πληκτρολόγιο σε θετική γωνία +2",
+            "c2_dev":    "Ωλένια/κερκιδική απόκλιση κατά την πληκτρολόγηση +1",
+            "c2_hi":     "Πληκτρολόγιο πολύ ψηλά — ώμοι σηκωμένοι +1",
+            "c2_over":   "Πρέπει να τεντώνεται για overhead αντικείμενα +1",
+            "c2_nonadj": "Πλατφόρμα μη ρυθμιζόμενη +1",
+        },
+        "en": {
+            "a1_base":   "Knees at 90° (base, no addition)",
+            "a1_low":    "Too low (knee angle <90°) +2",
+            "a1_high":   "Too high (knee angle >90°) +2",
+            "a1_nofoot": "No foot contact on ground +3",
+            "a1_cramp":  "Insufficient space under desk (can't cross legs) +1",
+            "a1_nonadj": "Non-adjustable +1",
+            "a2_base":   "~3 inches (about 8 cm) space behind knee (base)",
+            "a2_long":   "Pan too long (<3 inches space) +2",
+            "a2_short":  "Pan too short (>3 inches space) +2",
+            "a2_nonadj": "Non-adjustable +1",
+            "a3_base":   "Elbows supported, in line with shoulder, shoulders relaxed (base)",
+            "a3_high":   "Too high (shoulders shrugged) or low (arms unsupported) +2",
+            "a3_hard":   "Hard / damaged surface +1",
+            "a3_wide":   "Too wide apart +1",
+            "a3_nonadj": "Non-adjustable +1",
+            "a4_base":   "Adequate lumbar support, chair reclined 95°–110° (base)",
+            "a4_nolumb": "No lumbar support OR support not in small of back +2",
+            "a4_angle":  "Angled too far back (>110°) or forward (<95°) +2",
+            "a4_noback": "No back support (stool) or leaning forward +3",
+            "a4_hidesk": "Work surface too high (shoulders shrugged) +1",
+            "a4_nonadj": "Back rest non-adjustable +1",
+            "b1_base":   "Arm's-length distance (40–75 cm), screen at eye level (base)",
+            "b1_low":    "Too low (below 30°) +2",
+            "b1_far":    "Too far +1",
+            "b1_high":   "Too high (neck extension) +3",
+            "b1_twist":  "Neck twist greater than 30° +1",
+            "b1_glare":  "Glare on screen +1",
+            "b1_docs":   "Documents without holder +1",
+            "b2_base":   "Headset or one hand on phone + neutral neck posture (base)",
+            "b2_far":    "Too far of reach (outside 30 cm) +2",
+            "b2_hold":   "Neck and shoulder hold +2",
+            "b2_nohnd":  "No hands-free options +1",
+            "c1_base":   "Mouse in line with shoulder (base)",
+            "c1_reach":  "Reaching to mouse +2",
+            "c1_diff":   "Mouse/keyboard on different surfaces +2",
+            "c1_pinch":  "Pinch grip on mouse +1",
+            "c1_palm":   "Palmrest in front of mouse +1",
+            "c2_base":   "Wrists straight, shoulders relaxed (base)",
+            "c2_ext":    "Wrists extended / keyboard on positive angle (>15° wrist ext.) +2",
+            "c2_dev":    "Deviation while typing +1",
+            "c2_hi":     "Keyboard too high — shoulders shrugged +1",
+            "c2_over":   "Reaching to overhead items +1",
+            "c2_nonadj": "Platform non-adjustable +1",
+        },
+    }
+    L = _ROSA_L[lang]
+
+    def _rosa_checkbox(label, points, key):
+        return points if st.checkbox(label, key=key) else 0
+
+    def _duration_selector(key):
+        choice = st.radio(
+            t["rosa_duration"],
+            options=[-1, 0, 1],
+            format_func=lambda v: {
+                -1: t["rosa_dur_low"],
+                 0: t["rosa_dur_mid"],
+                 1: t["rosa_dur_high"],
+            }[v],
+            index=1,
+            key=key,
+            horizontal=False,
+        )
+        return int(choice)
+
+    # ── Section A: Chair ──────────────────────────────────────────
+    st.markdown(f"### {t['rosa_sec_a']}")
+    colA1, colA2 = st.columns(2)
+    with colA1:
+        st.markdown(f"**{t['rosa_a1']}**")
+        st.caption(L["a1_base"])
+        a1_pts = 1  # base
+        a1_pts += _rosa_checkbox(L["a1_low"],    2, "rosa_a1_low")
+        a1_pts += _rosa_checkbox(L["a1_high"],   2, "rosa_a1_high")
+        a1_pts += _rosa_checkbox(L["a1_nofoot"], 3, "rosa_a1_nofoot")
+        a1_pts += _rosa_checkbox(L["a1_cramp"],  1, "rosa_a1_cramp")
+        a1_pts += _rosa_checkbox(L["a1_nonadj"], 1, "rosa_a1_nonadj")
+
+        st.markdown(f"**{t['rosa_a3']}**")
+        st.caption(L["a3_base"])
+        a3_pts = 1
+        a3_pts += _rosa_checkbox(L["a3_high"],   2, "rosa_a3_high")
+        a3_pts += _rosa_checkbox(L["a3_hard"],   1, "rosa_a3_hard")
+        a3_pts += _rosa_checkbox(L["a3_wide"],   1, "rosa_a3_wide")
+        a3_pts += _rosa_checkbox(L["a3_nonadj"], 1, "rosa_a3_nonadj")
+
+    with colA2:
+        st.markdown(f"**{t['rosa_a2']}**")
+        st.caption(L["a2_base"])
+        a2_pts = 1
+        a2_pts += _rosa_checkbox(L["a2_long"],   2, "rosa_a2_long")
+        a2_pts += _rosa_checkbox(L["a2_short"],  2, "rosa_a2_short")
+        a2_pts += _rosa_checkbox(L["a2_nonadj"], 1, "rosa_a2_nonadj")
+
+        st.markdown(f"**{t['rosa_a4']}**")
+        st.caption(L["a4_base"])
+        a4_pts = 1
+        a4_pts += _rosa_checkbox(L["a4_nolumb"], 2, "rosa_a4_nolumb")
+        a4_pts += _rosa_checkbox(L["a4_angle"],  2, "rosa_a4_angle")
+        a4_pts += _rosa_checkbox(L["a4_noback"], 3, "rosa_a4_noback")
+        a4_pts += _rosa_checkbox(L["a4_hidesk"], 1, "rosa_a4_hidesk")
+        a4_pts += _rosa_checkbox(L["a4_nonadj"], 1, "rosa_a4_nonadj")
+
+    st.markdown("**" + t["rosa_duration"] + " · Chair**")
+    dur_chair = _duration_selector("rosa_dur_chair")
+
+    st.divider()
+
+    # ── Section B: Monitor + Phone ────────────────────────────────
+    st.markdown(f"### {t['rosa_sec_b']}")
+    colB1, colB2 = st.columns(2)
+    with colB1:
+        st.markdown(f"**{t['rosa_b1']}**")
+        st.caption(L["b1_base"])
+        b1_pts = 1
+        b1_pts += _rosa_checkbox(L["b1_low"],    2, "rosa_b1_low")
+        b1_pts += _rosa_checkbox(L["b1_far"],    1, "rosa_b1_far")
+        b1_pts += _rosa_checkbox(L["b1_high"],   3, "rosa_b1_high")
+        b1_pts += _rosa_checkbox(L["b1_twist"],  1, "rosa_b1_twist")
+        b1_pts += _rosa_checkbox(L["b1_glare"],  1, "rosa_b1_glare")
+        b1_pts += _rosa_checkbox(L["b1_docs"],   1, "rosa_b1_docs")
+        st.markdown("**" + t["rosa_duration"] + " · Monitor**")
+        dur_mon = _duration_selector("rosa_dur_mon")
+
+    with colB2:
+        st.markdown(f"**{t['rosa_b2']}**")
+        st.caption(L["b2_base"])
+        b2_pts = 1
+        b2_pts += _rosa_checkbox(L["b2_far"],   2, "rosa_b2_far")
+        b2_pts += _rosa_checkbox(L["b2_hold"],  2, "rosa_b2_hold")
+        b2_pts += _rosa_checkbox(L["b2_nohnd"], 1, "rosa_b2_nohnd")
+        st.markdown("**" + t["rosa_duration"] + " · Phone**")
+        dur_phone = _duration_selector("rosa_dur_phone")
+
+    st.divider()
+
+    # ── Section C: Mouse + Keyboard ───────────────────────────────
+    st.markdown(f"### {t['rosa_sec_c']}")
+    colC1, colC2 = st.columns(2)
+    with colC1:
+        st.markdown(f"**{t['rosa_c1']}**")
+        st.caption(L["c1_base"])
+        c1_pts = 1
+        c1_pts += _rosa_checkbox(L["c1_reach"],  2, "rosa_c1_reach")
+        c1_pts += _rosa_checkbox(L["c1_diff"],   2, "rosa_c1_diff")
+        c1_pts += _rosa_checkbox(L["c1_pinch"],  1, "rosa_c1_pinch")
+        c1_pts += _rosa_checkbox(L["c1_palm"],   1, "rosa_c1_palm")
+        st.markdown("**" + t["rosa_duration"] + " · Mouse**")
+        dur_mouse = _duration_selector("rosa_dur_mouse")
+
+    with colC2:
+        st.markdown(f"**{t['rosa_c2']}**")
+        st.caption(L["c2_base"])
+        c2_pts = 1
+        c2_pts += _rosa_checkbox(L["c2_ext"],    2, "rosa_c2_ext")
+        c2_pts += _rosa_checkbox(L["c2_dev"],    1, "rosa_c2_dev")
+        c2_pts += _rosa_checkbox(L["c2_hi"],     1, "rosa_c2_hi")
+        c2_pts += _rosa_checkbox(L["c2_over"],   1, "rosa_c2_over")
+        c2_pts += _rosa_checkbox(L["c2_nonadj"], 1, "rosa_c2_nonadj")
+        st.markdown("**" + t["rosa_duration"] + " · Keyboard**")
+        dur_kbd = _duration_selector("rosa_dur_kbd")
+
+    st.divider()
+
+    # ── Compute final ROSA scores ─────────────────────────────────
+    rosa = rosa_final_score(
+        a1=a1_pts, a2=a2_pts, a3=a3_pts, a4=a4_pts,
+        duration_chair=dur_chair,
+        b1=b1_pts, b2=b2_pts,
+        duration_mon=dur_mon, duration_phone=dur_phone,
+        c1=c1_pts, c2=c2_pts,
+        duration_mouse=dur_mouse, duration_kbd=dur_kbd,
+    )
+
+    # ── Display final scores ──────────────────────────────────────
+    rc1, rc2, rc3 = st.columns(3)
+    with rc1:
+        st.metric(t["rosa_chair_score"], f"{rosa['chair_rosa']} / 10")
+    with rc2:
+        st.metric(t["rosa_monperi"], f"{rosa['mon_peri']} / 10")
+    with rc3:
+        st.metric(t["rosa_final"], f"{rosa['final']} / 10")
+
+    # Action banner (color-coded)
+    st.markdown(
+        f"<div style='padding:18px 22px; background:{rosa['action_color']}; "
+        f"color:white; border-radius:12px; margin-top:10px; "
+        f"font-weight:800; font-size:15px; text-align:center;'>"
+        f"{t['rosa_action']}: {rosa['action']}</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Sub-score breakdown (for the ergonomist / auditability)
+    with st.expander("Sub-score breakdown"):
+        st.markdown(
+            f"- A.1 Chair height: **{a1_pts}**  \n"
+            f"- A.2 Pan depth: **{a2_pts}**  \n"
+            f"- A.3 Armrests: **{a3_pts}**  \n"
+            f"- A.4 Back support: **{a4_pts}**  \n"
+            f"- Duration adj (chair): **{dur_chair:+d}**  \n"
+            f"- **→ Chair ROSA = {rosa['chair_rosa']}**  \n\n"
+            f"- B.1 Monitor: **{b1_pts}** · Duration: **{dur_mon:+d}**  \n"
+            f"- B.2 Phone: **{b2_pts}** · Duration: **{dur_phone:+d}**  \n"
+            f"- **→ Section B = {rosa['section_b']}**  \n\n"
+            f"- C.1 Mouse: **{c1_pts}** · Duration: **{dur_mouse:+d}**  \n"
+            f"- C.2 Keyboard: **{c2_pts}** · Duration: **{dur_kbd:+d}**  \n"
+            f"- **→ Section C = {rosa['section_c']}**  \n\n"
+            f"- Monitor & Peripherals ROSA = **{rosa['mon_peri']}**  \n"
+            f"- **ROSA FINAL = {rosa['final']}**"
+        )
+
+
+# --------------------------------------------------------------------
+# Tab 5 (was 4) — Polished Summary
 # --------------------------------------------------------------------
 with tab_summary:
 
@@ -2587,6 +3062,26 @@ with tab_summary:
 
     # ---- Intended-purpose / non-medical disclaimer (top of summary)
     st.info(t["sum_intended"])
+
+    # ---- ROSA FINAL SCORE banner (validated instrument, ergonomist input) --
+    st.markdown(
+        f"<div style='display:flex; align-items:center; gap:16px; "
+        f"padding:18px 22px; margin:10px 0 4px; "
+        f"background:linear-gradient(135deg,{rosa['action_color']}22 0%,white 60%); "
+        f"border-left:6px solid {rosa['action_color']}; border-radius:12px;'>"
+        f"<div style='font-size:38px; font-weight:800; color:{rosa['action_color']};'>"
+        f"{rosa['final']}<span style='font-size:18px; color:#64748b;'>/10</span></div>"
+        f"<div style='flex:1;'>"
+        f"<div style='font-size:11px; letter-spacing:.14em; text-transform:uppercase; "
+        f"color:#64748b; font-weight:700;'>ROSA FINAL SCORE</div>"
+        f"<div style='font-size:14px; color:#0f172a; font-weight:600; margin-top:2px;'>"
+        f"{rosa['action']}</div>"
+        f"<div style='font-size:11px; color:#94a3b8; margin-top:4px;'>"
+        f"Sonne, Villalta &amp; Andrews (2012) · Chair {rosa['chair_rosa']}/10 · "
+        f"Monitor &amp; Peripherals {rosa['mon_peri']}/10</div>"
+        f"</div></div>",
+        unsafe_allow_html=True,
+    )
 
     # ---- Three domain cards (no overall composite) --------------
     q1, q2, q3 = st.columns(3)
@@ -2994,6 +3489,13 @@ with tab_summary:
             "chair_total":       n_total,
             "angles_pass":       n_ok,
             "angles_total":      n_total_angles,
+            # ROSA (Sonne 2012) — validated instrument
+            "rosa_chair":        rosa["chair_rosa"],
+            "rosa_section_b":    rosa["section_b"],
+            "rosa_section_c":    rosa["section_c"],
+            "rosa_mon_peri":     rosa["mon_peri"],
+            "rosa_final":        rosa["final"],
+            "rosa_action":       rosa["action"],
             # Risk-factor profile — condition → count of elevated factors
             "risk_conditions":   ", ".join(
                 f"{CONDITIONS[ck]['name_en']}("
