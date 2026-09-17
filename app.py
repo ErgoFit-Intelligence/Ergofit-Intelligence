@@ -1397,17 +1397,22 @@ def render_posture_svg(stature_cm, weight_kg,
     stand_bot_y = desk_y_svg
 
     # ── Seated eye height + ideal monitor top marker ──────────────
-    # Anthropometric ratio: seated eye height ≈ 0.452 × stature
-    # (Drillis & Contini; matches r_eye_sit used elsewhere).
+    # Anthropometric ratio: seated eye height ≈ 0.452 × stature.
+    # Ergonomic best practice: monitor TOP should sit at or slightly
+    # BELOW eye level (ANSI/HFES 100, ISO 9241-5). We visualise both:
+    #   • Eye level line  = actual eye height
+    #   • Ideal monitor top = eye level minus a 5 cm safety margin
+    EYE_MARGIN_CM = 5
     seated_eye_above_chair = 0.452 * stature_cm
-    eye_actual_cm = chair_h + seated_eye_above_chair       # ideal monitor-top height
-    eye_y_svg     = y(eye_actual_cm)                       # SVG y-coord of eye level
-
-    # Ideal monitor top = eye level. Ghost marker only if the measured
-    # monitor differs from ideal by more than the ±4 cm tolerance.
-    ideal_mon_top_cm = eye_actual_cm
+    eye_actual_cm    = chair_h + seated_eye_above_chair
+    eye_y_svg        = y(eye_actual_cm)
+    ideal_mon_top_cm = eye_actual_cm - EYE_MARGIN_CM
     ideal_mon_top_y  = y(ideal_mon_top_cm)
     show_ideal_mon   = abs(monitor_h - ideal_mon_top_cm) > 4
+
+    # Extra warning: monitor top ABOVE eye level is always bad, no matter
+    # how small the difference — forces sustained neck extension.
+    above_eye = monitor_h > eye_actual_cm
 
     # Downward-gaze indicator when monitor is too low
     gaze_note = ""
@@ -1634,19 +1639,29 @@ def render_posture_svg(stature_cm, weight_kg,
   <!-- ── Eye-level reference line (dashed, horizontal) ── -->
   <line x1="{head_cx + head_r + 4}" y1="{eye_y_svg}"
         x2="{mon_x + mon_w + 30}"    y2="{eye_y_svg}"
-        stroke="#0d9488" stroke-width="1.2" stroke-dasharray="4,4"
-        opacity="0.75"/>
+        stroke="{BAD if above_eye else '#0d9488'}" stroke-width="1.4"
+        stroke-dasharray="4,4" opacity="0.85"/>
   <text x="{mon_x + mon_w + 34}" y="{eye_y_svg + 3}" font-size="9"
-        font-family="Inter, sans-serif" fill="#0d9488"
+        font-family="Inter, sans-serif"
+        fill="{BAD if above_eye else '#0d9488'}"
         font-weight="700" letter-spacing="0.6">EYE LEVEL · {eye_actual_cm:.0f} cm</text>
 
-  {(f'''<!-- Ideal monitor top marker (ghost) -->
+  {(f'''<!-- Warning band: monitor top ABOVE eye level -->
+  <rect x="{mon_x - 6}" y="{mon_top_y - 3}"
+        width="{mon_w + 12}" height="{eye_y_svg - mon_top_y + 6}"
+        fill="{BAD}" opacity="0.14"/>
+  <text x="{mon_x + mon_w / 2 - 60}" y="{mon_top_y - 22}" font-size="10"
+        font-family="Inter, sans-serif" fill="{BAD}" font-weight="800"
+        letter-spacing="0.6">⚠ MONITOR TOP ABOVE EYE LEVEL</text>
+  ''') if above_eye else ''}
+
+  {(f'''<!-- Ideal monitor top marker (dashed green line at safe eye-margin) -->
   <line x1="{mon_x - 4}" y1="{ideal_mon_top_y}"
         x2="{mon_x + mon_w + 4}" y2="{ideal_mon_top_y}"
-        stroke="{OK}" stroke-width="2" stroke-dasharray="3,3" opacity="0.7"/>
-  <text x="{mon_x + mon_w / 2 - 22}" y="{ideal_mon_top_y - 4}" font-size="9"
+        stroke="{OK}" stroke-width="2" stroke-dasharray="3,3" opacity="0.75"/>
+  <text x="{mon_x + mon_w / 2 - 32}" y="{ideal_mon_top_y - 4}" font-size="9"
         font-family="Inter, sans-serif" fill="{OK}" font-weight="700"
-        letter-spacing="0.5">IDEAL TOP</text>
+        letter-spacing="0.5">IDEAL TOP · {ideal_mon_top_cm:.0f} cm</text>
   ''') if show_ideal_mon else ''}
 
   {(f'''<!-- Gaze-line from eye to monitor centre -->
@@ -1733,14 +1748,26 @@ else:
     _desk_source         = "estimate"
 ideal_desk_target        = round(ideal_chair + seated_elbow_gap, 1)
 
-# Ideal monitor top = chair + seated-eye gap (direct if supplied)
+# Ideal monitor top edge:
+# Best-practice ergonomics (ANSI/HFES 100, ISO 9241-5, OSHA):
+# the TOP of the screen should be **at or slightly BELOW eye level**.
+# A screen top ABOVE eye level forces sustained neck extension.
+# We set the ideal at eye level MINUS a 5 cm safety margin so the
+# top edge always sits comfortably at or below the eye reference line.
+EYE_TO_MON_TOP_OFFSET_CM = 5  # ergonomic safety margin below eye level
+
 if seated_eye_h_direct > 0:
     seated_eye_gap       = round(seated_eye_h_direct, 1)
     _mon_source          = "direct"
 else:
     seated_eye_gap       = round(r_eye_sit * height, 1)
     _mon_source          = "estimate"
-ideal_mon_target         = round(ideal_chair + seated_eye_gap,   1)
+
+# eye_level_from_chair = seated_eye_gap
+# ideal_monitor_top    = chair + eye_gap − offset (so it lands below eye level)
+ideal_mon_target         = round(
+    ideal_chair + seated_eye_gap - EYE_TO_MON_TOP_OFFSET_CM, 1
+)
 
 
 # ====================================================================
@@ -2277,7 +2304,11 @@ with tab_assessment:
     )
 
     desk_for_actual_chair    = round(chair_height + seated_elbow_gap, 1)
-    monitor_for_actual_chair = round(chair_height + seated_eye_gap,   1)
+    # Monitor top ideal = eye level MINUS the 5 cm safety margin
+    # (top of screen should sit at-or-below eye level, never above).
+    monitor_for_actual_chair = round(
+        chair_height + seated_eye_gap - EYE_TO_MON_TOP_OFFSET_CM, 1
+    )
 
     chair_diff   = chair_height   - ideal_chair
     desk_diff    = desk_height    - desk_for_actual_chair
