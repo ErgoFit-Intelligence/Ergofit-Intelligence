@@ -5,8 +5,9 @@ from ergofit.science.anthropometry import bmi_band
 from ergofit.science.standards import MONITOR_DISTANCE_REFERENCE_CM
 
 
-def build_findings(ctx: dict) -> list[Finding]:
+def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
     findings: list[Finding] = []
+    tr = lambda en, el: en if lang == "en" else el
 
     # Symptoms are findings, not diagnoses.
     regions = ctx.get("symptom_regions", [])
@@ -15,9 +16,12 @@ def build_findings(ctx: dict) -> list[Finding]:
         status = "priority" if severity >= 7 or ctx.get("symptom_interference") else "attention"
         findings.append(Finding(
             domain="Symptoms",
-            title="Current/recent musculoskeletal symptoms",
+            title=tr("Current/recent musculoskeletal symptoms", "Τρέχοντα/πρόσφατα μυοσκελετικά συμπτώματα"),
             status=status,
-            detail=f"Reported regions: {', '.join(regions)}; intensity {severity}/10. This is symptom information, not a diagnosis.",
+            detail=tr(
+                f"Reported regions: {', '.join(regions)}; intensity {severity}/10. This is symptom information, not a diagnosis.",
+                f"Αναφερόμενες περιοχές: {', '.join(regions)}· ένταση {severity}/10. Πρόκειται για πληροφορία συμπτωμάτων και όχι για διάγνωση."
+            ),
             modifiable=False,
         ))
 
@@ -25,9 +29,12 @@ def build_findings(ctx: dict) -> list[Finding]:
     if max(float(ctx.get("computer_hours", 0)), float(ctx.get("mouse_hours", 0))) > 4:
         findings.append(Finding(
             domain="Computer exposure",
-            title="Computer/mouse exposure >4 h/day",
+            title=tr("Computer/mouse exposure >4 h/day", "Έκθεση σε υπολογιστή/ποντίκι >4 ώρες/ημέρα"),
             status="attention",
-            detail="Prospective computer-worker evidence supports a small increase in broad arm/neck/shoulder complaints (CANS). This does not validate CTS prediction from computer hours.",
+            detail=tr(
+                "Prospective computer-worker evidence supports a small increase in broad arm/neck/shoulder complaints (CANS). This does not validate CTS prediction from computer hours.",
+                "Προοπτικά δεδομένα σε εργαζομένους που χρησιμοποιούν υπολογιστή υποστηρίζουν μικρή αύξηση ευρύτερων ενοχλήσεων άνω άκρου/αυχένα/ώμου. Αυτό δεν επικυρώνει πρόβλεψη συνδρόμου καρπιαίου σωλήνα από τις ώρες χρήσης υπολογιστή."
+            ),
             evidence_ids=("rijal_2026_cans_4h",),
         ))
 
@@ -35,60 +42,81 @@ def build_findings(ctx: dict) -> list[Finding]:
     if sitting >= 6:
         findings.append(Finding(
             domain="Sedentary exposure",
-            title="High occupational sitting exposure",
+            title=tr("High occupational sitting exposure", "Υψηλή έκθεση σε καθιστική εργασία"),
             status="attention",
-            detail="≥6 h/day is used here as an operational exposure flag, not as a study-derived causal threshold. Sitting–pain associations are mainly cross-sectional.",
+            detail=tr(
+                "≥6 h/day is used here as an operational exposure flag, not as a study-derived causal threshold. Sitting–pain associations are mainly cross-sectional.",
+                "Οι ≥6 ώρες/ημέρα χρησιμοποιούνται εδώ ως λειτουργική ένδειξη υψηλής έκθεσης και όχι ως αιτιώδες όριο που προέκυψε από μελέτη. Οι συσχετίσεις μεταξύ καθιστικής εργασίας και πόνου προέρχονται κυρίως από διατομεακά δεδομένα."
+            ),
             evidence_ids=("dzakpasu_2021_lbp_sitting", "dzakpasu_2021_neck_shoulder_sitting", "mahdavi_2022_lbp_sitting"),
         ))
 
     if ctx.get("long_sitting_bout") in {"60–120 min", ">120 min"}:
         findings.append(Finding(
             domain="Sedentary exposure",
-            title="Long uninterrupted sitting bouts",
+            title=tr("Long uninterrupted sitting bouts", "Μεγάλα συνεχόμενα διαστήματα καθιστικής εργασίας"),
             status="attention",
-            detail="Long static bouts reduce postural variation. The app does not treat any single break interval as a medical threshold.",
+            detail=tr(
+                "Long static bouts reduce postural variation. The app does not treat any single break interval as a medical threshold.",
+                "Τα μεγάλα στατικά διαστήματα μειώνουν τη μεταβλητότητα της στάσης. Το εργαλείο δεν θεωρεί κανένα συγκεκριμένο διάστημα διαλείμματος ως ιατρικό όριο."
+            ),
             evidence_ids=("waongenngarm_2018_breaks",),
         ))
 
     if ctx.get("active_breaks") is False:
         findings.append(Finding(
             domain="Movement variation",
-            title="Limited active breaks / postural variation",
+            title=tr("Limited active breaks / postural variation", "Περιορισμένα ενεργά διαλείμματα / περιορισμένη εναλλαγή στάσης"),
             status="attention",
-            detail="Office-worker intervention evidence supports active breaks and postural change more consistently than passive rest or a fixed universal interval.",
+            detail=tr(
+                "Office-worker intervention evidence supports active breaks and postural change more consistently than passive rest or a fixed universal interval.",
+                "Τα δεδομένα παρεμβάσεων σε εργαζομένους γραφείου υποστηρίζουν πιο σταθερά τα ενεργά διαλείμματα και τις αλλαγές στάσης σε σχέση με την παθητική ανάπαυση ή ένα ενιαίο καθολικό διάστημα."
+            ),
             evidence_ids=("waongenngarm_2018_breaks",),
         ))
 
     if ctx.get("high_repetition"):
         findings.append(Finding(
             domain="Upper-limb mechanical exposure",
-            title="High hand/wrist repetition",
+            title=tr("High hand/wrist repetition", "Υψηλή επανάληψη κινήσεων χεριού/καρπού"),
             status="priority",
-            detail="This exposure has prospective evidence for clinically assessed CTS in occupational cohorts. Applicability depends on whether the task resembles the studied high-repetition work.",
+            detail=tr(
+                "This exposure has prospective evidence for clinically assessed CTS in occupational cohorts. Applicability depends on whether the task resembles the studied high-repetition work.",
+                "Υπάρχουν προοπτικά δεδομένα που συνδέουν αυτή την έκθεση με κλινικά αξιολογημένο σύνδρομο καρπιαίου σωλήνα σε επαγγελματικούς πληθυσμούς. Η εφαρμοσιμότητα εξαρτάται από το αν η εργασία μοιάζει με τις εργασίες υψηλής επανάληψης που μελετήθηκαν."
+            ),
             evidence_ids=("hassan_2022_cts_repetition",),
         ))
     if ctx.get("hand_force"):
         findings.append(Finding(
             domain="Upper-limb mechanical exposure",
-            title="Meaningful hand/finger force",
+            title=tr("Meaningful hand/finger force", "Σημαντική δύναμη χεριού/δακτύλων"),
             status="priority",
-            detail="Prospective occupational evidence links force intensity with clinically assessed CTS; typical office tasks often have much lower force.",
+            detail=tr(
+                "Prospective occupational evidence links force intensity with clinically assessed CTS; typical office tasks often have much lower force.",
+                "Προοπτικά επαγγελματικά δεδομένα συνδέουν την ένταση δύναμης με κλινικά αξιολογημένο σύνδρομο καρπιαίου σωλήνα· οι συνήθεις εργασίες γραφείου έχουν συχνά πολύ χαμηλότερη απαίτηση δύναμης."
+            ),
             evidence_ids=("hassan_2022_cts_force",),
         ))
     if ctx.get("forearm_rotation"):
         findings.append(Finding(
             domain="Upper-limb mechanical exposure",
-            title="Substantial forearm rotation exposure",
+            title=tr("Substantial forearm rotation exposure", "Σημαντική έκθεση σε στροφή αντιβραχίου"),
             status="priority",
-            detail="Prospective evidence supports an association with lateral epicondylitis when exposure is substantial.",
+            detail=tr(
+                "Prospective evidence supports an association with lateral epicondylitis when exposure is substantial.",
+                "Προοπτικά δεδομένα υποστηρίζουν συσχέτιση με έξω επικονδυλίτιδα όταν η έκθεση σε στροφή αντιβραχίου είναι σημαντική."
+            ),
             evidence_ids=("bretschneider_2022_le_rotation",),
         ))
     if ctx.get("arm_elevation"):
         findings.append(Finding(
             domain="Shoulder exposure",
-            title="Sustained arm elevation / shoulder load",
+            title=tr("Sustained arm elevation / shoulder load", "Παρατεταμένη ανύψωση βραχίονα / φόρτιση ώμου"),
             status="priority",
-            detail="Evidence is mainly from manual/mixed occupations and is indirect for standard office work; use only because actual exposure was reported.",
+            detail=tr(
+                "Evidence is mainly from manual/mixed occupations and is indirect for standard office work; use only because actual exposure was reported.",
+                "Η τεκμηρίωση προέρχεται κυρίως από χειρωνακτικά/μικτά επαγγέλματα και είναι έμμεση για τη συνήθη εργασία γραφείου. Το εύρημα χρησιμοποιείται μόνο επειδή δηλώθηκε πραγματική έκθεση."
+            ),
             evidence_ids=("shoulder_arm_elevation",),
         ))
 
@@ -98,9 +126,12 @@ def build_findings(ctx: dict) -> list[Finding]:
     if seat_actual > 0 and seat_ref > 0 and abs(seat_actual - seat_ref) > 2.5:
         findings.append(Finding(
             domain="Workstation fit",
-            title="Seat height differs from body-fit reference",
+            title=tr("Seat height differs from body-fit reference", "Το ύψος της έδρας διαφέρει από τη σωματομετρική τιμή αναφοράς"),
             status="attention",
-            detail=f"Measured {seat_actual:.1f} cm vs reference {seat_ref:.1f} cm. The ±2.5 cm flag is an operational fitting tolerance, not a disease threshold.",
+            detail=tr(
+                f"Measured {seat_actual:.1f} cm vs reference {seat_ref:.1f} cm. The ±2.5 cm flag is an operational fitting tolerance, not a disease threshold.",
+                f"Μετρήθηκαν {seat_actual:.1f} cm έναντι τιμής αναφοράς {seat_ref:.1f} cm. Η απόκλιση ±2,5 cm είναι λειτουργικό όριο προσαρμογής και όχι όριο κινδύνου νόσου."
+            ),
         ))
 
     desk_actual = float(ctx.get("desk_height", 0))
@@ -108,9 +139,12 @@ def build_findings(ctx: dict) -> list[Finding]:
     if desk_actual > 0 and desk_ref > 0 and abs(desk_actual - desk_ref) > 3.0:
         findings.append(Finding(
             domain="Workstation fit",
-            title="Work-surface height differs from elbow-height reference",
+            title=tr("Work-surface height differs from elbow-height reference", "Το ύψος της επιφάνειας εργασίας διαφέρει από την αναφορά ύψους αγκώνα"),
             status="attention",
-            detail=f"Measured {desk_actual:.1f} cm vs reference {desk_ref:.1f} cm. Treat this as a fit prompt and confirm shoulder/elbow posture directly.",
+            detail=tr(
+                f"Measured {desk_actual:.1f} cm vs reference {desk_ref:.1f} cm. Treat this as a fit prompt and confirm shoulder/elbow posture directly.",
+                f"Μετρήθηκαν {desk_actual:.1f} cm έναντι τιμής αναφοράς {desk_ref:.1f} cm. Χρησιμοποίησέ το ως ένδειξη προσαρμογής και επιβεβαίωσε άμεσα τη στάση ώμου και αγκώνα."
+            ),
         ))
 
     distance = float(ctx.get("monitor_distance", 0))
@@ -118,71 +152,103 @@ def build_findings(ctx: dict) -> list[Finding]:
     if distance > 0 and not (lo <= distance <= hi):
         findings.append(Finding(
             domain="Visual workstation",
-            title="Monitor viewing distance outside reference range",
+            title=tr("Monitor viewing distance outside reference range", "Η απόσταση θέασης της οθόνης βρίσκεται εκτός του εύρους αναφοράς"),
             status="attention",
-            detail=f"Measured {distance:.0f} cm. Reference guidance commonly places the display roughly {lo}–{hi} cm away, adjusted for display size, visual needs and task.",
+            detail=tr(
+                f"Measured {distance:.0f} cm. Reference guidance commonly places the display roughly {lo}–{hi} cm away, adjusted for display size, visual needs and task.",
+                f"Μετρήθηκαν {distance:.0f} cm. Οι οδηγίες αναφοράς τοποθετούν συνήθως την οθόνη περίπου στα {lo}–{hi} cm, με προσαρμογή ανάλογα με το μέγεθος οθόνης, τις οπτικές ανάγκες και την εργασία."
+            ),
         ))
 
     if ctx.get("monitor_top") in {"above", "well_below"}:
         findings.append(Finding(
             domain="Visual workstation",
-            title="Monitor vertical position needs review",
+            title=tr("Monitor vertical position needs review", "Η κατακόρυφη θέση της οθόνης χρειάζεται έλεγχο"),
             status="attention",
-            detail="Use eye level, screen centre, viewing distance and corrective-lens needs together. v2 does not convert monitor height into a neck-disease coefficient.",
+            detail=tr(
+                "Use eye level, screen centre, viewing distance and corrective-lens needs together. v2 does not convert monitor height into a neck-disease coefficient.",
+                "Αξιολόγησε μαζί το ύψος των ματιών, το κέντρο της οθόνης, την απόσταση θέασης και τυχόν ανάγκες διορθωτικών φακών. Η v2 δεν μετατρέπει το ύψος της οθόνης σε συντελεστή κινδύνου πάθησης του αυχένα."
+            ),
         ))
 
     if ctx.get("keyboard_close") is False:
         findings.append(Finding(
             domain="Input devices",
-            title="Keyboard/mouse positioned away from the body",
+            title=tr("Keyboard/mouse positioned away from the body", "Πληκτρολόγιο/ποντίκι τοποθετημένα μακριά από το σώμα"),
             status="attention",
-            detail="Reaching can increase static shoulder/upper-limb demand; assess actual posture and task variation.",
+            detail=tr(
+                "Reaching can increase static shoulder/upper-limb demand; assess actual posture and task variation.",
+                "Το τέντωμα του χεριού μπορεί να αυξήσει τη στατική επιβάρυνση ώμου/άνω άκρου. Αξιολόγησε την πραγματική στάση και τη μεταβλητότητα της εργασίας."
+            ),
             evidence_ids=("jun_2017_neck_office",),
         ))
     if ctx.get("forearm_support") is False:
         findings.append(Finding(
             domain="Input devices",
-            title="Limited forearm support",
+            title=tr("Limited forearm support", "Περιορισμένη στήριξη αντιβραχίων"),
             status="attention",
-            detail="Where symptoms/exposure justify it, arm support combined with an alternative mouse has some office-RCT evidence for neck/shoulder outcomes.",
+            detail=tr(
+                "Where symptoms/exposure justify it, arm support combined with an alternative mouse has some office-RCT evidence for neck/shoulder outcomes.",
+                "Όταν τα συμπτώματα και η έκθεση το δικαιολογούν, ο συνδυασμός στήριξης αντιβραχίων και εναλλακτικού ποντικιού έχει ορισμένη τεκμηρίωση από τυχαιοποιημένες μελέτες γραφείου για αποτελέσματα αυχένα/ώμου."
+            ),
             evidence_ids=("hoe_2018_arm_support_mouse",),
         ))
     if ctx.get("glare"):
         findings.append(Finding(
             domain="Environment",
-            title="Glare / reflections reported",
+            title=tr("Glare / reflections reported", "Αναφέρθηκε θάμβωση / ενοχλητικές αντανακλάσεις"),
             status="attention",
-            detail="Visual-environment factors belong in a complete DSE assessment and should be corrected independently of musculoskeletal disease scoring.",
+            detail=tr(
+                "Visual-environment factors belong in a complete DSE assessment and should be corrected independently of musculoskeletal disease scoring.",
+                "Οι παράγοντες του οπτικού περιβάλλοντος αποτελούν μέρος μιας πλήρους αξιολόγησης εργασίας με οθόνη και πρέπει να διορθώνονται ανεξάρτητα από οποιαδήποτε βαθμολόγηση μυοσκελετικής νόσου."
+            ),
         ))
 
     if ctx.get("digital_eye_strain"):
         findings.append(Finding(
             domain="Visual symptoms",
-            title="Digital eye strain / visual fatigue reported",
+            title=tr("Digital eye strain / visual fatigue reported", "Αναφέρθηκε ψηφιακή κόπωση ματιών / οπτική κόπωση"),
             status="attention",
-            detail="Treat this as a visual/DSE symptom finding. It is not combined with the musculoskeletal evidence profile or a disease score.",
+            detail=tr(
+                "Treat this as a visual/DSE symptom finding. It is not combined with the musculoskeletal evidence profile or a disease score.",
+                "Αντιμετώπισέ το ως οπτικό σύμπτωμα σχετιζόμενο με εργασία σε οθόνη. Δεν συνδυάζεται με το μυοσκελετικό προφίλ τεκμηρίωσης ή με βαθμολογία νόσου."
+            ),
             modifiable=False,
         ))
 
     env_flags = []
-    for key, label in [("lighting_ok", "lighting"), ("noise_ok", "noise"), ("thermal_ok", "thermal comfort"), ("software_ok", "software/interface ergonomics")]:
+    for key, label in [
+        ("lighting_ok", tr("lighting", "φωτισμός")),
+        ("noise_ok", tr("noise", "θόρυβος")),
+        ("thermal_ok", tr("thermal comfort", "θερμική άνεση")),
+        ("software_ok", tr("software/interface ergonomics", "εργονομία λογισμικού/διεπαφής")),
+    ]:
         if ctx.get(key) is False:
             env_flags.append(label)
     if env_flags:
         findings.append(Finding(
             domain="DSE environment",
-            title="Work-environment factors need review",
+            title=tr("Work-environment factors need review", "Παράγοντες του εργασιακού περιβάλλοντος χρειάζονται έλεγχο"),
             status="attention",
-            detail="Flagged: " + ", ".join(env_flags) + ". These belong in a complete display-screen assessment and are not converted into MSD probability points.",
+            detail=tr(
+                "Flagged: " + ", ".join(env_flags) + ". These belong in a complete display-screen assessment and are not converted into MSD probability points.",
+                "Εντοπίστηκαν: " + ", ".join(env_flags) + ". Οι παράγοντες αυτοί ανήκουν σε μια πλήρη αξιολόγηση εργασίας με οθόνη και δεν μετατρέπονται σε πόντους πιθανότητας μυοσκελετικής πάθησης."
+            ),
         ))
 
     chair_failed = ctx.get("chair_failed", [])
     if chair_failed:
         findings.append(Finding(
             domain="Chair fit",
-            title=f"{len(chair_failed)} chair fit/adjustability issue(s)",
+            title=tr(
+                f"{len(chair_failed)} chair fit/adjustability issue(s)",
+                f"{len(chair_failed)} ζήτημα/ζητήματα προσαρμογής ή ρύθμισης καρέκλας"
+            ),
             status="attention" if len(chair_failed) < 4 else "priority",
-            detail="Chair findings are engineering/fit findings. Chair replacement alone should not be presented as a validated treatment for back pain.",
+            detail=tr(
+                "Chair findings are engineering/fit findings. Chair replacement alone should not be presented as a validated treatment for back pain.",
+                "Τα ευρήματα της καρέκλας αφορούν σχεδιασμό και προσαρμογή. Η αντικατάσταση της καρέκλας από μόνη της δεν πρέπει να παρουσιάζεται ως επικυρωμένη θεραπεία για πόνο στη μέση."
+            ),
             evidence_ids=("channak_2022_chairs",),
         ))
 
@@ -190,9 +256,15 @@ def build_findings(ctx: dict) -> list[Finding]:
     if posture_out:
         findings.append(Finding(
             domain="Posture & movement",
-            title=f"{len(posture_out)} joint-specific posture reference finding(s)",
+            title=tr(
+                f"{len(posture_out)} joint-specific posture reference finding(s)",
+                f"{len(posture_out)} εύρημα/ευρήματα στάσης ανά άρθρωση"
+            ),
             status="attention",
-            detail="These are reference observations. v2 deliberately does not aggregate them into an overall posture percentage or disease-risk category.",
+            detail=tr(
+                "These are reference observations. v2 deliberately does not aggregate them into an overall posture percentage or disease-risk category.",
+                "Πρόκειται για παρατηρήσεις αναφοράς. Η v2 σκόπιμα δεν τις συγκεντρώνει σε συνολικό ποσοστό στάσης ή σε κατηγορία κινδύνου νόσου."
+            ),
             evidence_ids=("jahn_2023_lbp_posture",),
         ))
 
@@ -200,16 +272,22 @@ def build_findings(ctx: dict) -> list[Finding]:
     if rosa_final >= 5:
         findings.append(Finding(
             domain="ROSA",
-            title=f"ROSA action level reached ({rosa_final}/10)",
+            title=tr(f"ROSA action level reached ({rosa_final}/10)", f"Επιτεύχθηκε το επίπεδο δράσης ROSA ({rosa_final}/10)"),
             status="priority",
-            detail="The original ROSA validation supports score 5 as an action level for further ergonomic investigation/intervention.",
+            detail=tr(
+                "The original ROSA validation supports score 5 as an action level for further ergonomic investigation/intervention.",
+                "Η αρχική επικύρωση του ROSA υποστηρίζει τη βαθμολογία 5 ως επίπεδο δράσης για περαιτέρω εργονομική διερεύνηση/παρέμβαση."
+            ),
         ))
     elif rosa_final > 0:
         findings.append(Finding(
             domain="ROSA",
-            title=f"ROSA below action level ({rosa_final}/10)",
+            title=tr(f"ROSA below action level ({rosa_final}/10)", f"ROSA κάτω από το επίπεδο δράσης ({rosa_final}/10)"),
             status="information",
-            detail="Below the validated action level of 5. This is not interpreted as a clinical low-risk disease category.",
+            detail=tr(
+                "Below the validated action level of 5. This is not interpreted as a clinical low-risk disease category.",
+                "Η βαθμολογία είναι κάτω από το τεκμηριωμένο επίπεδο δράσης 5. Δεν ερμηνεύεται ως κλινική κατηγορία χαμηλού κινδύνου νόσου."
+            ),
         ))
 
     # Contextual health factors: shown, never subtracted from disease risk.
@@ -218,9 +296,12 @@ def build_findings(ctx: dict) -> list[Finding]:
         evidence_id = "shiri_2015_cts_bmi_obese" if band == "obese" else "shiri_2015_cts_bmi_overweight"
         findings.append(Finding(
             domain="Health context",
-            title=f"BMI category: {band}",
+            title=tr(f"BMI category: {band}", f"Κατηγορία ΔΜΣ: {band}"),
             status="information",
-            detail="BMI can be associated with some musculoskeletal/neuropathic outcomes, but it is not an ergonomic exposure and is not converted into an ErgoFit disease score.",
+            detail=tr(
+                "BMI can be associated with some musculoskeletal/neuropathic outcomes, but it is not an ergonomic exposure and is not converted into an ErgoFit disease score.",
+                "Ο ΔΜΣ μπορεί να σχετίζεται με ορισμένες μυοσκελετικές/νευροπαθητικές εκβάσεις, αλλά δεν αποτελεί εργονομική έκθεση και δεν μετατρέπεται σε βαθμολογία νόσου του ErgoFit."
+            ),
             evidence_ids=(evidence_id,),
             modifiable=False,
         ))
@@ -228,9 +309,12 @@ def build_findings(ctx: dict) -> list[Finding]:
     if ctx.get("sleep_problem"):
         findings.append(Finding(
             domain="Health context",
-            title="Sleep concern",
+            title=tr("Sleep concern", "Ζήτημα ύπνου"),
             status="information",
-            detail="Sleep problems and chronic musculoskeletal pain are prospectively associated and bidirectional. v2 treats sleep as context, not as a numeric protective/risk credit.",
+            detail=tr(
+                "Sleep problems and chronic musculoskeletal pain are prospectively associated and bidirectional. v2 treats sleep as context, not as a numeric protective/risk credit.",
+                "Τα προβλήματα ύπνου και ο χρόνιος μυοσκελετικός πόνος παρουσιάζουν προοπτική και αμφίδρομη συσχέτιση. Η v2 αντιμετωπίζει τον ύπνο ως πλαίσιο υγείας και όχι ως αριθμητική προστατευτική/επιβαρυντική πίστωση."
+            ),
             evidence_ids=("runge_2024_sleep_msk",),
             modifiable=False,
         ))
@@ -238,9 +322,12 @@ def build_findings(ctx: dict) -> list[Finding]:
     if ctx.get("job_demand") or ctx.get("low_control") or ctx.get("low_support"):
         findings.append(Finding(
             domain="Psychosocial context",
-            title="Psychosocial work factors flagged",
+            title=tr("Psychosocial work factors flagged", "Εντοπίστηκαν ψυχοκοινωνικοί παράγοντες εργασίας"),
             status="attention",
-            detail="Psychosocial and organisational factors can contribute to symptom development/persistence. They are kept separate from workstation geometry and disease prediction.",
+            detail=tr(
+                "Psychosocial and organisational factors can contribute to symptom development/persistence. They are kept separate from workstation geometry and disease prediction.",
+                "Οι ψυχοκοινωνικοί και οργανωτικοί παράγοντες μπορούν να συμβάλλουν στην εμφάνιση ή επιμονή συμπτωμάτων. Διατηρούνται ξεχωριστά από τη γεωμετρία της θέσης εργασίας και από οποιαδήποτε πρόβλεψη νόσου."
+            ),
             evidence_ids=("jun_2017_neck_office",),
         ))
 
