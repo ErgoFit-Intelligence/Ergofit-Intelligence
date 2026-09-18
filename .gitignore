@@ -5,3 +5,4 @@ venv/
 .DS_Store
 *.log
 .streamlit/secrets.toml
+.pytest_cache/
