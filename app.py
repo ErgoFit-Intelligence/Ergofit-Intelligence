@@ -202,20 +202,27 @@ with tabs[1]:
         for region in symptom_regions:
             region_label = region_labels[region]
             st.markdown(f"**{region_label}**")
-            sc1, sc2 = st.columns([2, 1])
-            severity = sc1.slider(
+
+            severity = st.slider(
                 f"{t['severity']} — {region_label}",
                 0, 10, 0,
                 key=f"severity_{region}",
             )
-            interference = sc2.checkbox(
-                (
-                    f"Do symptoms in {region_label.lower()} interfere with work?"
-                    if lang == "en"
-                    else f"Τα συμπτώματα στην περιοχή «{region_label}» επηρεάζουν την εργασία;"
-                ),
+
+            st.caption(
+                "Does this symptom interfere with work?"
+                if lang == "en"
+                else "Επηρεάζει αυτό το σύμπτωμα την εργασία;"
+            )
+            interference = st.radio(
+                f"Work interference — {region_label}",
+                [False, True],
+                format_func=lambda v: ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι"),
+                horizontal=True,
+                label_visibility="collapsed",
                 key=f"interference_{region}",
             )
+
             symptom_details[region] = {
                 "label": region_label,
                 "severity": severity,
