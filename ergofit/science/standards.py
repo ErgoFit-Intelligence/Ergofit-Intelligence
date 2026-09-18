@@ -39,3 +39,37 @@ POSTURE_REFERENCES = [
     ("wrist_flex_ext", "Wrist flexion/extension", -15, 15, 0),
     ("wrist_deviation", "Wrist radial/ulnar deviation", -10, 15, 0),
 ]
+
+
+# Greek display labels. Internal keys and numeric references remain language-neutral.
+CHAIR_FIT_LABELS_EL = {
+    "seat_height_adjustable": "Το ύψος της έδρας ρυθμίζεται ώστε τα πέλματα να στηρίζονται και οι μηροί να είναι άνετοι.",
+    "seat_depth_fit": "Το βάθος της έδρας αφήνει επαρκές κενό πίσω από τα γόνατα και στηρίζει το μεγαλύτερο μέρος των μηρών.",
+    "backrest_support": "Η πλάτη της καρέκλας στηρίζει τον κορμό και την οσφυϊκή περιοχή χωρίς να επιβάλλει στατική στάση.",
+    "backrest_adjustable": "Η κλίση/θέση της πλάτης ρυθμίζεται ανάλογα με τον χρήστη και την εργασία.",
+    "armrests_fit": "Τα μπράτσα στηρίζουν τα αντιβράχια χωρίς να ανυψώνουν τους ώμους ή να απομακρύνουν τους αγκώνες από το σώμα.",
+    "armrests_clear_desk": "Τα μπράτσα δεν εμποδίζουν τον εργαζόμενο να πλησιάσει την επιφάνεια εργασίας.",
+    "seat_width_fit": "Το πλάτος της έδρας παρέχει επαρκή χώρο για τη λεκάνη.",
+    "stable_base": "Η καρέκλα είναι σταθερή και κατάλληλη για το δάπεδο και τους τροχούς της.",
+    "controls_usable": "Οι μηχανισμοί ρύθμισης είναι κατανοητοί και προσβάσιμοι από καθιστή θέση.",
+}
+
+POSTURE_LABELS_EL = {
+    "trunk_inclination": "Κλίση κορμού από την κατακόρυφο",
+    "hip_angle": "Γωνία κορμού–μηρού / ισχίου",
+    "knee_angle": "Γωνία μηρού–κνήμης / γόνατος",
+    "ankle_angle": "Γωνία κνήμης–πέλματος / ποδοκνημικής",
+    "shoulder_abduction": "Απαγωγή ώμου",
+    "shoulder_flexion": "Κάμψη ώμου",
+    "elbow_angle": "Γωνία αγκώνα",
+    "wrist_flex_ext": "Κάμψη/έκταση καρπού",
+    "wrist_deviation": "Κερκιδική/ωλένια απόκλιση καρπού",
+}
+
+EN1335_LABELS_EL = {
+    "seat_height_mm": "Ύψος έδρας",
+    "seat_depth_adjustable_mm": "Ρυθμιζόμενο βάθος έδρας",
+    "seat_pad_width_mm": "Πλάτος έδρας",
+    "armrest_height_mm": "Ύψος μπράτσων",
+    "hip_clearance_mm": "Ελεύθερος χώρος λεκάνης",
+}
