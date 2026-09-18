@@ -184,7 +184,12 @@ with tabs[1]:
         "Elbow / forearm / wrist / hand": t["upper_limb"],
         "Low back": t["low_back"], "Lower limbs": t["lower_limb"],
     }
-    symptom_regions = st.multiselect(t["symptom_regions"], region_options, format_func=lambda x: region_labels[x])
+    symptom_regions = st.multiselect(
+        t["symptom_regions"],
+        region_options,
+        format_func=lambda x: region_labels[x],
+        placeholder="Choose options" if lang == "en" else "Επίλεξε περιοχές",
+    )
 
     symptom_details: dict[str, dict] = {}
     if symptom_regions:
@@ -219,7 +224,7 @@ with tabs[1]:
             st.divider()
 
     symptom_severity = max((d["severity"] for d in symptom_details.values()), default=0)
-    symptom_interference = any((d["interference"] for d in symptom_details.values()), default=False)
+    symptom_interference = any(d["interference"] for d in symptom_details.values()) if symptom_details else False
 
     digital_eye_strain = st.checkbox("Digital eye strain / visual fatigue" if lang == "en" else "Ψηφιακή κόπωση ματιών / οπτική κόπωση")
 
