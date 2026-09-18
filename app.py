@@ -147,7 +147,7 @@ with tabs[0]:
         with st.expander(t["direct_anthro"], expanded=False):
             st.caption(t["estimated_note"])
             a1, a2, a3 = st.columns(3)
-            pop_direct = a1.number_input(t["popliteal"], min_value=0.0, max_value=65.0, value=0.0, step=0.5)
+            pop_direct = a1.number_input(t["popliteal"], min_value=0.0, max_value=65.0, value=0.0, step=0.5, help=t["popliteal_help"])
             elbow_direct = a2.number_input(t["elbow_height"], min_value=0.0, max_value=40.0, value=0.0, step=0.5)
             eye_direct = a3.number_input(t["eye_height"], min_value=0.0, max_value=100.0, value=0.0, step=0.5)
 
@@ -155,7 +155,7 @@ with tabs[0]:
     st.markdown("#### " + ("Body-fit references" if lang == "en" else "Σωματομετρικές τιμές αναφοράς"))
     a1, a2, a3 = st.columns(3)
     _src = lambda s: s if lang == "en" else ("άμεση μέτρηση" if s == "direct" else "εκτίμηση")
-    a1.metric("Popliteal height" if lang == "en" else "Ύψος ιγνυακής χώρας", f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
+    a1.metric("Popliteal height" if lang == "en" else "Ύψος πίσω από το γόνατο", f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
     a2.metric("Seated elbow height" if lang == "en" else "Ύψος αγκώνα από την έδρα", f"{anthro.seated_elbow_cm:.1f} cm", _src(anthro.source_elbow))
     a3.metric("Seated eye height" if lang == "en" else "Ύψος ματιών από την έδρα", f"{anthro.seated_eye_cm:.1f} cm", _src(anthro.source_eye))
 
