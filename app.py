@@ -3861,117 +3861,124 @@ with tab_summary:
             )
         )
 
-        # Per-condition WEIGHTED risk analysis with tier-based scoring
-        # + confidence intervals from published meta-analyses
+        # ---- Aggregate: for each condition, collect ALL risk-factor
+        # labels that trigger it. Show each condition ONCE (was
+        # duplicating when multiple triggers linked to the same
+        # condition, per user feedback Sept 2026).
+        cond_to_triggers = {}
         for risk_label, condition_keys in risk_profile:
-            with st.expander(f"⚠ {risk_label}", expanded=True):
-                for ck in condition_keys:
-                    c = CONDITIONS[ck]
-                    analysis = weighted_risk_analysis(ck, ctx)
+            for ck in condition_keys:
+                cond_to_triggers.setdefault(ck, []).append(risk_label)
 
-                    st.markdown(f"**{_cond_name(c)}**")
-                    # Plain-language category label
-                    _CAT_TXT = {
-                        "el": {"Low": "Χαμηλός κίνδυνος",
-                               "Moderate": "Μεσαίος κίνδυνος",
-                               "High": "Υψηλός κίνδυνος"},
-                        "en": {"Low": "Low risk", "Moderate": "Moderate risk",
-                               "High": "High risk"},
-                    }[lang]
-                    _n_factors_txt = (
-                        f"— {len(analysis['factors'])} παράγοντες παρόντες"
-                        if lang == "el"
-                        else f"— {len(analysis['factors'])} factors present"
-                    )
-                    st.markdown(
-                        f"<div style='display:inline-block; padding:6px 12px; "
-                        f"border-radius:8px; background:{analysis['category_color']}; "
-                        f"color:white; font-weight:700; font-size:13px; "
-                        f"letter-spacing:.03em; margin-top:6px;'>"
-                        f"{_CAT_TXT.get(analysis['category'], analysis['category'])} "
-                        f"{_n_factors_txt}</div>",
-                        unsafe_allow_html=True,
-                    )
+        # Sort conditions by severity — highest risk first
+        def _cond_sort_key(ck):
+            cat = weighted_risk_analysis(ck, ctx)["category"]
+            return {"High": 0, "Moderate": 1, "Low": 2}.get(cat, 3)
 
-                    if analysis["factors"]:
-                        st.markdown(f"**{t['risk_factors_present']}**")
+        sorted_conditions = sorted(cond_to_triggers.keys(), key=_cond_sort_key)
 
-                        # Plain-language tier names + risk translation
-                        _TIER_TXT = {
-                            "el": {"small": "🟢 Μικρή επιβάρυνση",
-                                   "moderate": "🟠 Μεσαία επιβάρυνση",
-                                   "strong": "🔴 Μεγάλη επιβάρυνση"},
-                            "en": {"small": "🟢 Small factor",
-                                   "moderate": "🟠 Moderate factor",
-                                   "strong": "🔴 Strong factor"},
-                        }[lang]
+        # Language tables (defined once)
+        _CAT_TXT = {
+            "el": {"Low": "Χαμηλός κίνδυνος",
+                   "Moderate": "Μεσαίος κίνδυνος",
+                   "High": "Υψηλός κίνδυνος"},
+            "en": {"Low": "Low risk", "Moderate": "Moderate risk",
+                   "High": "High risk"},
+        }[lang]
+        _TIER_TXT = {
+            "el": {"small": "🟢 Μικρή επιβάρυνση",
+                   "moderate": "🟠 Μεσαία επιβάρυνση",
+                   "strong": "🔴 Μεγάλη επιβάρυνση"},
+            "en": {"small": "🟢 Small factor",
+                   "moderate": "🟠 Moderate factor",
+                   "strong": "🔴 Strong factor"},
+        }[lang]
+        _triggered_by  = "Ενεργοποιείται από:" if lang == "el" else "Triggered by:"
+        _protective_lb = "Προστατευτικοί παράγοντες:" if lang == "el" else "Protective factors:"
 
-                        for ff in analysis["factors"]:
-                            # OR 1.34 → "αυξάνει τον κίνδυνο ~34%"
-                            or_pct = int(round((ff["or"] - 1) * 100)) if ff["or"] > 1.0 else 0
-                            if lang == "el":
-                                risk_txt = (
-                                    f"αυξάνει τον κίνδυνο περίπου {or_pct}%"
-                                    if or_pct > 0 else ""
-                                )
-                                if ff["ci"] and or_pct > 0:
-                                    lo_pct = int(round((ff["ci"][0] - 1) * 100))
-                                    hi_pct = int(round((ff["ci"][1] - 1) * 100))
-                                    risk_txt += (
-                                        f" (η μελέτη δίνει μεταξύ {lo_pct}% και {hi_pct}%)"
-                                    )
-                            else:
-                                risk_txt = (
-                                    f"raises the risk by about {or_pct}%"
-                                    if or_pct > 0 else ""
-                                )
-                                if ff["ci"] and or_pct > 0:
-                                    lo_pct = int(round((ff["ci"][0] - 1) * 100))
-                                    hi_pct = int(round((ff["ci"][1] - 1) * 100))
-                                    risk_txt += (
-                                        f" (the study range is {lo_pct}%–{hi_pct}%)"
-                                    )
+        # ---- One expander per condition, with all triggers listed ----
+        for ck in sorted_conditions:
+            c        = CONDITIONS[ck]
+            triggers = cond_to_triggers[ck]
+            analysis = weighted_risk_analysis(ck, ctx)
+            n_f      = len(analysis["factors"])
+            n_word   = "παράγοντες παρόντες" if lang == "el" else "factors present"
+            cat_lbl  = _CAT_TXT.get(analysis["category"], analysis["category"])
 
-                            tier_txt = _TIER_TXT.get(ff["tier"], ff["tier"])
-                            source_txt = (
-                                f"Πηγή: {ff['source']}" if lang == "el"
-                                else f"Source: {ff['source']}"
-                            )
+            with st.expander(
+                f"⚠ {_cond_name(c)} — {cat_lbl} · {n_f} {n_word}",
+                expanded=(analysis["category"] in ("High", "Moderate")),
+            ):
+                # -- List which environmental risk factors triggered this --
+                st.markdown(f"**{_triggered_by}**")
+                for tr in triggers:
+                    st.markdown(f"- {tr}")
 
-                            st.markdown(
-                                f"<div style='padding:8px 12px; margin:5px 0; "
-                                f"background:#f8fafc; border-radius:8px; "
-                                f"border-left:4px solid {ff['color']}; font-size:13.5px;'>"
-                                f"<b>{ff['label']}</b>"
-                                f"<div style='font-size:12.5px; color:#334155; "
-                                f"margin-top:4px; line-height:1.5;'>"
-                                f"<b>{tier_txt}</b>"
-                                + (f" — {risk_txt}" if risk_txt else "")
-                                + f"</div>"
-                                f"<div style='font-size:11px; color:#64748b; "
-                                f"margin-top:4px; font-style:italic;'>{source_txt}</div>"
-                                f"</div>",
-                                unsafe_allow_html=True,
-                            )
-
-                    if analysis["protective_notes"]:
-                        st.markdown(
-                            "**"
-                            + ("Προστατευτικοί παράγοντες:" if lang == "el"
-                               else "Protective factors:")
-                            + f"** (−{abs(analysis['protective_credit'])} pts)"
-                        )
-                        for pn in analysis["protective_notes"]:
-                            st.markdown(
-                                f"<div style='padding:4px 10px; margin:3px 0; "
-                                f"background:#d1fae5; border-radius:6px; "
-                                f"border-left:3px solid #10b981; font-size:12px;'>"
-                                f"✓ {pn}</div>",
-                                unsafe_allow_html=True,
-                            )
+                # -- Present factors block --
+                if analysis["factors"]:
                     st.markdown("")
+                    st.markdown(f"**{t['risk_factors_present']}**")
+                    for ff in analysis["factors"]:
+                        or_pct = int(round((ff["or"] - 1) * 100)) if ff["or"] > 1.0 else 0
+                        if lang == "el":
+                            risk_txt = (
+                                f"αυξάνει τον κίνδυνο περίπου {or_pct}%"
+                                if or_pct > 0 else ""
+                            )
+                            if ff["ci"] and or_pct > 0:
+                                lo_pct = int(round((ff["ci"][0] - 1) * 100))
+                                hi_pct = int(round((ff["ci"][1] - 1) * 100))
+                                risk_txt += (
+                                    f" (η μελέτη δίνει μεταξύ {lo_pct}% και {hi_pct}%)"
+                                )
+                        else:
+                            risk_txt = (
+                                f"raises the risk by about {or_pct}%"
+                                if or_pct > 0 else ""
+                            )
+                            if ff["ci"] and or_pct > 0:
+                                lo_pct = int(round((ff["ci"][0] - 1) * 100))
+                                hi_pct = int(round((ff["ci"][1] - 1) * 100))
+                                risk_txt += (
+                                    f" (the study range is {lo_pct}%–{hi_pct}%)"
+                                )
 
-        # Consolidated summary view
+                        tier_txt   = _TIER_TXT.get(ff["tier"], ff["tier"])
+                        source_txt = (
+                            f"Πηγή: {ff['source']}" if lang == "el"
+                            else f"Source: {ff['source']}"
+                        )
+
+                        st.markdown(
+                            f"<div style='padding:8px 12px; margin:5px 0; "
+                            f"background:#f8fafc; border-radius:8px; "
+                            f"border-left:4px solid {ff['color']}; font-size:13.5px;'>"
+                            f"<b>{ff['label']}</b>"
+                            f"<div style='font-size:12.5px; color:#334155; "
+                            f"margin-top:4px; line-height:1.5;'>"
+                            f"<b>{tier_txt}</b>"
+                            + (f" — {risk_txt}" if risk_txt else "")
+                            + f"</div>"
+                            f"<div style='font-size:11px; color:#64748b; "
+                            f"margin-top:4px; font-style:italic;'>{source_txt}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                # -- Protective factors --
+                if analysis["protective_notes"]:
+                    st.markdown("")
+                    st.markdown(f"**{_protective_lb}**")
+                    for pn in analysis["protective_notes"]:
+                        st.markdown(
+                            f"<div style='padding:4px 10px; margin:3px 0; "
+                            f"background:#d1fae5; border-radius:6px; "
+                            f"border-left:3px solid #10b981; font-size:12px;'>"
+                            f"✓ {pn}</div>",
+                            unsafe_allow_html=True,
+                        )
+
+        # ---- Compact summary strip (one row per condition) ----------
         st.markdown("")
         st.markdown(f"#### {t['risk_summary_head']}")
         st.caption(t["risk_summary_caption"])
@@ -3981,7 +3988,7 @@ with tab_summary:
         }[lang]
         _f_word = "παράγοντες" if lang == "el" else "factors"
 
-        for ck in all_condition_keys:
+        for ck in sorted_conditions:
             c = CONDITIONS[ck]
             analysis = weighted_risk_analysis(ck, ctx)
             n_f = len(analysis["factors"])
