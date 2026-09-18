@@ -23,7 +23,15 @@ def build_recommendations(ctx: dict, findings: list[Finding], lang: str = "en") 
             ),
         ))
 
-    if any("Seat height differs" in t or "Work-surface height differs" in t or "Monitor" in t for t in titles):
+    if any(
+        "Seat height differs" in t
+        or "Work-surface height differs" in t
+        or "Monitor" in t
+        or "ύψος της έδρας" in t
+        or "επιφάνειας εργασίας" in t
+        or "οθόνης" in t
+        for t in titles
+    ):
         recs.append(Recommendation(
             priority="now",
             title=tr("Correct workstation fit before adding accessories", "Διόρθωσε πρώτα την προσαρμογή της θέσης εργασίας"),
