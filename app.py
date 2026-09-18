@@ -1409,7 +1409,7 @@ else:                           sex_anthro = "Combined average"
 # ---- BMI computation + WHO category + load multipliers ---------
 bmi = round(weight / ((height / 100) ** 2), 1)
 
-if   bmi < 18.5: bmi_cat, bmi_color, bmi_band = "Underweight",     "#3b82f6", "normal"
+if   bmi < 18.5: bmi_cat, bmi_color, bmi_band = "Underweight",     "#3b82f6", "underweight"
 elif bmi < 25.0: bmi_cat, bmi_color, bmi_band = "Normal",          "#10b981", "normal"
 elif bmi < 30.0: bmi_cat, bmi_color, bmi_band = "Overweight",      "#f59e0b", "overweight"
 elif bmi < 35.0: bmi_cat, bmi_color, bmi_band = "Obese class I",   "#ef4444", "obese"
@@ -2312,7 +2312,13 @@ def weighted_risk_analysis(condition_key, ctx):
 
     if "bmi" in f:
         band = ctx.get("bmi_band", "normal")
-        if band != "normal":
+        # Underweight is not a scored risk factor for these MSK conditions
+        # (it's a nutritional/skeletal concern that's out of scope for
+        # this ergonomic screening tool). Do not include as an elevated
+        # factor. Displayed as an informational note in the summary.
+        if band == "underweight":
+            pass  # skip — handled elsewhere as an info flag
+        elif band != "normal":
             or_v, ci_lo, ci_hi, src = FACTOR_EVIDENCE.get(
                 (condition_key, "bmi", band),
                 (f["bmi"].get(band, 1.0), None, None, "internal"),
@@ -2379,17 +2385,42 @@ def weighted_risk_analysis(condition_key, ctx):
          f"Prolonged mouse use ({ctx.get('hours_mouse')}h/day)")
     _try("sitting_hours_high",  ctx.get("hours_sitting", 0) >= 6,
          f"Prolonged workplace sitting ({ctx.get('hours_sitting')}h/day)")
-    _try("sex_female", is_female, "Female sex (population-level association)")
-    _try("sex_male",   is_male,   "Male sex (population-level association)")
+    # Demographics (sex, age) are non-modifiable population characteristics.
+    # We tag them as "demographic" so the UI can separate them from
+    # modifiable/behavioural risk factors — the person cannot change them.
+    def _add_demographic(label, or_value, ci, source):
+        tier, pts, color = _factor_tier(or_value)
+        factors_out.append({
+            "label":  label, "or": or_value, "ci": ci,
+            "tier":   tier, "points": pts, "color": color, "source": source,
+            "demographic": True,
+        })
+
+    def _try_demographic(factor_key, condition_met, label_fmt):
+        if factor_key in f and condition_met:
+            info = FACTOR_EVIDENCE.get((condition_key, factor_key))
+            if info:
+                or_v, ci_lo, ci_hi, src = info
+                ci = (ci_lo, ci_hi) if ci_lo else None
+                _add_demographic(label_fmt, or_v, ci, src)
+            else:
+                _add_demographic(
+                    label_fmt,
+                    f[factor_key] if isinstance(f[factor_key], (int, float)) else 1.0,
+                    None, "internal",
+                )
+
+    _try_demographic("sex_female", is_female, "Female sex")
+    _try_demographic("sex_male",   is_male,   "Male sex")
 
     if "age_over_30" in f and age > 30:
-        _try("age_over_30", True, f"Age > 30 ({age})")
+        _try_demographic("age_over_30", True, f"Age > 30 ({age})")
     if "age_over_45" in f and age > 45:
-        _try("age_over_45", True, f"Age > 45 ({age})")
+        _try_demographic("age_over_45", True, f"Age > 45 ({age})")
     if "age_over_60" in f and age > 60:
-        _try("age_over_60", True, f"Age > 60 ({age})")
+        _try_demographic("age_over_60", True, f"Age > 60 ({age})")
     if "age_35_to_54" in f and 35 <= age <= 54:
-        _try("age_35_to_54", True, f"Peak-incidence age band 35-54 ({age})")
+        _try_demographic("age_35_to_54", True, f"Peak-incidence age band 35-54 ({age})")
 
     _try("diabetes",        ctx.get("diabetes", False),      "Diabetes mellitus")
     _try("smoking_current", ctx.get("smoking") == "Current", "Current smoker")
@@ -2408,24 +2439,32 @@ def weighted_risk_analysis(condition_key, ctx):
         _try("oral_contra", True, "Oral contraceptive use")
 
     # ---- Modifiable-risk credits (protective factors) ----------
-    # A very active person or good sleep/nutrition profile REDUCES
-    # overall risk; this is reflected as a downward adjustment
-    # (small negative points) rather than a hard-coded protective OR.
+    # Calibrated magnitudes (Sept 2026, data-analyst review):
+    #   Exercise (3+/week):     −2 pts (strongest effect in literature —
+    #                                    e.g. Shiri 2017 leisure PA vs LBP,
+    #                                    Sundstrup 2020 muscle strength vs MSD)
+    #   Meets WHO PA:           −1 pt  (partially overlaps with exercise,
+    #                                    so smaller marginal credit)
+    #   Adequate sleep (7-9h):  −1 pt  (Bonvanie 2016 sleep-pain link)
+    #   High Mediterranean:     −1 pt  (modest anti-inflammatory effect —
+    #                                    Veronese 2019, more evidence for
+    #                                    knee/hip OA than office MSD)
+    # Max protective credit: −5 pts (if all four apply).
     # Never allow the score to go negative.
     protective_credit = 0
     protective_notes  = []
     if ctx.get("exercise_freq") in ("3-5x/week", "6+/week"):
-        protective_credit -= 1
-        protective_notes.append("Regular exercise (3+ sessions/week) — evidence for reduced MSK symptom incidence")
-    if ctx.get("sleep_hours") in ("7-8h", "8-9h"):
-        protective_credit -= 1
-        protective_notes.append("Adequate sleep (7-9h) — evidence for lower musculoskeletal pain intensity")
-    if ctx.get("diet_med") == "High":
-        protective_credit -= 1
-        protective_notes.append("High Mediterranean-diet adherence — anti-inflammatory effect")
+        protective_credit -= 2
+        protective_notes.append("Regular exercise (3+ sessions/week) — strongest single protective factor for MSK symptoms (−2 pts)")
     if ctx.get("non_work_pa_min", 0) >= 150:
         protective_credit -= 1
-        protective_notes.append("Meets WHO PA guidelines (≥150 min/week moderate PA)")
+        protective_notes.append("Meets WHO PA guidelines (≥150 min/week moderate activity) (−1 pt)")
+    if ctx.get("sleep_hours") in ("7-8h", "8-9h"):
+        protective_credit -= 1
+        protective_notes.append("Adequate sleep (7-9h) — lowers musculoskeletal pain intensity (−1 pt)")
+    if ctx.get("diet_med") == "High":
+        protective_credit -= 1
+        protective_notes.append("High Mediterranean-diet adherence — modest anti-inflammatory effect (−1 pt)")
 
     # ---- Compute weighted score ---------------------------------
     raw_score = sum(x["points"] for x in factors_out)
@@ -2436,10 +2475,13 @@ def weighted_risk_analysis(condition_key, ctx):
     # Theoretical max points if every factor was "strong" (3 pts each)
     score_max = 3 * len([k for k in f.keys() if k != "bmi"]) + (3 if "bmi" in f else 0)
 
-    # Category tiers
-    if score <= 2:
+    # Category tiers — calibrated Sept 2026 after data-analyst validation.
+    # Old thresholds (≤2/3-5/≥6) put typical office workers at "High"
+    # after only 3 baseline factors (sex+computer+mouse). New thresholds
+    # give room for realistic profiles without alarm fatigue.
+    if score <= 3:
         category, cat_color = "Low", "#10b981"
-    elif score <= 5:
+    elif score <= 7:
         category, cat_color = "Moderate", "#f59e0b"
     else:
         category, cat_color = "High", "#ef4444"
@@ -3595,6 +3637,22 @@ with tab_summary:
             + '</div>',
             unsafe_allow_html=True,
         )
+    elif bmi_band == "underweight":
+        # Underweight is not scored as an MSK risk factor here, but the
+        # ergonomist should be aware — implications for bone density,
+        # spine cushioning, and referral to a dietitian.
+        _uw_msg = (
+            f"⚠️ BMI {bmi} kg/m² ({bmi_cat}) — υποβάρος. Δεν αξιολογείται "
+            "ως εργονομικός παράγοντας κινδύνου εδώ, αλλά συνιστάται "
+            "παραπομπή για διατροφική αξιολόγηση (κίνδυνος οστεοπόρωσης, "
+            "σαρκοπενίας, μειωμένη μυϊκή στήριξη σπονδυλικής)."
+            if lang == "el" else
+            f"⚠️ BMI {bmi} kg/m² ({bmi_cat}) — underweight. Not scored as "
+            "an ergonomic risk factor here, but a nutritional referral is "
+            "advisable (concerns: osteoporosis, sarcopenia, reduced spinal "
+            "muscular support)."
+        )
+        st.warning(_uw_msg)
     else:
         st.caption(
             f"BMI {bmi} kg/m² ({bmi_cat}). The following ergonomic considerations "
@@ -3914,11 +3972,18 @@ with tab_summary:
                 for tr in triggers:
                     st.markdown(f"- {tr}")
 
-                # -- Present factors block --
-                if analysis["factors"]:
+                # -- Present factors block (modifiable + demographic split) --
+                modifiable_ff = [x for x in analysis["factors"] if not x.get("demographic")]
+                demographic_ff = [x for x in analysis["factors"] if x.get("demographic")]
+                _demog_head = (
+                    "Δημογραφικοί παράγοντες (μη-τροποποιήσιμοι):" if lang == "el"
+                    else "Demographic factors (non-modifiable):"
+                )
+
+                if modifiable_ff:
                     st.markdown("")
                     st.markdown(f"**{t['risk_factors_present']}**")
-                    for ff in analysis["factors"]:
+                    for ff in modifiable_ff:
                         or_pct = int(round((ff["or"] - 1) * 100)) if ff["or"] > 1.0 else 0
                         if lang == "el":
                             risk_txt = (
@@ -3961,6 +4026,37 @@ with tab_summary:
                             + f"</div>"
                             f"<div style='font-size:11px; color:#64748b; "
                             f"margin-top:4px; font-style:italic;'>{source_txt}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                # -- Demographic (non-modifiable) factors — separate section --
+                if demographic_ff:
+                    st.markdown("")
+                    st.markdown(f"**{_demog_head}**")
+                    for ff in demographic_ff:
+                        or_pct = int(round((ff["or"] - 1) * 100)) if ff["or"] > 1.0 else 0
+                        if lang == "el":
+                            note = (
+                                f"στατιστική συσχέτιση επιπέδου πληθυσμού · "
+                                f"+~{or_pct}% κίνδυνος στον γενικό πληθυσμό"
+                            ) if or_pct > 0 else "στατιστική συσχέτιση επιπέδου πληθυσμού"
+                        else:
+                            note = (
+                                f"population-level association · "
+                                f"+~{or_pct}% risk in the general population"
+                            ) if or_pct > 0 else "population-level association"
+                        source_txt = (
+                            f"Πηγή: {ff['source']}" if lang == "el"
+                            else f"Source: {ff['source']}"
+                        )
+                        st.markdown(
+                            f"<div style='padding:6px 12px; margin:4px 0; "
+                            f"background:#f1f5f9; border-radius:8px; "
+                            f"border-left:3px solid #94a3b8; font-size:13px;'>"
+                            f"<b>{ff['label']}</b> — <span style='color:#64748b;'>{note}</span>"
+                            f"<div style='font-size:11px; color:#64748b; "
+                            f"margin-top:3px; font-style:italic;'>{source_txt}</div>"
                             f"</div>",
                             unsafe_allow_html=True,
                         )
