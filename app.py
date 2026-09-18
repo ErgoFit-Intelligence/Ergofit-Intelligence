@@ -233,7 +233,7 @@ with tabs[1]:
     symptom_severity = max((d["severity"] for d in symptom_details.values()), default=0)
     symptom_interference = any(d["interference"] for d in symptom_details.values()) if symptom_details else False
 
-    digital_eye_strain = st.checkbox("Digital eye strain / visual fatigue" if lang == "en" else "Ψηφιακή κόπωση ματιών / οπτική κόπωση")
+    digital_eye_strain = st.checkbox("Digital eye strain / visual fatigue" if lang == "en" else "Κόπωση ματιών από τη χρήση της οθόνης")
 
     st.markdown("#### " + ("Work exposure" if lang == "en" else "Εργασιακή έκθεση"))
     c1, c2, c3 = st.columns(3)
