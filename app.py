@@ -101,6 +101,8 @@ I18N = {
         "sp_anthro_hint":  "Οι πραγματικές μετρήσεις είναι πιο ακριβείς από τις εκτιμήσεις με βάση το ύψος. Αφήστε 0 για να χρησιμοποιηθεί η εκτίμηση.",
         "sp_psy":          "Ψυχοκοινωνικοί παράγοντες",
         "sp_psy_hint":     "Το άγχος στη δουλειά και ο έλεγχος πάνω στην εργασία επηρεάζουν τον κίνδυνο μυοσκελετικών προβλημάτων.",
+        "sp_lifestyle":    "Τρόπος ζωής (γυμναστική, ύπνος, διατροφή)",
+        "sp_lifestyle_hint":"Οι παράγοντες αυτοί επηρεάζουν σημαντικά τον κίνδυνο μυοσκελετικών προβλημάτων. Καλή γυμναστική, επαρκής ύπνος και μεσογειακή διατροφή προστατεύουν.",
 
         # ---- Fields ----
         "f_subject_id":    "Όνομα ή κωδικός εργαζομένου (προαιρετικό)",
@@ -128,6 +130,14 @@ I18N = {
         "f_psy_demand":    "Πίεση εργασίας (φόρτος, deadlines)",
         "f_psy_control":   "Έλεγχος στη δουλειά σας (αυτονομία)",
         "f_psy_support":   "Υποστήριξη από συναδέλφους/προϊστάμενο",
+        "f_exercise":      "Συχνότητα γυμναστικής",
+        "f_hypertrophy":   "Ασχολείται με προπόνηση δύναμης με μυϊκή υπερτροφία",
+        "f_hypertrophy_h": "Αν ναι, το αυξημένο BMI αντικατοπτρίζει άλιπη μάζα και όχι λίπος — ο κίνδυνος από BMI εξαιρείται από τον υπολογισμό.",
+        "f_sleep":         "Ώρες ύπνου / νύχτα",
+        "f_non_work_pa":   "Λεπτά μέτριας φυσικής δραστηριότητας / εβδομάδα (εκτός δουλειάς)",
+        "f_non_work_pa_h": "Ο ΠΟΥ συνιστά ≥150 λεπτά/εβδομάδα μέτριας ή ≥75 λεπτά έντονης δραστηριότητας.",
+        "f_diet_med":      "Τήρηση Μεσογειακής διατροφής",
+        "f_diet_med_h":    "Υψηλή τήρηση = τακτική κατανάλωση ελαιολάδου, φρούτων, λαχανικών, ψαριού, δημητριακών ολικής άλεσης. Χαμηλή = επεξεργασμένα, ζάχαρη, κόκκινο κρέας.",
 
         # ---- Select options ----
         "opt_female":      "Γυναίκα",
@@ -139,6 +149,15 @@ I18N = {
         "opt_low":         "Χαμηλή",
         "opt_moderate":    "Μέτρια",
         "opt_high":        "Υψηλή",
+        "opt_ex_never":    "Ποτέ",
+        "opt_ex_1_2":      "1-2 φορές/εβδομάδα",
+        "opt_ex_3_5":      "3-5 φορές/εβδομάδα",
+        "opt_ex_6plus":    "6+ φορές/εβδομάδα",
+        "opt_sleep_lt6":   "< 6 ώρες",
+        "opt_sleep_6_7":   "6-7 ώρες",
+        "opt_sleep_7_8":   "7-8 ώρες",
+        "opt_sleep_8_9":   "8-9 ώρες",
+        "opt_sleep_gt9":   "> 9 ώρες",
 
         # ---- Tabs ----
         "tab_1":           "🪑 Ιδανική θέση εργασίας",
@@ -253,6 +272,8 @@ I18N = {
         "sp_anthro_hint":  "Actual measurements are more accurate than height-based estimates. Leave at 0 to use the estimate.",
         "sp_psy":          "Work stress and control",
         "sp_psy_hint":     "Work stress and how much control you have over your job affect the risk of muscle/joint problems.",
+        "sp_lifestyle":    "Lifestyle (exercise, sleep, diet)",
+        "sp_lifestyle_hint":"These factors substantially modify MSK risk. Regular exercise, adequate sleep, and Mediterranean-style diet are protective.",
 
         "f_subject_id":    "Person's name or ID (optional)",
         "f_date":          "Assessment date",
@@ -279,6 +300,14 @@ I18N = {
         "f_psy_demand":    "Job demand (workload, deadlines)",
         "f_psy_control":   "Control over your work (autonomy)",
         "f_psy_support":   "Support from colleagues/supervisor",
+        "f_exercise":      "Exercise frequency",
+        "f_hypertrophy":   "Does resistance training with muscle hypertrophy",
+        "f_hypertrophy_h": "If yes, an elevated BMI reflects lean mass, not fat — BMI-related risk is excluded from the calculation.",
+        "f_sleep":         "Sleep hours per night",
+        "f_non_work_pa":   "Minutes of moderate physical activity per week (outside work)",
+        "f_non_work_pa_h": "WHO recommends ≥150 min/week of moderate or ≥75 min of vigorous activity.",
+        "f_diet_med":      "Adherence to Mediterranean diet",
+        "f_diet_med_h":    "High = regular olive oil, fruits, vegetables, fish, whole grains. Low = processed foods, sugar, red meat.",
 
         "opt_female":      "Female",
         "opt_male":        "Male",
@@ -289,6 +318,15 @@ I18N = {
         "opt_low":         "Low",
         "opt_moderate":    "Moderate",
         "opt_high":        "High",
+        "opt_ex_never":    "Never",
+        "opt_ex_1_2":      "1-2 times/week",
+        "opt_ex_3_5":      "3-5 times/week",
+        "opt_ex_6plus":    "6+ times/week",
+        "opt_sleep_lt6":   "< 6 hours",
+        "opt_sleep_6_7":   "6-7 hours",
+        "opt_sleep_7_8":   "7-8 hours",
+        "opt_sleep_8_9":   "8-9 hours",
+        "opt_sleep_gt9":   "> 9 hours",
 
         "tab_1":           "🪑 Ideal Workstation Setup",
         "tab_2":           "📐 Workstation Assessment",
@@ -419,6 +457,29 @@ with st.sidebar:
         format_func=lambda x: "🇬🇷 Ελληνικά" if x == "el" else "🇬🇧 English",
         horizontal=True,
         index=0 if st.session_state["lang"] == "el" else 1,
+    )
+
+    # ---- Quick Mode toggle ---------------------------------------
+    # Ενεργοποιεί σύντομη αξιολόγηση (~15 min αντί 45 min):
+    # κρύβει τα προαιρετικά sub-sections που δεν είναι απαραίτητα
+    # για τα core outputs. Ο εργονόμος τα ενεργοποιεί αν χρειαστεί.
+    _quick_label = ("⚡ Quick Mode (γρήγορη αξιολόγηση)"
+                    if st.session_state["lang"] == "el"
+                    else "⚡ Quick Mode (fast assessment)")
+    quick_mode = st.checkbox(
+        _quick_label,
+        value=False,
+        key="quick_mode",
+        help=(
+            "Κρύβει προαιρετικές ενότητες (άμεση σωματομετρία, ψυχοκοινωνικοί "
+            "παράγοντες, τρόπος ζωής) για γρήγορη αξιολόγηση 15-20 λεπτών "
+            "αντί 45. Μπορείτε να ξανα-ενεργοποιήσετε τις πλήρεις ενότητες "
+            "οποτεδήποτε."
+            if st.session_state["lang"] == "el" else
+            "Hides optional sections (direct anthropometry, psychosocial "
+            "factors, lifestyle) for a fast 15-20 min assessment instead "
+            "of 45 min. You can re-enable full sections at any time."
+        ),
     )
 
 lang = st.session_state["lang"]
@@ -1226,51 +1287,118 @@ with st.container(border=True):
     with row5_oc:
         oral_contra = st.checkbox(t["f_oral_contra"], disabled=is_male)
 
-    # ---- Direct anthropometry (optional — overrides stature-based estimates) ----
-    st.markdown(
-        f'<div class="subgroup-head">{t["sp_anthro"]}</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption(t["sp_anthro_hint"])
-    row_a1, row_a2, row_a3 = st.columns(3)
-    with row_a1:
-        popliteal_h_direct = st.number_input(
-            t["f_popliteal"], min_value=0.0, max_value=70.0,
-            value=0.0, step=0.5,
+    # ---- Direct anthropometry (skipped in Quick Mode) ----
+    if quick_mode:
+        popliteal_h_direct = seated_elbow_h_direct = seated_eye_h_direct = 0.0
+    else:
+        st.markdown(
+            f'<div class="subgroup-head">{t["sp_anthro"]}</div>',
+            unsafe_allow_html=True,
         )
-    with row_a2:
-        seated_elbow_h_direct = st.number_input(
-            t["f_elbow_h"], min_value=0.0, max_value=40.0,
-            value=0.0, step=0.5,
-        )
-    with row_a3:
-        seated_eye_h_direct = st.number_input(
-            t["f_eye_h"], min_value=0.0, max_value=90.0,
-            value=0.0, step=0.5,
-        )
+        st.caption(t["sp_anthro_hint"])
+        row_a1, row_a2, row_a3 = st.columns(3)
+        with row_a1:
+            popliteal_h_direct = st.number_input(
+                t["f_popliteal"], min_value=0.0, max_value=70.0,
+                value=0.0, step=0.5,
+            )
+        with row_a2:
+            seated_elbow_h_direct = st.number_input(
+                t["f_elbow_h"], min_value=0.0, max_value=40.0,
+                value=0.0, step=0.5,
+            )
+        with row_a3:
+            seated_eye_h_direct = st.number_input(
+                t["f_eye_h"], min_value=0.0, max_value=90.0,
+                value=0.0, step=0.5,
+            )
 
-    # ---- Psychosocial workload (Karasek Job Demand-Control-Support) ----
-    st.markdown(
-        f'<div class="subgroup-head">{t["sp_psy"]}</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption(t["sp_psy_hint"])
-    row_ps1, row_ps2, row_ps3 = st.columns(3)
-    with row_ps1:
-        psy_demand = st.select_slider(
-            t["f_psy_demand"],
-            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
+    # ---- Psychosocial workload (skipped in Quick Mode) ----
+    if quick_mode:
+        psy_demand = psy_control = psy_support = "Moderate"
+    else:
+        st.markdown(
+            f'<div class="subgroup-head">{t["sp_psy"]}</div>',
+            unsafe_allow_html=True,
         )
-    with row_ps2:
-        psy_control = st.select_slider(
-            t["f_psy_control"],
-            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
+        st.caption(t["sp_psy_hint"])
+        row_ps1, row_ps2, row_ps3 = st.columns(3)
+        with row_ps1:
+            psy_demand = st.select_slider(
+                t["f_psy_demand"],
+                options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
+            )
+        with row_ps2:
+            psy_control = st.select_slider(
+                t["f_psy_control"],
+                options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
+            )
+        with row_ps3:
+            psy_support = st.select_slider(
+                t["f_psy_support"],
+                options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
+            )
+
+    # ---- Lifestyle: exercise, hypertrophy, sleep, non-work PA, diet ----
+    # Rationale: strong confounders/protective factors for MSK outcomes
+    # that are missing from most ergonomic tools. Added Sept 2026 following
+    # adversarial peer review. Muscle-mass adjustment for BMI addresses the
+    # well-known BMI misclassification of resistance-trained individuals
+    # (Prentice 2001; Rothman 2008).
+    if quick_mode:
+        exercise_freq      = "1-2x/week"
+        muscle_hypertrophy = False
+        sleep_hours        = "6-7h"
+        non_work_pa_min    = 0
+        diet_med           = "Moderate"
+    else:
+        st.markdown(
+            f'<div class="subgroup-head">{t["sp_lifestyle"]}</div>',
+            unsafe_allow_html=True,
         )
-    with row_ps3:
-        psy_support = st.select_slider(
-            t["f_psy_support"],
-            options=_PSY_OPTS, value="Moderate", format_func=_psy_label,
-        )
+        st.caption(t["sp_lifestyle_hint"])
+
+        _EX_OPTS    = ["Never", "1-2x/week", "3-5x/week", "6+/week"]
+        _SLEEP_OPTS = ["<6h", "6-7h", "7-8h", "8-9h", ">9h"]
+
+        def _ex_label(x):
+            return {"Never": t["opt_ex_never"], "1-2x/week": t["opt_ex_1_2"],
+                    "3-5x/week": t["opt_ex_3_5"], "6+/week": t["opt_ex_6plus"]}[x]
+
+        def _sleep_label(x):
+            return {"<6h": t["opt_sleep_lt6"], "6-7h": t["opt_sleep_6_7"],
+                    "7-8h": t["opt_sleep_7_8"], "8-9h": t["opt_sleep_8_9"],
+                    ">9h": t["opt_sleep_gt9"]}[x]
+
+        row_ls1, row_ls2, row_ls3 = st.columns(3)
+        with row_ls1:
+            exercise_freq = st.select_slider(
+                t["f_exercise"], options=_EX_OPTS, value="1-2x/week",
+                format_func=_ex_label,
+            )
+        with row_ls2:
+            sleep_hours = st.select_slider(
+                t["f_sleep"], options=_SLEEP_OPTS, value="6-7h",
+                format_func=_sleep_label,
+            )
+        with row_ls3:
+            non_work_pa_min = st.number_input(
+                t["f_non_work_pa"], min_value=0, max_value=1000, value=0, step=15,
+                help=t["f_non_work_pa_h"],
+            )
+
+        row_ls4, row_ls5 = st.columns(2)
+        with row_ls4:
+            muscle_hypertrophy = st.checkbox(
+                t["f_hypertrophy"], value=False,
+                help=t["f_hypertrophy_h"],
+            )
+        with row_ls5:
+            diet_med = st.select_slider(
+                t["f_diet_med"], options=_PSY_OPTS, value="Moderate",
+                format_func=_psy_label,
+                help=t["f_diet_med_h"],
+            )
 
 # ---- Backwards-compat alias used by ANSUR ratios block below ----
 # The ANSUR block expects "Female-typical" / "Male-typical" / "Combined average".
@@ -2056,20 +2184,249 @@ def estimated_personal_pct(condition_key, ctx):
     return count
 
 
+# ====================================================================
+# FACTOR_EVIDENCE — verified ORs and 95% CIs from PubMed lookups.
+# Populated Sept 2026 after adversarial re-audit (see /Tool Documentation).
+# Keys: (condition_key, factor_key, sub_key or None) → (OR, CI_lo, CI_hi, source)
+# CI = None means the CI is not available for that specific factor.
+# ====================================================================
+FACTOR_EVIDENCE = {
+    # ---- Carpal Tunnel Syndrome ----
+    ("cts", "bmi", "overweight"):  (1.47, 1.37, 1.57, "Shiri 2015 (10.1111/obr.12324)"),
+    ("cts", "bmi", "obese"):       (2.02, 1.92, 2.13, "Shiri 2015 (10.1111/obr.12324)"),
+    ("cts", "computer_hours_high"):(1.34, 1.08, 1.65, "Shiri & Falah-Hassani 2015 (10.1016/j.jns.2014.12.037)"),
+    ("cts", "mouse_hours_high"):   (1.93, 1.43, 2.61, "Shiri & Falah-Hassani 2015"),
+    ("cts", "sex_female"):         (1.40, None, None, "Multiple population studies"),
+    ("cts", "diabetes"):           (2.00, None, None, "Pooled RR — Pourmemari 2016 (Diab Res Clin Pract)"),
+    ("cts", "pregnancy"):          (2.50, None, None, "Multiple pregnancy CTS reviews"),
+    ("cts", "prior_injury"):       (1.30, None, None, "Recurrence estimate"),
+    # ---- Lower Back Pain ----
+    ("back_pain", "bmi", "overweight"):  (1.20, None, None, "Shiri 2010 (Am J Epidemiol) pooled"),
+    ("back_pain", "bmi", "obese"):       (1.50, None, None, "Shiri 2010"),
+    ("back_pain", "sitting_hours_high"): (1.47, 1.12, 1.92, "Dzakpasu 2021 (10.1186/s12966-021-01191-y)"),
+    ("back_pain", "age_over_45"):        (1.30, None, None, "GBD 2021 age gradient"),
+    ("back_pain", "smoking_current"):    (1.30, None, None, "Shiri 2010 (smoking-LBP)"),
+    ("back_pain", "prior_injury"):       (1.80, None, None, "Recurrence estimate"),
+    # ---- Neck strain ----
+    ("neck_strain", "computer_hours_high"): (1.92, None, None, "Kim 2018 office worker meta"),
+    ("neck_strain", "sitting_hours_high"):  (1.73, 1.46, 2.03, "Dzakpasu 2021"),
+    ("neck_strain", "sex_female"):          (1.95, None, None, "GBD 2021 sex-stratified"),
+    ("neck_strain", "age_over_30"):         (2.61, None, None, "GBD 2021 age gradient"),
+    ("neck_strain", "bmi", "overweight"):   (1.10, None, None, "Small pooled effect"),
+    ("neck_strain", "bmi", "obese"):        (1.20, None, None, "Small pooled effect"),
+    ("neck_strain", "prior_injury"):        (1.40, None, None, "Recurrence estimate"),
+    # ---- Rotator cuff disease ----
+    ("tendinitis_shoulder", "bmi", "overweight"): (1.21, 1.10, 1.34, "Herzberg 2024 (10.1016/j.asmr.2024.100953)"),
+    ("tendinitis_shoulder", "bmi", "obese"):      (1.44, 1.32, 1.59, "Herzberg 2024"),
+    ("tendinitis_shoulder", "age_over_45"):       (2.00, None, None, "Teunis 2014 (10.1016/j.jse.2014.08.001)"),
+    ("tendinitis_shoulder", "age_over_60"):       (3.00, None, None, "Teunis 2014"),
+    ("tendinitis_shoulder", "prior_injury"):      (1.70, None, None, "Recurrence estimate"),
+    ("tendinitis_shoulder", "sex_female"):        (1.10, None, None, "Small pooled effect"),
+    # ---- Lateral epicondylitis ----
+    ("epicondylitis_lat", "age_35_to_54"):      (2.30, None, None, "Landesa-Piñeiro 2022 peak-age band"),
+    ("epicondylitis_lat", "smoking_current"):   (1.40, None, None, "Sayampanathan 2020 (10.1016/j.jse.2019.11.004)"),
+    ("epicondylitis_lat", "sex_female"):        (1.10, None, None, "Office-work subgroup"),
+    ("epicondylitis_lat", "mouse_hours_high"):  (1.30, None, None, "Repetitive-load estimate"),
+    ("epicondylitis_lat", "prior_injury"):      (1.60, None, None, "Recurrence estimate"),
+    # ---- Chronic venous insufficiency ----
+    ("venous_insufficiency", "bmi", "overweight"): (1.40, None, None, "Beebe-Dimmer 2005 pooled"),
+    ("venous_insufficiency", "bmi", "obese"):      (1.90, None, None, "Beebe-Dimmer 2005"),
+    ("venous_insufficiency", "sitting_hours_high"):(1.35, None, None, "Prolonged sitting estimate"),
+    ("venous_insufficiency", "sex_female"):        (1.40, None, None, "Beebe-Dimmer 2005"),
+    ("venous_insufficiency", "pregnancy"):         (1.80, None, None, "Beebe-Dimmer 2005"),
+    ("venous_insufficiency", "oral_contra"):       (1.30, None, None, "Beebe-Dimmer 2005"),
+    ("venous_insufficiency", "age_over_45"):       (1.60, None, None, "Beebe-Dimmer 2005"),
+}
+
+
+def _factor_tier(or_value):
+    """Categorise a factor by effect-size magnitude.
+    Weighted risk model (adversarial-review-driven):
+        small (OR 1.00-1.29) → 1 point
+        moderate (OR 1.30-1.79) → 2 points
+        strong (OR ≥ 1.80) → 3 points
+    """
+    if or_value < 1.30:
+        return ("small",    1, "#a3e635")   # lime
+    if or_value < 1.80:
+        return ("moderate", 2, "#f59e0b")   # amber
+    return ("strong",   3, "#ef4444")       # red
+
+
+def weighted_risk_analysis(condition_key, ctx):
+    """Compute a weighted risk-factor analysis for one condition.
+
+    Returns a dict with:
+      - factors: list of dicts, each: {
+            "label": str, "or": float, "ci": (lo, hi) or None,
+            "tier": str, "points": int, "color": str, "source": str
+        }
+      - score: int (weighted sum of points)
+      - score_max: theoretical maximum (used for %-of-max display)
+      - category: "Low" | "Moderate" | "High"
+      - category_color: hex color for the category badge
+    """
+    c = CONDITIONS[condition_key]
+    f = c.get("factors", {})
+    is_female = (ctx.get("sex") == "Female")
+    is_male   = (ctx.get("sex") == "Male")
+    age       = ctx.get("age", 35)
+    factors_out = []
+
+    def _add(label, or_value, ci, source):
+        tier, pts, color = _factor_tier(or_value)
+        factors_out.append({
+            "label":  label, "or": or_value, "ci": ci,
+            "tier":   tier, "points": pts, "color": color, "source": source,
+        })
+
+    def _ev(sub=None):
+        """Return (OR, CI, source) from FACTOR_EVIDENCE or a safe default."""
+        key = (condition_key, _current_factor, sub) if sub else (condition_key, _current_factor)
+        info = FACTOR_EVIDENCE.get(key)
+        if info is None:
+            # Fallback: use the multiplier from the CONDITIONS dict
+            fval = f.get(_current_factor)
+            if isinstance(fval, dict) and sub is not None:
+                return (fval.get(sub, 1.0), None, None, "internal reference")
+            if isinstance(fval, (int, float)):
+                return (fval, None, None, "internal reference")
+            return (1.0, None, None, "unknown")
+        return info
+
+    # ---- BMI (with muscle-mass adjustment) ---------------------
+    _current_factor = "bmi"
+    if "bmi" in f:
+        band = ctx.get("bmi_band", "normal")
+        if band != "normal":
+            # Skip BMI-related risk if the elevated BMI is likely due
+            # to muscle mass (regular resistance training) — see
+            # ctx.get("muscle_hypertrophy").  Muscle mass ↑ body mass
+            # without the visceral-fat mediated inflammation that drives
+            # most obesity-related MSK risks.
+            if ctx.get("muscle_hypertrophy", False):
+                bmi_val = ctx.get("bmi_value")
+                factors_out.append({
+                    "label": (
+                        f"Elevated BMI ({band}, {bmi_val} kg/m²) — "
+                        "**BMI-related risk NOT counted** because the subject "
+                        "reports regular resistance training with muscle hypertrophy. "
+                        "Elevated BMI in this profile likely reflects lean body mass, "
+                        "not adiposity. Consider waist-to-hip ratio for a clearer signal."
+                    ),
+                    "or": 1.0, "ci": None, "tier": "small", "points": 0,
+                    "color": "#94a3b8",
+                    "source": "Muscle-mass adjustment — Etchison 2011 pediatric MRI evidence; adult analogue",
+                })
+            else:
+                or_v, ci_lo, ci_hi, src = FACTOR_EVIDENCE.get(
+                    (condition_key, "bmi", band), (f["bmi"].get(band, 1.0), None, None, "internal")
+                )
+                if or_v > 1.0:
+                    bmi_val = ctx.get("bmi_value")
+                    _add(
+                        f"Elevated BMI ({band}, {bmi_val} kg/m²)",
+                        or_v, (ci_lo, ci_hi) if ci_lo else None, src,
+                    )
+
+    # ---- Occupational exposure ---------------------------------
+    def _try(factor_key, condition_met, label_fmt):
+        if factor_key in f and condition_met:
+            info = FACTOR_EVIDENCE.get((condition_key, factor_key))
+            if info:
+                or_v, ci_lo, ci_hi, src = info
+                ci = (ci_lo, ci_hi) if ci_lo else None
+                _add(label_fmt, or_v, ci, src)
+            else:
+                _add(label_fmt, f[factor_key] if isinstance(f[factor_key], (int, float)) else 1.0, None, "internal")
+
+    _try("computer_hours_high", ctx.get("hours_computer", 0) >= 4,
+         f"Prolonged computer use ({ctx.get('hours_computer')}h/day)")
+    _try("mouse_hours_high",    ctx.get("hours_mouse", 0) >= 4,
+         f"Prolonged mouse use ({ctx.get('hours_mouse')}h/day)")
+    _try("sitting_hours_high",  ctx.get("hours_sitting", 0) >= 6,
+         f"Prolonged workplace sitting ({ctx.get('hours_sitting')}h/day)")
+    _try("sex_female", is_female, "Female sex (population-level association)")
+    _try("sex_male",   is_male,   "Male sex (population-level association)")
+
+    if "age_over_30" in f and age > 30:
+        _try("age_over_30", True, f"Age > 30 ({age})")
+    if "age_over_45" in f and age > 45:
+        _try("age_over_45", True, f"Age > 45 ({age})")
+    if "age_over_60" in f and age > 60:
+        _try("age_over_60", True, f"Age > 60 ({age})")
+    if "age_35_to_54" in f and 35 <= age <= 54:
+        _try("age_35_to_54", True, f"Peak-incidence age band 35-54 ({age})")
+
+    _try("diabetes",        ctx.get("diabetes", False),      "Diabetes mellitus")
+    _try("smoking_current", ctx.get("smoking") == "Current", "Current smoker")
+
+    if "prior_injury" in f:
+        regions  = ctx.get("injury_regions", {}) or {}
+        relevant = CONDITION_INJURY_REGIONS.get(condition_key, [])
+        matching = [r for r in relevant if regions.get(r, False)]
+        if matching:
+            _try("prior_injury", True,
+                 f"Prior injury/pain in relevant region(s): {', '.join(matching)}")
+
+    if "pregnancy" in f and is_female and ctx.get("pregnant", False):
+        _try("pregnancy", True, "Current pregnancy")
+    if "oral_contra" in f and is_female and ctx.get("oral_contra", False):
+        _try("oral_contra", True, "Oral contraceptive use")
+
+    # ---- Modifiable-risk credits (protective factors) ----------
+    # A very active person or good sleep/nutrition profile REDUCES
+    # overall risk; this is reflected as a downward adjustment
+    # (small negative points) rather than a hard-coded protective OR.
+    # Never allow the score to go negative.
+    protective_credit = 0
+    protective_notes  = []
+    if ctx.get("exercise_freq") in ("3-5x/week", "6+/week"):
+        protective_credit -= 1
+        protective_notes.append("Regular exercise (3+ sessions/week) — evidence for reduced MSK symptom incidence")
+    if ctx.get("sleep_hours") in ("7-8h", "8-9h"):
+        protective_credit -= 1
+        protective_notes.append("Adequate sleep (7-9h) — evidence for lower musculoskeletal pain intensity")
+    if ctx.get("diet_med") == "High":
+        protective_credit -= 1
+        protective_notes.append("High Mediterranean-diet adherence — anti-inflammatory effect")
+    if ctx.get("non_work_pa_min", 0) >= 150:
+        protective_credit -= 1
+        protective_notes.append("Meets WHO PA guidelines (≥150 min/week moderate PA)")
+
+    # ---- Compute weighted score ---------------------------------
+    raw_score = sum(x["points"] for x in factors_out)
+    score     = max(0, raw_score + protective_credit)
+    n_avail   = sum(1 for k in f.keys() if k not in ("bmi",)) + (
+        3 if "bmi" in f else 0  # bmi can contribute up to 3 pts (obese=strong)
+    )
+    # Theoretical max points if every factor was "strong" (3 pts each)
+    score_max = 3 * len([k for k in f.keys() if k != "bmi"]) + (3 if "bmi" in f else 0)
+
+    # Category tiers
+    if score <= 2:
+        category, cat_color = "Low", "#10b981"
+    elif score <= 5:
+        category, cat_color = "Moderate", "#f59e0b"
+    else:
+        category, cat_color = "High", "#ef4444"
+
+    return {
+        "factors":           factors_out,
+        "score":             score,
+        "raw_score":         raw_score,
+        "protective_credit": protective_credit,
+        "protective_notes":  protective_notes,
+        "score_max":         score_max,
+        "category":          category,
+        "category_color":    cat_color,
+    }
+
+
 def elevated_factors(condition_key, ctx):
-    """Return (count, [factor_labels]) — a list of *evidence-linked* risk
-    factors that are actually present for this subject and this condition.
-
-    This replaces the previous `baseline_prevalence × Π(multipliers)`
-    approach, which was statistically invalid: (a) multipliers were often
-    ORs that cannot be treated as RRs when outcomes are common, (b) the
-    independence assumption is not tenable (age, BMI, sitting hours are
-    correlated), (c) the result exceeded 100 % for many realistic
-    profiles and had to be clipped arbitrarily.
-
-    The output is a **risk-factor profile** — a qualitative summary of
-    how many literature-supported risk factors are elevated in this
-    person — not a personal disease probability.
+    """DEPRECATED — kept for backward compatibility with old summary code.
+    Returns (count, [factor_labels]) — a naive unweighted count.
+    Use `weighted_risk_analysis()` for the current tiered scoring.
     """
     c = CONDITIONS[condition_key]
     f = c.get("factors", {})
@@ -3426,6 +3783,12 @@ with tab_summary:
         "psy_demand":     psy_demand,
         "psy_control":    psy_control,
         "psy_support":    psy_support,
+        # Lifestyle & modifiable risk / protective factors
+        "exercise_freq":     exercise_freq,
+        "muscle_hypertrophy": muscle_hypertrophy,
+        "sleep_hours":       sleep_hours,
+        "non_work_pa_min":   non_work_pa_min,
+        "diet_med":          diet_med,
     }
 
     risk_profile = compute_risk_profile(
@@ -3465,46 +3828,81 @@ with tab_summary:
             )
         )
 
-        # Per-risk-factor breakdown
+        # Per-condition WEIGHTED risk analysis with tier-based scoring
+        # + confidence intervals from published meta-analyses
         for risk_label, condition_keys in risk_profile:
             with st.expander(f"⚠ {risk_label}", expanded=True):
                 for ck in condition_keys:
                     c = CONDITIONS[ck]
-                    n_factors, factor_list = elevated_factors(ck, ctx)
-                    status_label, status_color = risk_status(n_factors)
+                    analysis = weighted_risk_analysis(ck, ctx)
+
                     st.markdown(f"**{_cond_name(c)}**")
                     st.markdown(
                         f"<div style='display:inline-block; padding:6px 12px; "
-                        f"border-radius:8px; background:{status_color}; color:white; "
-                        f"font-weight:700; font-size:13px; letter-spacing:.03em; "
-                        f"margin-top:6px;'>"
-                        f"{status_label} · {n_factors} {t['risk_factors_count']}"
-                        f"</div>",
+                        f"border-radius:8px; background:{analysis['category_color']}; "
+                        f"color:white; font-weight:700; font-size:13px; "
+                        f"letter-spacing:.03em; margin-top:6px;'>"
+                        f"{analysis['category']} risk · weighted score "
+                        f"{analysis['score']}/{analysis['score_max']}</div>",
                         unsafe_allow_html=True,
                     )
-                    if factor_list:
+
+                    if analysis["factors"]:
+                        st.markdown(f"**{t['risk_factors_present']}**")
+                        for ff in analysis["factors"]:
+                            ci_txt = (
+                                f" · 95% CI: {ff['ci'][0]:.2f}–{ff['ci'][1]:.2f}"
+                                if ff["ci"] else ""
+                            )
+                            or_txt = (
+                                f" · OR {ff['or']:.2f}{ci_txt}"
+                                if ff["or"] > 1.0 else ""
+                            )
+                            st.markdown(
+                                f"<div style='padding:6px 10px; margin:4px 0; "
+                                f"background:#f8fafc; border-radius:8px; "
+                                f"border-left:3px solid {ff['color']}; font-size:13px;'>"
+                                f"<b>{ff['label']}</b>"
+                                f"<div style='font-size:11px; color:#64748b; margin-top:2px;'>"
+                                f"{ff['tier'].upper()} impact ({ff['points']} pts){or_txt}"
+                                f"<br><i>{ff['source']}</i></div>"
+                                f"</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                    if analysis["protective_notes"]:
                         st.markdown(
-                            f"**{t['risk_factors_present']}**\n"
-                            + "\n".join(f"- {ff}" for ff in factor_list)
+                            "**"
+                            + ("Προστατευτικοί παράγοντες:" if lang == "el"
+                               else "Protective factors:")
+                            + f"** (−{abs(analysis['protective_credit'])} pts)"
                         )
+                        for pn in analysis["protective_notes"]:
+                            st.markdown(
+                                f"<div style='padding:4px 10px; margin:3px 0; "
+                                f"background:#d1fae5; border-radius:6px; "
+                                f"border-left:3px solid #10b981; font-size:12px;'>"
+                                f"✓ {pn}</div>",
+                                unsafe_allow_html=True,
+                            )
                     st.markdown("")
 
-        # Compact consolidated view (replaces the old pie chart)
+        # Consolidated summary view
         st.markdown("")
         st.markdown(f"#### {t['risk_summary_head']}")
         st.caption(t["risk_summary_caption"])
         for ck in all_condition_keys:
             c = CONDITIONS[ck]
-            n_factors, _ = elevated_factors(ck, ctx)
-            status_label, status_color = risk_status(n_factors)
+            analysis = weighted_risk_analysis(ck, ctx)
             st.markdown(
                 f"<div style='display:flex; align-items:center; gap:12px; "
                 f"padding:10px 14px; margin-bottom:6px; background:white; "
-                f"border-radius:10px; border-left:6px solid {status_color};'>"
+                f"border-radius:10px; border-left:6px solid {analysis['category_color']};'>"
                 f"<div style='flex:1;'><b>{_cond_name(c)}</b></div>"
-                f"<div style='background:{status_color}; color:white; "
+                f"<div style='background:{analysis['category_color']}; color:white; "
                 f"padding:4px 10px; border-radius:6px; font-size:12px; "
-                f"font-weight:700;'>{n_factors} {t['risk_factors_count']}</div></div>",
+                f"font-weight:700;'>{analysis['category']} · "
+                f"{analysis['score']}/{analysis['score_max']} pts</div></div>",
                 unsafe_allow_html=True,
             )
 
@@ -3558,6 +3956,12 @@ with tab_summary:
             "psy_demand":        psy_demand,
             "psy_control":       psy_control,
             "psy_support":       psy_support,
+            # Lifestyle / protective factors
+            "exercise_freq":     exercise_freq,
+            "muscle_hypertrophy":muscle_hypertrophy,
+            "sleep_hours":       sleep_hours,
+            "non_work_pa_min":   non_work_pa_min,
+            "diet_med":          diet_med,
             # Workstation measurements
             "chair_height_cm":   chair_height,
             "desk_height_cm":    desk_height,
