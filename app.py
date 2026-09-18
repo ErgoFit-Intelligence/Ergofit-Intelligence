@@ -15,7 +15,10 @@ from ergofit.science.evidence_registry import EVIDENCE, get_many
 from ergofit.science.rosa import compute_rosa
 from ergofit.science.standards import (
     CHAIR_FIT_ITEMS,
+    CHAIR_FIT_LABELS_EL,
+    EN1335_LABELS_EL,
     EN1335_TYPE_A_REFERENCE,
+    POSTURE_LABELS_EL,
     POSTURE_REFERENCES,
 )
 from ergofit.ui.components import evidence_card, finding_card, recommendation_card
@@ -43,7 +46,7 @@ with st.sidebar:
         format_func=lambda x: "🇬🇷 Ελληνικά" if x == "el" else "🇬🇧 English",
         horizontal=True,
     )
-    quick_mode = st.toggle("⚡ Quick Mode", value=False)
+    quick_mode = st.toggle("⚡ Quick Mode" if st.session_state.lang == "en" else "⚡ Γρήγορη αξιολόγηση", value=False)
     st.caption(
         "Quick Mode hides direct anthropometry, psychosocial context and advanced mechanical exposures."
         if st.session_state.lang == "en"
@@ -51,7 +54,11 @@ with st.sidebar:
     )
     st.divider()
     st.markdown("**ErgoFit Intelligence v2**")
-    st.caption("Evidence architecture: exposure → symptoms → intervention. No disease probability score.")
+    st.caption(
+        "Evidence architecture: exposure → symptoms → intervention. No disease probability score."
+        if st.session_state.lang == "en"
+        else "Αρχιτεκτονική τεκμηρίωσης: έκθεση → συμπτώματα → παρέμβαση. Δεν υπολογίζεται πιθανότητα νόσου."
+    )
 
 lang = st.session_state.lang
 t = get_text(lang)
@@ -127,7 +134,11 @@ with tabs[0]:
     height = c2.number_input(t["height"], min_value=140.0, max_value=210.0, value=175.0, step=0.5)
     weight = c3.number_input(t["weight"], min_value=40.0, max_value=200.0, value=75.0, step=0.5)
     bmi_value = bmi(weight, height)
-    st.caption(f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score.")
+    st.caption(
+        f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
+        if lang == "en"
+        else f"ΔΜΣ: {bmi_value:.1f} kg/m² — εμφανίζεται ως στοιχείο υγείας και όχι ως εργονομική βαθμολογία."
+    )
 
     if quick_mode:
         pop_direct = elbow_direct = eye_direct = 0.0
@@ -141,11 +152,12 @@ with tabs[0]:
             eye_direct = a3.number_input(t["eye_height"], min_value=0.0, max_value=100.0, value=0.0, step=0.5)
 
     anthro = reference_from_stature(height, sex, pop_direct, elbow_direct, eye_direct)
-    st.markdown("#### " + ("Body-fit references" if lang == "en" else "Σωματομετρικά reference values"))
+    st.markdown("#### " + ("Body-fit references" if lang == "en" else "Σωματομετρικές τιμές αναφοράς"))
     a1, a2, a3 = st.columns(3)
-    a1.metric("Popliteal", f"{anthro.popliteal_cm:.1f} cm", anthro.source_popliteal)
-    a2.metric("Seated elbow", f"{anthro.seated_elbow_cm:.1f} cm", anthro.source_elbow)
-    a3.metric("Seated eye", f"{anthro.seated_eye_cm:.1f} cm", anthro.source_eye)
+    _src = lambda s: s if lang == "en" else ("άμεση μέτρηση" if s == "direct" else "εκτίμηση")
+    a1.metric("Popliteal height" if lang == "en" else "Ύψος ιγνυακής χώρας", f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
+    a2.metric("Seated elbow height" if lang == "en" else "Ύψος αγκώνα από την έδρα", f"{anthro.seated_elbow_cm:.1f} cm", _src(anthro.source_elbow))
+    a3.metric("Seated eye height" if lang == "en" else "Ύψος ματιών από την έδρα", f"{anthro.seated_eye_cm:.1f} cm", _src(anthro.source_eye))
 
     c1, c2, c3 = st.columns(3)
     diabetes = c1.checkbox(t["diabetes"])
@@ -158,7 +170,7 @@ with tabs[0]:
     st.caption(
         "Physical activity and exercise are recorded as wellbeing/intervention context. They do not subtract points from a disease score."
         if lang == "en" else
-        "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως wellbeing/intervention context. Δεν αφαιρούν πόντους από disease score."
+        "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως στοιχεία ευεξίας και παρέμβασης. Δεν αφαιρούν πόντους από κάποια βαθμολογία κινδύνου νόσου."
     )
 
 # ---------------------------------------------------------------------
@@ -196,7 +208,7 @@ with tabs[1]:
         st.caption(
             "Only flag these when the actual task exposure exists. They should not be inferred from ordinary computer use."
             if lang == "en" else
-            "Ενεργοποίησέ τα μόνο όταν υπάρχει πραγματική έκθεση στο task. Δεν πρέπει να συμπεραίνονται από απλή χρήση υπολογιστή."
+            "Ενεργοποίησέ τα μόνο όταν υπάρχει πραγματική έκθεση στη συγκεκριμένη εργασία. Δεν πρέπει να συμπεραίνονται από απλή χρήση υπολογιστή."
         )
         c1, c2 = st.columns(2)
         high_repetition = c1.checkbox(t["repetition"])
@@ -224,7 +236,7 @@ with tabs[2]:
     st.caption(
         "Measured values are compared with body-fit/design references. Differences are prompts for observation, not validated disease thresholds."
         if lang == "en" else
-        "Οι μετρήσεις συγκρίνονται με body-fit/design references. Οι αποκλίσεις είναι prompts για παρατήρηση, όχι validated disease thresholds."
+        "Οι μετρήσεις συγκρίνονται με σωματομετρικές και σχεδιαστικές τιμές αναφοράς. Οι αποκλίσεις αποτελούν ενδείξεις για περαιτέρω παρατήρηση και όχι επικυρωμένα όρια κινδύνου νόσου."
     )
     c1, c2, c3 = st.columns(3)
     seat_height = c1.number_input(t["chair_actual"], min_value=0.0, max_value=70.0, value=0.0, step=0.5)
@@ -251,12 +263,20 @@ with tabs[2]:
 
     st.markdown("#### " + t["reference_fit"])
     r1, r2 = st.columns(2)
-    r1.metric("Seat/body reference", f"{anthro.popliteal_cm:.1f} cm", anthro.source_popliteal)
-    r2.metric("Work-surface/elbow reference", f"{anthro.desk_reference_cm:.1f} cm", "body-fit reference")
+    r1.metric(
+        "Seat/body reference" if lang == "en" else "Αναφορά ύψους έδρας",
+        f"{anthro.popliteal_cm:.1f} cm",
+        anthro.source_popliteal if lang == "en" else ("άμεση μέτρηση" if anthro.source_popliteal == "direct" else "εκτίμηση")
+    )
+    r2.metric(
+        "Work-surface/elbow reference" if lang == "en" else "Αναφορά επιφάνειας εργασίας / αγκώνα",
+        f"{anthro.desk_reference_cm:.1f} cm",
+        "body-fit reference" if lang == "en" else "σωματομετρική αναφορά"
+    )
     st.info(
         "Monitor v2 uses actual viewing distance + vertical position rather than a universal 'eye level − 5 cm' formula."
         if lang == "en" else
-        "Στη v2 η οθόνη αξιολογείται με πραγματική απόσταση + κατακόρυφη θέση και όχι με universal τύπο 'eye level − 5 cm'."
+        "Στη v2 η οθόνη αξιολογείται με την πραγματική απόσταση θέασης και την κατακόρυφη θέση της και όχι με έναν καθολικό τύπο «ύψος ματιών − 5 cm»."
     )
 
     with st.expander("DSE environment" if lang == "en" else "Περιβάλλον DSE", expanded=False):
@@ -265,7 +285,11 @@ with tabs[2]:
         noise_ok = yes_no_unknown("Noise is acceptable for the task" if lang == "en" else "Ο θόρυβος είναι αποδεκτός για το task", "noise_ok")
         thermal_ok = yes_no_unknown("Thermal comfort is acceptable" if lang == "en" else "Η θερμική άνεση είναι αποδεκτή", "thermal_ok")
         software_ok = yes_no_unknown("Software/interface supports the task without avoidable strain" if lang == "en" else "Το λογισμικό/interface υποστηρίζει το task χωρίς περιττή επιβάρυνση", "software_ok")
-        st.caption("These fields support a broader EU display-screen assessment and are kept separate from musculoskeletal disease scoring.")
+        st.caption(
+            "These fields support a broader EU display-screen assessment and are kept separate from musculoskeletal disease scoring."
+            if lang == "en"
+            else "Τα πεδία αυτά υποστηρίζουν μια πληρέστερη αξιολόγηση εργασίας με οθόνη σύμφωνα με την ευρωπαϊκή προσέγγιση και παραμένουν ξεχωριστά από οποιαδήποτε βαθμολόγηση μυοσκελετικής νόσου."
+        )
 
 # ---------------------------------------------------------------------
 # 4. Chair fit / adjustability
@@ -275,6 +299,8 @@ with tabs[3]:
     st.info(t["chair_screen_note"])
     st.caption(
         "Reference: EN 1335 / ISO 9241-5 design principles. Full conformity requires the official standard and its complete test method."
+        if lang == "en"
+        else "Αναφορά: αρχές σχεδιασμού EN 1335 / ISO 9241-5. Η πλήρης συμμόρφωση απαιτεί το επίσημο πρότυπο και την ολοκληρωμένη μέθοδο δοκιμής του."
     )
     chair_completed = st.toggle("Assessment completed" if lang == "en" else "Ο έλεγχος καρέκλας ολοκληρώθηκε", value=False, key="chair_completed")
     chair_results: dict[str, bool] = {}
@@ -282,18 +308,35 @@ with tabs[3]:
         ca, cb = st.columns(2)
         for idx, (key, label) in enumerate(CHAIR_FIT_ITEMS):
             with (ca if idx < (len(CHAIR_FIT_ITEMS)+1)//2 else cb):
-                chair_results[key] = st.checkbox(label, value=True, key=f"chair_{key}")
+                display_label = label if lang == "en" else CHAIR_FIT_LABELS_EL.get(key, label)
+                chair_results[key] = st.checkbox(display_label, value=True, key=f"chair_{key}")
         chair_failed = [key for key, ok in chair_results.items() if not ok]
-        st.metric("Items confirmed", f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
-        st.caption("No compliance percentage or clinical risk band is generated.")
+        st.metric("Items confirmed" if lang == "en" else "Κριτήρια που πληρούνται", f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
+        st.caption(
+            "No compliance percentage or clinical risk band is generated."
+            if lang == "en"
+            else "Δεν παράγεται ποσοστό συμμόρφωσης ή κλινική κατηγορία κινδύνου."
+        )
     else:
         chair_failed = []
-        st.caption("Mark the section as completed before chair findings are included in the report.")
+        st.caption(
+            "Mark the section as completed before chair findings are included in the report."
+            if lang == "en"
+            else "Σημείωσε ότι ο έλεγχος ολοκληρώθηκε ώστε τα ευρήματα της καρέκλας να συμπεριληφθούν στην αναφορά."
+        )
 
-    with st.expander("EN 1335 Type A reference dimensions — audit note", expanded=False):
+    with st.expander(
+        "EN 1335 Type A reference dimensions — audit note" if lang == "en" else "Διαστάσεις αναφοράς EN 1335 Type A — σημείωση ελέγχου",
+        expanded=False,
+    ):
         for k, v in EN1335_TYPE_A_REFERENCE.items():
-            st.write(f"- **{k.replace('_',' ')}:** {v}")
-        st.caption("Displayed for reference only; the screen above is not a product-certification procedure.")
+            label = k.replace("_", " ") if lang == "en" else EN1335_LABELS_EL.get(k, k)
+            st.write(f"- **{label}:** {v}")
+        st.caption(
+            "Displayed for reference only; the screen above is not a product-certification procedure."
+            if lang == "en"
+            else "Οι τιμές εμφανίζονται μόνο ως αναφορά. Η παραπάνω ενότητα δεν αποτελεί διαδικασία πιστοποίησης προϊόντος."
+        )
 
 # ---------------------------------------------------------------------
 # 5. Posture & movement
@@ -306,15 +349,16 @@ with tabs[4]:
     if posture_completed:
         for key, label, lo, hi, default in POSTURE_REFERENCES:
             c1, c2, c3 = st.columns([3, 1, 2])
-            c1.markdown(f"**{label}**")
-            c1.caption(f"Reference: {lo}° to {hi}°")
+            display_label = label if lang == "en" else POSTURE_LABELS_EL.get(key, label)
+            c1.markdown(f"**{display_label}**")
+            c1.caption(f"Reference: {lo}° to {hi}°" if lang == "en" else f"Τιμή αναφοράς: {lo}° έως {hi}°")
             min_value = -45 if "wrist" in key else 0
             angle = c2.number_input("°", min_value=min_value, max_value=180, value=default, step=5, key=f"posture_{key}", label_visibility="collapsed")
             if lo <= angle <= hi:
-                c3.success(f"{angle}° · within reference")
+                c3.success(f"{angle}° · within reference" if lang == "en" else f"{angle}° · εντός τιμής αναφοράς")
             else:
-                c3.warning(f"{angle}° · review")
-                posture_out.append({"key": key, "label": label, "value": angle, "reference": [lo, hi]})
+                c3.warning(f"{angle}° · review" if lang == "en" else f"{angle}° · χρειάζεται έλεγχο")
+                posture_out.append({"key": key, "label": display_label, "value": angle, "reference": [lo, hi]})
 
         movement_variability = st.selectbox(
             "Movement / postural variability" if lang == "en" else "Μεταβλητότητα στάσης / κίνησης",
@@ -326,10 +370,18 @@ with tabs[4]:
             }[x],
         )
         if movement_variability == "limited":
-            st.warning("Static posture flagged. Duration and variation should be addressed even when individual angles look acceptable.")
+            st.warning(
+                "Static posture flagged. Duration and variation should be addressed even when individual angles look acceptable."
+                if lang == "en"
+                else "Εντοπίστηκε περιορισμένη μεταβλητότητα στάσης. Η διάρκεια και η εναλλαγή θέσεων πρέπει να αξιολογηθούν ακόμη και όταν οι επιμέρους γωνίες είναι αποδεκτές."
+            )
     else:
         movement_variability = "not_assessed"
-        st.caption("Mark the section as completed before posture findings are included in the report.")
+        st.caption(
+            "Mark the section as completed before posture findings are included in the report."
+            if lang == "en"
+            else "Σημείωσε ότι η παρατήρηση στάσης ολοκληρώθηκε ώστε τα σχετικά ευρήματα να συμπεριληφθούν στην αναφορά."
+        )
 
 # ---------------------------------------------------------------------
 # 6. ROSA
@@ -341,29 +393,29 @@ with tabs[5]:
 
     rosa_completed = st.toggle("Assessment completed" if lang == "en" else "Η αξιολόγηση ROSA ολοκληρώθηκε", value=False, key="rosa_completed")
     if rosa_completed:
-        st.markdown("### A · Chair")
+        st.markdown("### A · Chair" if lang == "en" else "### A · Καρέκλα")
         a1c, a2c = st.columns(2)
         with a1c:
-            st.markdown("**A.1 Chair height**")
+            st.markdown("**A.1 Chair height**" if lang == "en" else "**A.1 Ύψος καρέκλας**")
             a1 = 1
             a1 += rosa_checkbox("Πολύ χαμηλή", "Too low", 2, "rosa_a1_low")
             a1 += rosa_checkbox("Πολύ υψηλή", "Too high", 2, "rosa_a1_high")
             a1 += rosa_checkbox("Πόδια χωρίς στήριξη", "No foot support", 3, "rosa_a1_nofoot")
             a1 += rosa_checkbox("Περιορισμένος χώρος κάτω από γραφείο", "Insufficient under-desk space", 1, "rosa_a1_cramp")
             a1 += rosa_checkbox("Μη ρυθμιζόμενη", "Non-adjustable", 1, "rosa_a1_nonadj")
-            st.markdown("**A.3 Armrests**")
+            st.markdown("**A.3 Armrests**" if lang == "en" else "**A.3 Μπράτσα καρέκλας**")
             a3 = 1
             a3 += rosa_checkbox("Πολύ ψηλά/χαμηλά", "Too high/low", 2, "rosa_a3_high")
             a3 += rosa_checkbox("Σκληρή/φθαρμένη επιφάνεια", "Hard/damaged surface", 1, "rosa_a3_hard")
             a3 += rosa_checkbox("Πολύ μεγάλη απόσταση", "Too wide apart", 1, "rosa_a3_wide")
             a3 += rosa_checkbox("Μη ρυθμιζόμενα", "Non-adjustable", 1, "rosa_a3_nonadj")
         with a2c:
-            st.markdown("**A.2 Seat pan depth**")
+            st.markdown("**A.2 Seat pan depth**" if lang == "en" else "**A.2 Βάθος έδρας**")
             a2 = 1
             a2 += rosa_checkbox("Πολύ βαθιά έδρα", "Pan too long", 2, "rosa_a2_long")
             a2 += rosa_checkbox("Πολύ ρηχή έδρα", "Pan too short", 2, "rosa_a2_short")
             a2 += rosa_checkbox("Μη ρυθμιζόμενο βάθος", "Depth non-adjustable", 1, "rosa_a2_nonadj")
-            st.markdown("**A.4 Back support**")
+            st.markdown("**A.4 Back support**" if lang == "en" else "**A.4 Στήριξη πλάτης**")
             a4 = 1
             a4 += rosa_checkbox("Ανεπαρκής οσφυϊκή στήριξη", "No/poor lumbar support", 2, "rosa_a4_lumbar")
             a4 += rosa_checkbox("Υπερβολική/ανεπαρκής κλίση πλάτης", "Backrest angle outside ROSA reference", 2, "rosa_a4_angle")
@@ -373,45 +425,45 @@ with tabs[5]:
         dur_chair = duration_selector("dur_chair")
     
         st.divider()
-        st.markdown("### B · Monitor & phone")
+        st.markdown("### B · Monitor & phone" if lang == "en" else "### B · Οθόνη & τηλέφωνο")
         b1c, b2c = st.columns(2)
         with b1c:
-            st.markdown("**B.1 Monitor**")
+            st.markdown("**B.1 Monitor**" if lang == "en" else "**B.1 Οθόνη**")
             b1 = 1
             b1 += rosa_checkbox("Οθόνη πολύ χαμηλά", "Monitor too low", 2, "rosa_b1_low")
             b1 += rosa_checkbox("Οθόνη πολύ μακριά", "Monitor too far", 1, "rosa_b1_far")
             b1 += rosa_checkbox("Οθόνη πολύ ψηλά", "Monitor too high", 3, "rosa_b1_high")
             b1 += rosa_checkbox("Στροφή αυχένα >30°", "Neck twist >30°", 1, "rosa_b1_twist")
-            b1 += rosa_checkbox("Glare", "Glare", 1, "rosa_b1_glare")
-            b1 += rosa_checkbox("Έγγραφα χωρίς holder", "Documents without holder", 1, "rosa_b1_docs")
+            b1 += rosa_checkbox("Θάμβωση / αντανάκλαση", "Glare", 1, "rosa_b1_glare")
+            b1 += rosa_checkbox("Έγγραφα χωρίς βάση στήριξης", "Documents without holder", 1, "rosa_b1_docs")
             dur_monitor = duration_selector("dur_monitor")
         with b2c:
-            st.markdown("**B.2 Phone**")
+            st.markdown("**B.2 Phone**" if lang == "en" else "**B.2 Τηλέφωνο**")
             b2 = 1
             b2 += rosa_checkbox("Τηλέφωνο μακριά", "Phone too far", 2, "rosa_b2_far")
             b2 += rosa_checkbox("Κράτημα με αυχένα/ώμο", "Neck/shoulder hold", 2, "rosa_b2_hold")
-            b2 += rosa_checkbox("Χωρίς hands-free", "No hands-free option", 1, "rosa_b2_hands")
+            b2 += rosa_checkbox("Χωρίς δυνατότητα hands-free", "No hands-free option", 1, "rosa_b2_hands")
             dur_phone = duration_selector("dur_phone")
     
         st.divider()
-        st.markdown("### C · Mouse & keyboard")
+        st.markdown("### C · Mouse & keyboard" if lang == "en" else "### C · Ποντίκι & πληκτρολόγιο")
         c1c, c2c = st.columns(2)
         with c1c:
-            st.markdown("**C.1 Mouse**")
+            st.markdown("**C.1 Mouse**" if lang == "en" else "**C.1 Ποντίκι**")
             c1r = 1
-            c1r += rosa_checkbox("Reach προς το ποντίκι", "Reaching to mouse", 2, "rosa_c1_reach")
+            c1r += rosa_checkbox("Τέντωμα χεριού προς το ποντίκι", "Reaching to mouse", 2, "rosa_c1_reach")
             c1r += rosa_checkbox("Ποντίκι/πληκτρολόγιο σε διαφορετικά επίπεδα", "Mouse/keyboard on different surfaces", 2, "rosa_c1_diff")
-            c1r += rosa_checkbox("Pinch grip", "Pinch grip", 1, "rosa_c1_pinch")
-            c1r += rosa_checkbox("Palmrest μπροστά από ποντίκι", "Palmrest in front of mouse", 1, "rosa_c1_palm")
+            c1r += rosa_checkbox("Λαβή με τα δάκτυλα (pinch grip)", "Pinch grip", 1, "rosa_c1_pinch")
+            c1r += rosa_checkbox("Στήριγμα παλάμης μπροστά από το ποντίκι", "Palmrest in front of mouse", 1, "rosa_c1_palm")
             dur_mouse = duration_selector("dur_mouse")
         with c2c:
-            st.markdown("**C.2 Keyboard**")
+            st.markdown("**C.2 Keyboard**" if lang == "en" else "**C.2 Πληκτρολόγιο**")
             c2r = 1
             c2r += rosa_checkbox("Έκταση καρπού / θετική κλίση πληκτρολογίου", "Wrist extension / positive keyboard angle", 2, "rosa_c2_ext")
             c2r += rosa_checkbox("Απόκλιση καρπού", "Wrist deviation", 1, "rosa_c2_dev")
             c2r += rosa_checkbox("Πληκτρολόγιο πολύ ψηλά", "Keyboard too high", 1, "rosa_c2_high")
-            c2r += rosa_checkbox("Reach σε overhead αντικείμενα", "Reaching overhead", 1, "rosa_c2_over")
-            c2r += rosa_checkbox("Platform μη ρυθμιζόμενη", "Platform non-adjustable", 1, "rosa_c2_nonadj")
+            c2r += rosa_checkbox("Τέντωμα χεριού προς αντικείμενα πάνω από το ύψος των ώμων", "Reaching overhead", 1, "rosa_c2_over")
+            c2r += rosa_checkbox("Μη ρυθμιζόμενη βάση πληκτρολογίου", "Platform non-adjustable", 1, "rosa_c2_nonadj")
             dur_keyboard = duration_selector("dur_keyboard")
     
         rosa = compute_rosa(
@@ -420,19 +472,31 @@ with tabs[5]:
             c1r, c2r, dur_mouse, dur_keyboard,
         )
         r1, r2, r3 = st.columns(3)
-        r1.metric("Chair ROSA", f"{rosa['chair']} / 10")
-        r2.metric("Monitor & peripherals", f"{rosa['monitor_peripherals']} / 10")
-        r3.metric("ROSA final", f"{rosa['final']} / 10")
+        r1.metric("Chair ROSA" if lang == "en" else "ROSA καρέκλας", f"{rosa['chair']} / 10")
+        r2.metric("Monitor & peripherals" if lang == "en" else "Οθόνη & περιφερειακά", f"{rosa['monitor_peripherals']} / 10")
+        r3.metric("ROSA final" if lang == "en" else "Τελικό ROSA", f"{rosa['final']} / 10")
         if rosa["final"] >= 5:
-            st.error("ROSA action level reached (≥5): further ergonomic investigation/intervention indicated.")
+            st.error(
+                "ROSA action level reached (≥5): further ergonomic investigation/intervention indicated."
+                if lang == "en"
+                else "Επιτεύχθηκε το επίπεδο δράσης ROSA (≥5): ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση."
+            )
         else:
-            st.success("ROSA below the validated action level of 5. This is not a clinical 'low disease risk' category.")
+            st.success(
+                "ROSA below the validated action level of 5. This is not a clinical 'low disease risk' category."
+                if lang == "en"
+                else "Το ROSA βρίσκεται κάτω από το τεκμηριωμένο επίπεδο δράσης 5. Αυτό δεν σημαίνει κλινικά «χαμηλό κίνδυνο νόσου»."
+            )
     else:
         rosa = {
             "chair": 0, "section_b": 0, "section_c": 0,
             "monitor_peripherals": 0, "final": 0, "action": "not_assessed"
         }
-        st.caption("Mark ROSA as completed before a score is included in the report.")
+        st.caption(
+            "Mark ROSA as completed before a score is included in the report."
+            if lang == "en"
+            else "Σημείωσε ότι η αξιολόγηση ROSA ολοκληρώθηκε ώστε η βαθμολογία να συμπεριληφθεί στην αναφορά."
+        )
 
 # ---------------------------------------------------------------------
 # Build context, findings and recommendations before evidence/summary tabs.
@@ -509,21 +573,33 @@ with tabs[6]:
     if findings:
         st.markdown("### " + ("Assessment findings" if lang == "en" else "Ευρήματα αξιολόγησης"))
         for f in findings:
-            finding_card(f)
+            finding_card(f, lang)
             st.write("")
     else:
-        st.success("No priority exposure finding was generated from the entered data.")
+        st.success(
+            "No priority exposure finding was generated from the entered data."
+            if lang == "en"
+            else "Δεν προέκυψε εύρημα έκθεσης υψηλής προτεραιότητας από τα δεδομένα που καταχωρίστηκαν."
+        )
 
-    st.markdown("### " + ("Evidence linked to this assessment" if lang == "en" else "Evidence που συνδέεται με αυτή την αξιολόγηση"))
+    st.markdown("### " + ("Evidence linked to this assessment" if lang == "en" else "Επιστημονική τεκμηρίωση που συνδέεται με αυτή την αξιολόγηση"))
     if relevant_evidence:
         for e in relevant_evidence:
-            evidence_card(e)
+            evidence_card(e, lang)
             st.write("")
     else:
-        st.caption("No evidence cards are triggered until relevant exposure/symptom information is entered.")
+        st.caption(
+            "No evidence cards are triggered until relevant exposure/symptom information is entered."
+            if lang == "en"
+            else "Δεν εμφανίζονται κάρτες τεκμηρίωσης μέχρι να καταχωριστούν σχετικά στοιχεία έκθεσης ή συμπτωμάτων."
+        )
 
-    with st.expander("Full v2 evidence registry", expanded=False):
-        st.caption("Registry entries are deliberately separated by outcome and population; they are not pooled into a universal points score.")
+    with st.expander("Full v2 evidence registry" if lang == "en" else "Πλήρες μητρώο επιστημονικής τεκμηρίωσης v2", expanded=False):
+        st.caption(
+            "Registry entries are deliberately separated by outcome and population; they are not pooled into a universal points score."
+            if lang == "en"
+            else "Οι εγγραφές διατηρούνται ξεχωριστές ανά έκβαση και πληθυσμό και δεν συγχωνεύονται σε μία καθολική βαθμολογία πόντων."
+        )
         for e in EVIDENCE.values():
             evidence_card(e)
             st.write("")
@@ -538,17 +614,23 @@ with tabs[7]:
         f"""<div class="ef-summary"><div class="ef-kicker">ERGOFIT INTELLIGENCE V2</div>
         <h3 style="margin:.2rem 0!important">{subject_display}</h3>
         <div>{assessment_date} · BMI {bmi_value:.1f} · ROSA {rosa['final']}/10</div>
-        <div style="margin-top:8px;color:#5b6475">No disease probability is generated. The report separates ergonomic exposure, symptoms, context and intervention evidence.</div></div>""",
+        <div style="margin-top:8px;color:#5b6475">{"No disease probability is generated. The report separates ergonomic exposure, symptoms, context and intervention evidence." if lang == "en" else "Δεν υπολογίζεται πιθανότητα νόσου. Η αναφορά διαχωρίζει την εργονομική έκθεση, τα συμπτώματα, το πλαίσιο υγείας και την τεκμηρίωση των παρεμβάσεων."}</div></div>""",
         unsafe_allow_html=True,
     )
 
     s1, s2, s3 = st.columns(3)
-    s1.metric("Priority findings", sum(f.status == "priority" for f in findings))
-    s2.metric("Attention findings", sum(f.status == "attention" for f in findings))
+    s1.metric("Priority findings" if lang == "en" else "Ευρήματα υψηλής προτεραιότητας", sum(f.status == "priority" for f in findings))
+    s2.metric("Attention findings" if lang == "en" else "Ευρήματα που χρειάζονται προσοχή", sum(f.status == "attention" for f in findings))
     if rosa["final"] > 0:
-        s3.metric("ROSA", f"{rosa['final']} / 10", "Action level" if rosa['final'] >= 5 else "Below action level")
+        s3.metric(
+            "ROSA",
+            f"{rosa['final']} / 10",
+            ("Action level" if rosa['final'] >= 5 else "Below action level")
+            if lang == "en"
+            else ("Επίπεδο δράσης" if rosa['final'] >= 5 else "Κάτω από το επίπεδο δράσης")
+        )
     else:
-        s3.metric("ROSA", "Not assessed")
+        s3.metric("ROSA", "Not assessed" if lang == "en" else "Δεν αξιολογήθηκε")
 
     st.markdown("### " + ("Key findings" if lang == "en" else "Κύρια ευρήματα"))
     if findings:
@@ -556,11 +638,15 @@ with tabs[7]:
             finding_card(f)
             st.write("")
     else:
-        st.success("No priority ergonomic exposure was identified from the entered information.")
+        st.success(
+            "No priority ergonomic exposure was identified from the entered information."
+            if lang == "en"
+            else "Δεν εντοπίστηκε εργονομική έκθεση υψηλής προτεραιότητας από τα στοιχεία που καταχωρίστηκαν."
+        )
 
     st.markdown("### " + ("Recommendations" if lang == "en" else "Συστάσεις"))
     for r in recommendations:
-        recommendation_card(r)
+        recommendation_card(r, lang)
         st.write("")
 
     report_payload = {
@@ -599,4 +685,6 @@ with tabs[7]:
 st.divider()
 st.caption(
     "ErgoFit Intelligence v2 · Scientific architecture: evidence registry + separate exposure/symptom/intervention domains · Alpha build"
+    if lang == "en"
+    else "ErgoFit Intelligence v2 · Επιστημονική αρχιτεκτονική: μητρώο τεκμηρίωσης + ξεχωριστοί τομείς έκθεσης/συμπτωμάτων/παρεμβάσεων · Έκδοση alpha"
 )
