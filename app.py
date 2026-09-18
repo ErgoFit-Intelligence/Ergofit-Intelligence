@@ -652,6 +652,21 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
     }
 
+    /* ─────────────────── Long checkbox labels: prevent truncation ────
+       Streamlit truncates checkbox labels by default. This forces full
+       text wrapping so long chair-checklist items are fully readable. */
+    [data-testid="stCheckbox"] label > div[data-testid="stMarkdownContainer"] p,
+    [data-testid="stCheckbox"] label p,
+    .stCheckbox label p {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        line-height: 1.45 !important;
+    }
+    [data-testid="stCheckbox"] label {
+        align-items: flex-start !important;
+    }
+
     /* ───────────────────── Section header ───────────────────── */
     .section-head {
         display: flex; align-items: center; gap: 10px;
@@ -2623,29 +2638,97 @@ with tab_osha:
     st.subheader(t["chair_tab_head"])
     st.caption(t["chair_tab_cap"])
 
-    OSHA_ITEMS = [
-        ("adjust",       "Παρέχει εύκολες ρυθμίσεις"),
-        ("back_tilt",    "Κλίση πλάτης ρυθμιζόμενη (συνιστώμενο εύρος 90°–120°)"),
-        ("back_lock",    "Η πλάτη σταθεροποιείται σε κάθε επιλεγμένη θέση"),
-        ("back_height",  "Το ύψος της πλάτης είναι κατάλληλο (EN 1335: χαμηλή ≤ 40 cm, μεσαία ≤ 50 cm, υψηλή > 50 cm — μετρημένο από την έδρα προς τα πάνω)"),
-        ("back_width",   "Το πλάτος της πλάτης της καρέκλας είναι ≥ 31 cm"),
-        ("lumbar",       "Η πλάτη της καρέκλας υποστηρίζει την φυσική κυρτότητα της οσφυϊκής χώρας (lumbar support)"),
-        ("back_angle",   "Η γωνία μεταξύ καθίσματος και πλάτης της καρέκλας είναι 90°–120°"),
-        ("rounded",      "Τα άκρα της πλάτης και της έδρας είναι περιμετρικά στρογγυλεμένα"),
-        ("seat_height",  "Το ύψος της έδρας είναι ρυθμιζόμενο (EN 1335-1: 40–51 cm από το έδαφος)"),
-        ("seat_depth",   "Το βάθος της έδρας είναι ρυθμιζόμενο (συνιστώμενο εύρος 38–45 cm)"),
-        ("seat_width",   "Το πλάτος της έδρας είναι ≥ 45 cm"),
-        ("seat_tilt",    "Η έδρα έχει κλίση 0°–7° σε σχέση με το οριζόντιο επίπεδο"),
-        ("seat_front",   "Το μπροστινό μέρος της έδρας έχει ελαφριά κλίση και είναι στρογγυλεμένο (waterfall type)"),
-        ("seat_concave", "Η επιφάνεια της έδρας έχει ελαφρύ κοίλωμα για ομοιόμορφη στήριξη"),
-        ("seat_elastic", "Το υλικό της έδρας και της πλάτης έχει κατάλληλη ελαστικότητα (cushioning)"),
-        ("seat_fabric",  "Επένδυση ανθεκτική, μη ολισθηρή, υδατοδιαπερατή (αναπνέει)"),
-        ("arm_height",   "Το ύψος των υποβραχιόνιων ρυθμίζεται (αποδεκτό ~25 cm από την έδρα)"),
-        ("arm_distance", "Η απόσταση μεταξύ των δύο υποβραχιόνιων ρυθμίζεται (> 40 cm)"),
-        ("arm_width",    "Πλάτος υποβραχιόνων ≥ 5 cm"),
-        ("base",         "Βάση με ≥ 5 ακτίνες, ροδάκια απρόσκοπτης κύλισης"),
-        ("swivel",       "Το κάθισμα περιστρέφεται περί του άξονά του (swivel)"),
+    # Bilingual chair checklist items (EN 1335 / ISO 9241-5 based).
+    # Each item = (key, {"el": Greek label, "en": English label})
+    _CHAIR_ITEMS_BILINGUAL = [
+        ("adjust", {
+            "el": "Παρέχει εύκολες ρυθμίσεις",
+            "en": "Provides easy adjustments",
+        }),
+        ("back_tilt", {
+            "el": "Κλίση πλάτης ρυθμιζόμενη (συνιστώμενο εύρος 90°–120°)",
+            "en": "Backrest tilt is adjustable (recommended range 90°–120°)",
+        }),
+        ("back_lock", {
+            "el": "Η πλάτη σταθεροποιείται σε κάθε επιλεγμένη θέση",
+            "en": "Backrest locks in any selected position",
+        }),
+        ("back_height", {
+            "el": "Το ύψος της πλάτης είναι κατάλληλο (EN 1335: χαμηλή ≤ 40 cm, μεσαία ≤ 50 cm, υψηλή > 50 cm — μετρημένο από την έδρα προς τα πάνω)",
+            "en": "Backrest height is appropriate (EN 1335: low ≤ 40 cm, medium ≤ 50 cm, high > 50 cm — measured from seat upward)",
+        }),
+        ("back_width", {
+            "el": "Το πλάτος της πλάτης της καρέκλας είναι ≥ 31 cm",
+            "en": "Backrest width is ≥ 31 cm",
+        }),
+        ("lumbar", {
+            "el": "Η πλάτη της καρέκλας υποστηρίζει την φυσική κυρτότητα της οσφυϊκής χώρας (lumbar support)",
+            "en": "The backrest supports the natural lumbar curvature (lumbar support)",
+        }),
+        ("back_angle", {
+            "el": "Η γωνία μεταξύ καθίσματος και πλάτης της καρέκλας είναι 90°–120°",
+            "en": "The seat-to-backrest angle is 90°–120°",
+        }),
+        ("rounded", {
+            "el": "Τα άκρα της πλάτης και της έδρας είναι περιμετρικά στρογγυλεμένα",
+            "en": "Backrest and seat edges are rounded all around",
+        }),
+        ("seat_height", {
+            "el": "Το ύψος της έδρας είναι ρυθμιζόμενο (EN 1335-1: 40–51 cm από το έδαφος)",
+            "en": "Seat height is adjustable (EN 1335-1: 40–51 cm from the floor)",
+        }),
+        ("seat_depth", {
+            "el": "Το βάθος της έδρας είναι ρυθμιζόμενο (συνιστώμενο εύρος 38–45 cm)",
+            "en": "Seat depth is adjustable (recommended range 38–45 cm)",
+        }),
+        ("seat_width", {
+            "el": "Το πλάτος της έδρας είναι ≥ 45 cm",
+            "en": "Seat width is ≥ 45 cm",
+        }),
+        ("seat_tilt", {
+            "el": "Η έδρα έχει κλίση 0°–7° σε σχέση με το οριζόντιο επίπεδο",
+            "en": "The seat has a 0°–7° tilt relative to horizontal",
+        }),
+        ("seat_front", {
+            "el": "Το μπροστινό μέρος της έδρας έχει ελαφριά κλίση και είναι στρογγυλεμένο (waterfall type)",
+            "en": "The front edge of the seat is slightly inclined and rounded (waterfall design)",
+        }),
+        ("seat_concave", {
+            "el": "Η επιφάνεια της έδρας έχει ελαφρύ κοίλωμα για ομοιόμορφη στήριξη",
+            "en": "The seat surface has a slight concavity for even support",
+        }),
+        ("seat_elastic", {
+            "el": "Το υλικό της έδρας και της πλάτης έχει κατάλληλη ελαστικότητα (cushioning)",
+            "en": "The seat and backrest material has appropriate cushioning",
+        }),
+        ("seat_fabric", {
+            "el": "Επένδυση ανθεκτική, μη ολισθηρή, υδατοδιαπερατή (αναπνέει)",
+            "en": "Upholstery is durable, non-slip, and breathable",
+        }),
+        ("arm_height", {
+            "el": "Το ύψος των υποβραχιόνιων ρυθμίζεται (αποδεκτό ~25 cm από την έδρα)",
+            "en": "Armrest height is adjustable (typical ~25 cm above the seat)",
+        }),
+        ("arm_distance", {
+            "el": "Η απόσταση μεταξύ των δύο υποβραχιόνιων ρυθμίζεται (> 40 cm)",
+            "en": "The distance between the two armrests is adjustable (> 40 cm)",
+        }),
+        ("arm_width", {
+            "el": "Πλάτος υποβραχιόνων ≥ 5 cm",
+            "en": "Armrest width is ≥ 5 cm",
+        }),
+        ("base", {
+            "el": "Βάση με ≥ 5 ακτίνες, ροδάκια απρόσκοπτης κύλισης",
+            "en": "5-star base with smooth-rolling casters",
+        }),
+        ("swivel", {
+            "el": "Το κάθισμα περιστρέφεται περί του άξονά του (swivel)",
+            "en": "The seat rotates freely around its central axis (swivel)",
+        }),
     ]
+
+    # Build the display list using the currently selected language.
+    OSHA_ITEMS = [(key, labels[lang]) for key, labels in _CHAIR_ITEMS_BILINGUAL]
 
     osha_results = {}
     half = (len(OSHA_ITEMS) + 1) // 2
