@@ -132,7 +132,7 @@ I18N = {
         "f_psy_support":   "Υποστήριξη από συναδέλφους/προϊστάμενο",
         "f_exercise":      "Συχνότητα γυμναστικής",
         "f_hypertrophy":   "Ασχολείται με προπόνηση δύναμης με μυϊκή υπερτροφία",
-        "f_hypertrophy_h": "Αν ναι, το αυξημένο BMI αντικατοπτρίζει άλιπη μάζα και όχι λίπος — ο κίνδυνος από BMI εξαιρείται από τον υπολογισμό.",
+        "f_hypertrophy_h": "Αν ναι, το αυξημένο BMI αντικατοπτρίζει κυρίως άλιπη μάζα. Για μυοσκελετικές παθήσεις που οδηγούνται από μεταβολική φλεγμονή (CTS, τενοντίτιδα ώμου/αγκώνα), ο κίνδυνος BMI μειώνεται. Για παθήσεις μηχανικού φόρτου (οσφυαλγία, φλεβική ανεπάρκεια), το BMI εξακολουθεί να μετράει πλήρως γιατί ο μηχανικός φόρτος στη σπονδυλική/άρθρωση δεν εξαρτάται από τη σύνθεση σώματος.",
         "f_sleep":         "Ώρες ύπνου / νύχτα",
         "f_non_work_pa":   "Λεπτά μέτριας φυσικής δραστηριότητας / εβδομάδα (εκτός δουλειάς)",
         "f_non_work_pa_h": "Ο ΠΟΥ συνιστά ≥150 λεπτά/εβδομάδα μέτριας ή ≥75 λεπτά έντονης δραστηριότητας.",
@@ -302,7 +302,7 @@ I18N = {
         "f_psy_support":   "Support from colleagues/supervisor",
         "f_exercise":      "Exercise frequency",
         "f_hypertrophy":   "Does resistance training with muscle hypertrophy",
-        "f_hypertrophy_h": "If yes, an elevated BMI reflects lean mass, not fat — BMI-related risk is excluded from the calculation.",
+        "f_hypertrophy_h": "If yes, an elevated BMI mostly reflects lean mass. For conditions driven by metabolic inflammation (CTS, rotator cuff/tennis-elbow tendinopathy), BMI risk is reduced. For mechanical-load conditions (lower back pain, venous insufficiency), BMI still counts in full because spinal/joint compression depends on total body mass regardless of composition.",
         "f_sleep":         "Sleep hours per night",
         "f_non_work_pa":   "Minutes of moderate physical activity per week (outside work)",
         "f_non_work_pa_h": "WHO recommends ≥150 min/week of moderate or ≥75 min of vigorous activity.",
@@ -2294,36 +2294,69 @@ def weighted_risk_analysis(condition_key, ctx):
             return (1.0, None, None, "unknown")
         return info
 
-    # ---- BMI (with muscle-mass adjustment) ---------------------
+    # ---- BMI (with nuanced muscle-mass adjustment) --------------
+    # BMI drives TWO different risk mechanisms:
+    #   (A) MECHANICAL LOAD — spinal/joint compression, seat pressure.
+    #       Applies to total body mass regardless of composition.
+    #       Relevant conditions: back_pain, venous_insufficiency.
+    #   (B) METABOLIC INFLAMMATION — visceral-fat-driven low-grade
+    #       inflammation that mediates tendinopathy and nerve entrapment.
+    #       Relevant conditions: cts, tendinitis_shoulder,
+    #       epicondylitis_lat, neck_strain.
+    # If the subject reports resistance-training hypertrophy, elevated
+    # BMI likely reflects lean mass → the METABOLIC pathway (B) is
+    # attenuated but the MECHANICAL pathway (A) still applies.
+    # Reference: Prentice 2001 (Nutr Rev); Rothman 2008 (Int J Obes).
     _current_factor = "bmi"
+    MECHANICAL_BMI_CONDITIONS = {"back_pain", "venous_insufficiency"}
+
     if "bmi" in f:
         band = ctx.get("bmi_band", "normal")
         if band != "normal":
-            # Skip BMI-related risk if the elevated BMI is likely due
-            # to muscle mass (regular resistance training) — see
-            # ctx.get("muscle_hypertrophy").  Muscle mass ↑ body mass
-            # without the visceral-fat mediated inflammation that drives
-            # most obesity-related MSK risks.
-            if ctx.get("muscle_hypertrophy", False):
+            or_v, ci_lo, ci_hi, src = FACTOR_EVIDENCE.get(
+                (condition_key, "bmi", band),
+                (f["bmi"].get(band, 1.0), None, None, "internal"),
+            )
+            if or_v > 1.0:
                 bmi_val = ctx.get("bmi_value")
-                factors_out.append({
-                    "label": (
-                        f"Elevated BMI ({band}, {bmi_val} kg/m²) — "
-                        "**BMI-related risk NOT counted** because the subject "
-                        "reports regular resistance training with muscle hypertrophy. "
-                        "Elevated BMI in this profile likely reflects lean body mass, "
-                        "not adiposity. Consider waist-to-hip ratio for a clearer signal."
-                    ),
-                    "or": 1.0, "ci": None, "tier": "small", "points": 0,
-                    "color": "#94a3b8",
-                    "source": "Muscle-mass adjustment — Etchison 2011 pediatric MRI evidence; adult analogue",
-                })
-            else:
-                or_v, ci_lo, ci_hi, src = FACTOR_EVIDENCE.get(
-                    (condition_key, "bmi", band), (f["bmi"].get(band, 1.0), None, None, "internal")
-                )
-                if or_v > 1.0:
-                    bmi_val = ctx.get("bmi_value")
+                is_mechanical = condition_key in MECHANICAL_BMI_CONDITIONS
+                hypertrophy   = ctx.get("muscle_hypertrophy", False)
+
+                if hypertrophy and is_mechanical:
+                    # Mechanical load still applies — full factor counted
+                    tier, pts, color = _factor_tier(or_v)
+                    factors_out.append({
+                        "label": (
+                            f"Elevated BMI ({band}, {bmi_val} kg/m²) — "
+                            "MECHANICAL load still applies (body mass compresses "
+                            "spine/joints regardless of composition). Metabolic "
+                            "inflammation pathway is likely reduced due to "
+                            "resistance-training hypertrophy."
+                        ),
+                        "or": or_v,
+                        "ci": (ci_lo, ci_hi) if ci_lo else None,
+                        "tier": tier, "points": pts, "color": color,
+                        "source": src + " · mechanical-only interpretation (Prentice 2001)",
+                    })
+                elif hypertrophy and not is_mechanical:
+                    # Metabolic pathway attenuated — factor reduced to
+                    # ~50 % contribution (1 point instead of 2-3)
+                    factors_out.append({
+                        "label": (
+                            f"Elevated BMI ({band}, {bmi_val} kg/m²) — "
+                            "REDUCED WEIGHTING (½ pt) because the metabolic-"
+                            "inflammation pathway that drives {c_name} risk "
+                            "is attenuated in resistance-trained individuals "
+                            "with muscle hypertrophy. Consider waist-to-hip "
+                            "ratio for a cleaner signal."
+                        ).replace("{c_name}", c["name_en"]),
+                        "or": or_v,
+                        "ci": (ci_lo, ci_hi) if ci_lo else None,
+                        "tier": "small", "points": 1, "color": "#a3e635",
+                        "source": src + " · attenuated-metabolic interpretation (Rothman 2008)",
+                    })
+                else:
+                    # Standard: no hypertrophy adjustment
                     _add(
                         f"Elevated BMI ({band}, {bmi_val} kg/m²)",
                         or_v, (ci_lo, ci_hi) if ci_lo else None, src,
