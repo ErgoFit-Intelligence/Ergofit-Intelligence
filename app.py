@@ -1961,7 +1961,7 @@ CONDITIONS = {
             "sex_female":        1.10,
         },
         "sources": [
-            ("Herzberg et al., 2024 — BMI & rotator cuff meta-analysis (n=525K)",
+            ("Herzberg et al., 2024 — BMI & rotator cuff meta-analysis (17 studies pooled)",
              "10.1016/j.asmr.2024.100953"),
             ("Teunis et al., 2014 — Age-stratified prevalence pooled analysis",
              "10.1016/j.jse.2014.08.001"),
@@ -1986,7 +1986,7 @@ CONDITIONS = {
             "prior_injury":      1.60,
         },
         "sources": [
-            ("Landesa-Piñeiro & Leirós-Rodríguez, 2022 — Prevalence systematic review",
+            ("Landesa-Piñeiro & Leirós-Rodríguez, 2022 — Prevalence 1-3% ages 35-54 (background citation, primary paper is on treatment)",
              "10.3233/BMR-210053"),
             ("Sayampanathan et al., 2020 — Risk factors meta-analysis",
              "10.1016/j.jse.2019.11.004"),
