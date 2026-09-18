@@ -559,8 +559,8 @@ ctx = {
     "rosa_final": rosa["final"],
     "rosa": rosa,
 }
-findings = build_findings(ctx)
-recommendations = build_recommendations(ctx, findings)
+findings = build_findings(ctx, lang)
+recommendations = build_recommendations(ctx, findings, lang)
 relevant_evidence_ids = evidence_ids_for_context(ctx, findings)
 relevant_evidence = get_many(relevant_evidence_ids)
 
