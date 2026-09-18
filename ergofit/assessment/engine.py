@@ -9,10 +9,28 @@ def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
     findings: list[Finding] = []
     tr = lambda en, el: en if lang == "en" else el
 
-    # Symptoms are findings, not diagnoses.
+    # Symptoms are recorded separately by body region; they are findings, not diagnoses.
     regions = ctx.get("symptom_regions", [])
-    severity = int(ctx.get("symptom_severity", 0))
-    if regions:
+    symptom_details = ctx.get("symptom_details", {}) or {}
+    if symptom_details:
+        for region in regions:
+            item = symptom_details.get(region, {})
+            label = item.get("label", region)
+            severity = int(item.get("severity", 0))
+            interference = bool(item.get("interference", False))
+            status = "priority" if severity >= 7 or interference else "attention"
+            findings.append(Finding(
+                domain="Symptoms",
+                title=tr(f"Symptom: {label}", f"Σύμπτωμα: {label}"),
+                status=status,
+                detail=tr(
+                    f"Intensity {severity}/10; work interference: {'yes' if interference else 'no'}. This is symptom information, not a diagnosis.",
+                    f"Ένταση {severity}/10· επηρεάζει την εργασία: {'ναι' if interference else 'όχι'}. Πρόκειται για πληροφορία συμπτωμάτων και όχι για διάγνωση."
+                ),
+                modifiable=False,
+            ))
+    elif regions:
+        severity = int(ctx.get("symptom_severity", 0))
         status = "priority" if severity >= 7 or ctx.get("symptom_interference") else "attention"
         findings.append(Finding(
             domain="Symptoms",
