@@ -3491,8 +3491,8 @@ with tab_summary:
             "angles_total":      n_total_angles,
             # ROSA (Sonne 2012) — validated instrument
             "rosa_chair":        rosa["chair_rosa"],
-            "rosa_section_b":    rosa["section_b"],
-            "rosa_section_c":    rosa["section_c"],
+            "rosa_section B":    rosa["section_b"],
+            "rosa_section C":    rosa["section_c"],
             "rosa_mon_peri":     rosa["mon_peri"],
             "rosa_final":        rosa["final"],
             "rosa_action":       rosa["action"],
