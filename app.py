@@ -185,9 +185,42 @@ with tabs[1]:
         "Low back": t["low_back"], "Lower limbs": t["lower_limb"],
     }
     symptom_regions = st.multiselect(t["symptom_regions"], region_options, format_func=lambda x: region_labels[x])
-    c1, c2 = st.columns(2)
-    symptom_severity = c1.slider(t["severity"], 0, 10, 0)
-    symptom_interference = c2.checkbox(t["interference"])
+
+    symptom_details: dict[str, dict] = {}
+    if symptom_regions:
+        st.markdown("#### " + ("Symptoms by body region" if lang == "en" else "Συμπτώματα ανά περιοχή σώματος"))
+        st.caption(
+            "Record intensity and work interference separately for each selected region."
+            if lang == "en"
+            else "Κατέγραψε ξεχωριστά την ένταση και το αν επηρεάζεται η εργασία για κάθε περιοχή που επέλεξες."
+        )
+        for region in symptom_regions:
+            region_label = region_labels[region]
+            st.markdown(f"**{region_label}**")
+            sc1, sc2 = st.columns([2, 1])
+            severity = sc1.slider(
+                f"{t['severity']} — {region_label}",
+                0, 10, 0,
+                key=f"severity_{region}",
+            )
+            interference = sc2.checkbox(
+                (
+                    f"Do symptoms in {region_label.lower()} interfere with work?"
+                    if lang == "en"
+                    else f"Τα συμπτώματα στην περιοχή «{region_label}» επηρεάζουν την εργασία;"
+                ),
+                key=f"interference_{region}",
+            )
+            symptom_details[region] = {
+                "label": region_label,
+                "severity": severity,
+                "interference": interference,
+            }
+            st.divider()
+
+    symptom_severity = max((d["severity"] for d in symptom_details.values()), default=0)
+    symptom_interference = any((d["interference"] for d in symptom_details.values()), default=False)
+
     digital_eye_strain = st.checkbox("Digital eye strain / visual fatigue" if lang == "en" else "Ψηφιακή κόπωση ματιών / οπτική κόπωση")
 
     st.markdown("#### " + ("Work exposure" if lang == "en" else "Εργασιακή έκθεση"))
@@ -515,6 +548,7 @@ ctx = {
     "exercise": exercise,
     "pa_minutes": pa_minutes,
     "symptom_regions": symptom_regions,
+    "symptom_details": symptom_details,
     "symptom_severity": symptom_severity,
     "symptom_interference": symptom_interference,
     "digital_eye_strain": digital_eye_strain,
