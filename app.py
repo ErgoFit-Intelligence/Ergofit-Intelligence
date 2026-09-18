@@ -50,7 +50,7 @@ with st.sidebar:
     st.caption(
         "Quick Mode hides direct anthropometry, psychosocial context and advanced mechanical exposures."
         if st.session_state.lang == "en"
-        else "Το Quick Mode κρύβει άμεση σωματομετρία, ψυχοκοινωνικό πλαίσιο και προχωρημένες μηχανικές εκθέσεις."
+        else "Η Γρήγορη αξιολόγηση κρύβει τις άμεσες σωματομετρικές μετρήσεις, το ψυχοκοινωνικό πλαίσιο και τις προχωρημένες μηχανικές εκθέσεις."
     )
     st.divider()
     st.markdown("**ErgoFit Intelligence v2**")
@@ -279,12 +279,12 @@ with tabs[2]:
         "Στη v2 η οθόνη αξιολογείται με την πραγματική απόσταση θέασης και την κατακόρυφη θέση της και όχι με έναν καθολικό τύπο «ύψος ματιών − 5 cm»."
     )
 
-    with st.expander("DSE environment" if lang == "en" else "Περιβάλλον DSE", expanded=False):
+    with st.expander("DSE environment" if lang == "en" else "Περιβάλλον εργασίας με οθόνη", expanded=False):
         e1, e2 = st.columns(2)
         lighting_ok = yes_no_unknown("Lighting is adequate" if lang == "en" else "Ο φωτισμός είναι επαρκής", "lighting_ok")
-        noise_ok = yes_no_unknown("Noise is acceptable for the task" if lang == "en" else "Ο θόρυβος είναι αποδεκτός για το task", "noise_ok")
+        noise_ok = yes_no_unknown("Noise is acceptable for the task" if lang == "en" else "Ο θόρυβος είναι αποδεκτός για τη συγκεκριμένη εργασία", "noise_ok")
         thermal_ok = yes_no_unknown("Thermal comfort is acceptable" if lang == "en" else "Η θερμική άνεση είναι αποδεκτή", "thermal_ok")
-        software_ok = yes_no_unknown("Software/interface supports the task without avoidable strain" if lang == "en" else "Το λογισμικό/interface υποστηρίζει το task χωρίς περιττή επιβάρυνση", "software_ok")
+        software_ok = yes_no_unknown("Software/interface supports the task without avoidable strain" if lang == "en" else "Το λογισμικό/η διεπαφή υποστηρίζει την εργασία χωρίς περιττή επιβάρυνση", "software_ok")
         st.caption(
             "These fields support a broader EU display-screen assessment and are kept separate from musculoskeletal disease scoring."
             if lang == "en"
@@ -601,7 +601,7 @@ with tabs[6]:
             else "Οι εγγραφές διατηρούνται ξεχωριστές ανά έκβαση και πληθυσμό και δεν συγχωνεύονται σε μία καθολική βαθμολογία πόντων."
         )
         for e in EVIDENCE.values():
-            evidence_card(e)
+            evidence_card(e, lang)
             st.write("")
 
 # ---------------------------------------------------------------------
@@ -635,7 +635,7 @@ with tabs[7]:
     st.markdown("### " + ("Key findings" if lang == "en" else "Κύρια ευρήματα"))
     if findings:
         for f in findings:
-            finding_card(f)
+            finding_card(f, lang)
             st.write("")
     else:
         st.success(
@@ -667,7 +667,7 @@ with tabs[7]:
     st.caption(t["print_note"])
 
     st.divider()
-    st.markdown("#### " + ("Optional secure backend" if lang == "en" else "Προαιρετικό backend"))
+    st.markdown("#### " + ("Optional secure backend" if lang == "en" else "Προαιρετική ασφαλής αποθήκευση"))
     try:
         backend_cfg = st.secrets.get("backend", {})
         webhook_url = backend_cfg.get("webhook_url", "") if backend_cfg else ""
