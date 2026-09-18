@@ -255,21 +255,18 @@ with tabs[1]:
             if lang == "en" else
             "Ενεργοποίησέ τα μόνο όταν υπάρχει πραγματική έκθεση στη συγκεκριμένη εργασία. Δεν πρέπει να συμπεραίνονται από απλή χρήση υπολογιστή."
         )
-        c1, c2 = st.columns(2)
-        high_repetition = c1.checkbox(t["repetition"])
-        hand_force = c2.checkbox(t["force"])
-        c1, c2 = st.columns(2)
-        forearm_rotation = c1.checkbox(t["forearm_rotation"])
-        arm_elevation = c2.checkbox(t["arm_elevation"])
+        high_repetition = st.checkbox(t["repetition"])
+        hand_force = st.checkbox(t["force"])
+        forearm_rotation = st.checkbox(t["forearm_rotation"])
+        arm_elevation = st.checkbox(t["arm_elevation"])
     else:
         high_repetition = hand_force = forearm_rotation = arm_elevation = False
 
     if not quick_mode:
         with st.expander(t["psychosocial"], expanded=False):
-            c1, c2, c3 = st.columns(3)
-            job_demand = c1.checkbox(t["job_demand"])
-            low_control = c2.checkbox(t["low_control"])
-            low_support = c3.checkbox(t["low_support"])
+            job_demand = st.checkbox(t["job_demand"])
+            low_control = st.checkbox(t["low_control"])
+            low_support = st.checkbox(t["low_support"])
     else:
         job_demand = low_control = low_support = False
 
