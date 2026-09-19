@@ -515,16 +515,27 @@ with tabs[5]:
         "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
     )
 
-    ROSA_WORKSHEET_IMAGE = "assets/rosa_banner.jpg"
+    ROSA_WORKSHEET_IMAGE = "https://raw.githubusercontent.com/ErgoFit-Intelligence/Ergofit-Intelligence/main/assets/rosa_banner.jpg"
     ROSA_WORKSHEET_PDF = "https://7488314.fs1.hubspotusercontent-na1.net/hubfs/7488314/Infosheets/ROSA_Worksheet_TuMeke.pdf"
 
     with st.expander(
         "Visual ROSA worksheet & icons" if lang == "en" else "Οπτικός οδηγός ROSA με τα εικονίδια",
         expanded=True,
     ):
-        st.image(
-            ROSA_WORKSHEET_IMAGE,
-            use_container_width=True,
+        # Render via the browser instead of st.image/Pillow. Streamlit executes
+        # tab contents eagerly, so a PIL decoding error here would otherwise
+        # crash the whole app even when the ROSA tab is not selected.
+        st.markdown(
+            f"""
+            <div style="width:100%; margin:0 0 12px 0;">
+              <img
+                src="{ROSA_WORKSHEET_IMAGE}?v=2"
+                alt="ErgoFit ROSA checklist"
+                style="width:100%; height:auto; display:block; border-radius:10px; border:1px solid #d9dde6;"
+              />
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         st.markdown(
             f"[Open worksheet PDF]({ROSA_WORKSHEET_PDF})"
