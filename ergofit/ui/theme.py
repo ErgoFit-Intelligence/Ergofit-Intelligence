@@ -59,7 +59,7 @@ def apply_theme(asset_dir: Path) -> None:
           .ef-source {{ margin-top:8px; font-size:12px; color:#667085; }}
           .ef-effect {{ font-size:18px; font-weight:800; color:var(--navy); margin:.25rem 0; }}
           .ef-summary {{ border-left:4px solid var(--gold); background:white; border-radius:12px; padding:16px 18px; margin:10px 0; }}
-          .ef-kicker {{ font-size:11px; font-weight:800; letter-spacing:.14em; color:var(--gold); text-transform:uppercase; }}
+          .ef-kicker {{ font-size:11px; font-weight:800; letter-spacing:.14em; color:var(--gold); }}
           .stTabs [data-baseweb="tab-list"] {{ gap:5px; background:#eceef4; border:1px solid #e0e3eb; padding:5px; border-radius:13px; }}
           .stTabs [data-baseweb="tab"] {{ border-radius:9px; padding:9px 14px; color:#4b5563; font-weight:600; }}
           .stTabs [aria-selected="true"] {{ background:white!important; color:var(--navy)!important; box-shadow:0 2px 7px rgba(16,17,77,.1); }}
