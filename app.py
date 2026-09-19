@@ -128,6 +128,192 @@ def rosa_checkbox(label_el: str, label_en: str, points: int, key: str) -> int:
     return points if st.checkbox(f"{label} (+{points})", key=key) else 0
 
 
+# ---------------------------------------------------------------------
+# Client profile — shared by both assessments
+# ---------------------------------------------------------------------
+st.markdown("## " + ("1 · Client details" if lang == "en" else "1 · Στοιχεία πελάτη"))
+st.caption(
+    "These details identify the person being assessed and are shared by the first and second assessment."
+    if lang == "en"
+    else "Τα στοιχεία αυτά αφορούν τον ίδιο πελάτη/εργαζόμενο και χρησιμοποιούνται τόσο στην 1η όσο και στη 2η αξιολόγηση."
+)
+
+p1, p2, p3 = st.columns([1.3, 1.2, 1.2])
+subject_id = p1.text_input(
+    "Client name or code" if lang == "en" else "Όνομα ή κωδικός πελάτη",
+    value="",
+    placeholder="π.χ. COS-024",
+    key="client_subject_id",
+)
+company = p2.text_input("Company" if lang == "en" else "Εταιρεία", value="", key="client_company")
+department = p3.text_input("Department / area" if lang == "en" else "Τμήμα / χώρος", value="", key="client_department")
+
+p1, p2, p3 = st.columns([1.4, 1, 1])
+job_title = p1.text_input("Job title" if lang == "en" else "Θέση εργασίας", value="", key="client_job_title")
+age = p2.number_input(t["age"], min_value=18, max_value=80, value=35, key="client_age")
+sex_options = ["female", "male", "other"]
+sex = p3.selectbox(
+    t["sex"],
+    sex_options,
+    format_func=lambda x: {"female": t["female"], "male": t["male"], "other": t["other"]}[x],
+    key="client_sex",
+)
+
+p1, p2 = st.columns(2)
+height = p1.number_input(t["height"], min_value=140.0, max_value=210.0, value=175.0, step=0.5, key="client_height")
+weight = p2.number_input(t["weight"], min_value=40.0, max_value=200.0, value=75.0, step=0.5, key="client_weight")
+bmi_value = bmi(weight, height)
+st.caption(
+    f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
+    if lang == "en"
+    else f"ΔΜΣ: {bmi_value:.1f} kg/m² — εμφανίζεται ως στοιχείο υγείας και όχι ως εργονομική βαθμολογία."
+)
+
+st.divider()
+st.markdown("## " + ("2 · Assessment" if lang == "en" else "2 · Αξιολόγηση"))
+assessment_stage = st.radio(
+    "Choose assessment" if lang == "en" else "Επίλεξε αξιολόγηση",
+    ["baseline", "followup"],
+    format_func=lambda x: (
+        "1st Assessment" if x == "baseline" and lang == "en"
+        else "2nd Assessment / Reassessment" if x == "followup" and lang == "en"
+        else "1η Αξιολόγηση" if x == "baseline"
+        else "2η Αξιολόγηση / Επαναξιολόγηση"
+    ),
+    horizontal=True,
+    key="assessment_stage",
+)
+
+baseline_report = None
+baseline_assessment = {}
+parent_assessment_id = ""
+interventions_notes = ""
+
+if assessment_stage == "followup":
+    st.markdown("### " + ("Connection with the 1st assessment" if lang == "en" else "Σύνδεση με την 1η αξιολόγηση"))
+
+    if sheets_ready:
+        if subject_id.strip():
+            try:
+                previous = [
+                    r for r in list_worker_assessments(
+                        sheets_credentials,
+                        sheets_spreadsheet_id,
+                        subject_id.strip(),
+                    )
+                    if str(r.get("assessment_stage", "")) == "baseline"
+                ]
+            except Exception as exc:
+                previous = []
+                st.error(
+                    f"Could not read Google Sheets: {exc}"
+                    if lang == "en"
+                    else f"Δεν ήταν δυνατή η ανάγνωση του Google Sheets: {exc}"
+                )
+
+            if previous:
+                options = [str(r.get("assessment_id", "")) for r in previous]
+                labels = {
+                    str(r.get("assessment_id", "")): (
+                        f"{r.get('assessment_date', '—')} · ROSA {r.get('rosa_final', '—')} · {r.get('assessment_id', '')}"
+                    )
+                    for r in previous
+                }
+                selected_baseline = st.selectbox(
+                    "Select the 1st assessment" if lang == "en" else "Επίλεξε την 1η αξιολόγηση",
+                    options,
+                    format_func=lambda x: labels.get(x, x),
+                    key="selected_baseline_assessment",
+                )
+                try:
+                    baseline_report = load_assessment_payload(
+                        sheets_credentials,
+                        sheets_spreadsheet_id,
+                        selected_baseline,
+                    )
+                except Exception as exc:
+                    baseline_report = None
+                    st.error(
+                        f"Could not load the selected assessment: {exc}"
+                        if lang == "en"
+                        else f"Δεν ήταν δυνατή η φόρτωση της επιλεγμένης αξιολόγησης: {exc}"
+                    )
+                if baseline_report:
+                    baseline_assessment = baseline_report.get("assessment", {}) or {}
+                    parent_assessment_id = selected_baseline
+                    st.success(
+                        "The 1st assessment was loaded automatically. The final section will compare it with the reassessment."
+                        if lang == "en"
+                        else "Η 1η αξιολόγηση φορτώθηκε αυτόματα. Στην τελική ενότητα θα συγκριθεί με την επαναξιολόγηση."
+                    )
+            else:
+                st.info(
+                    "No 1st assessment was found for this client code."
+                    if lang == "en"
+                    else "Δεν βρέθηκε 1η αξιολόγηση για αυτόν τον κωδικό πελάτη."
+                )
+        else:
+            st.info(
+                "Enter the client name/code above first."
+                if lang == "en"
+                else "Συμπλήρωσε πρώτα το όνομα ή τον κωδικό πελάτη."
+            )
+    else:
+        st.warning(
+            "Google Sheets automatic connection is not active in the deployed app yet. Until it is activated, the 1st assessment can be loaded from its JSON backup."
+            if lang == "en"
+            else "Η αυτόματη σύνδεση του deployed app με το Google Sheets δεν έχει ενεργοποιηθεί ακόμη. Μέχρι να ενεργοποιηθεί, η 1η αξιολόγηση μπορεί να φορτωθεί από το αντίγραφο JSON."
+        )
+        baseline_file = st.file_uploader(
+            "1st assessment JSON" if lang == "en" else "Αρχείο 1ης αξιολόγησης (JSON)",
+            type=["json"],
+            key="baseline_report_upload",
+        )
+        if baseline_file is not None:
+            try:
+                baseline_report = json.loads(baseline_file.getvalue().decode("utf-8"))
+                if not isinstance(baseline_report, dict) or "assessment" not in baseline_report:
+                    raise ValueError("invalid report structure")
+                baseline_assessment = baseline_report.get("assessment", {}) or {}
+                parent_assessment_id = str(
+                    baseline_assessment.get("assessment_id", "")
+                    or baseline_report.get("assessment_id", "")
+                    or ""
+                )
+            except Exception:
+                baseline_report = None
+                baseline_assessment = {}
+                st.error(
+                    "The file could not be read as a valid ErgoFit assessment."
+                    if lang == "en"
+                    else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
+                )
+
+    interventions_notes = st.text_area(
+        "Interventions implemented between the two assessments"
+        if lang == "en"
+        else "Παρεμβάσεις που εφαρμόστηκαν μεταξύ 1ης και 2ης αξιολόγησης",
+        placeholder=(
+            "e.g. chair adjustment, monitor repositioning, task changes, active breaks..."
+            if lang == "en"
+            else "π.χ. ρύθμιση καρέκλας, αλλαγή θέσης οθόνης, αλλαγές στην οργάνωση της εργασίας, ενεργά διαλείμματα..."
+        ),
+        key="interventions_notes",
+    )
+
+stage_heading = (
+    "1st Assessment" if assessment_stage == "baseline" and lang == "en"
+    else "2nd Assessment / Reassessment" if assessment_stage == "followup" and lang == "en"
+    else "1η Αξιολόγηση" if assessment_stage == "baseline"
+    else "2η Αξιολόγηση / Επαναξιολόγηση"
+)
+st.markdown(f"### {stage_heading}")
+st.caption(
+    "Complete all sections below for this assessment."
+    if lang == "en"
+    else "Συμπλήρωσε όλες τις παρακάτω ενότητες για τη συγκεκριμένη αξιολόγηση."
+)
+
 # Ordered workflow; Streamlit evaluates all tabs so later tabs can consume earlier values.
 tabs = st.tabs([
     t["tab_profile"], t["tab_symptoms"], t["tab_workstation"], t["tab_chair"],
@@ -135,179 +321,12 @@ tabs = st.tabs([
 ])
 
 # ---------------------------------------------------------------------
-# 1. Worker profile
+# 1. Health context & anthropometry
 # ---------------------------------------------------------------------
 with tabs[0]:
     st.subheader(t["profile_title"])
 
-    assessment_stage = st.radio(
-        "Assessment stage" if lang == "en" else "Στάδιο αξιολόγησης",
-        ["baseline", "followup"],
-        format_func=lambda x: (
-            "Before intervention (baseline)" if x == "baseline" and lang == "en"
-            else "Follow-up after intervention" if x == "followup" and lang == "en"
-            else "Πριν τις παρεμβάσεις (αρχική αξιολόγηση)" if x == "baseline"
-            else "Μετά τις παρεμβάσεις (επανεκτίμηση)"
-        ),
-        horizontal=True,
-        key="assessment_stage",
-    )
-
-    id1, id2, id3 = st.columns([1.4, 1.3, 1.3])
-    subject_id = id1.text_input(t["subject_id"], value="", placeholder="π.χ. COS-024")
-    company = id2.text_input("Company" if lang == "en" else "Εταιρεία", value="")
-    department = id3.text_input("Department / area" if lang == "en" else "Τμήμα / χώρος", value="")
-
-    baseline_report = None
-    baseline_assessment = {}
-    parent_assessment_id = ""
-    interventions_notes = ""
-
-    if assessment_stage == "followup":
-        st.markdown("#### " + ("Link to the initial assessment" if lang == "en" else "Σύνδεση με την αρχική αξιολόγηση"))
-
-        if sheets_ready:
-            if subject_id.strip():
-                try:
-                    previous = [
-                        r for r in list_worker_assessments(
-                            sheets_credentials,
-                            sheets_spreadsheet_id,
-                            subject_id.strip(),
-                        )
-                        if str(r.get("assessment_stage", "")) == "baseline"
-                    ]
-                except Exception as exc:
-                    previous = []
-                    st.error(
-                        f"Could not read Google Sheets: {exc}"
-                        if lang == "en"
-                        else f"Δεν ήταν δυνατή η ανάγνωση του Google Sheets: {exc}"
-                    )
-
-                if previous:
-                    options = [str(r.get("assessment_id", "")) for r in previous]
-                    labels = {
-                        str(r.get("assessment_id", "")): (
-                            f"{r.get('assessment_date', '—')} · ROSA {r.get('rosa_final', '—')} · {r.get('assessment_id', '')}"
-                        )
-                        for r in previous
-                    }
-                    selected_baseline = st.selectbox(
-                        "Select initial assessment" if lang == "en" else "Επίλεξε την αρχική αξιολόγηση",
-                        options,
-                        format_func=lambda x: labels.get(x, x),
-                        key="selected_baseline_assessment",
-                    )
-                    try:
-                        baseline_report = load_assessment_payload(
-                            sheets_credentials,
-                            sheets_spreadsheet_id,
-                            selected_baseline,
-                        )
-                    except Exception as exc:
-                        baseline_report = None
-                        st.error(
-                            f"Could not load the selected assessment: {exc}"
-                            if lang == "en"
-                            else f"Δεν ήταν δυνατή η φόρτωση της επιλεγμένης αξιολόγησης: {exc}"
-                        )
-                    if baseline_report:
-                        baseline_assessment = baseline_report.get("assessment", {}) or {}
-                        parent_assessment_id = selected_baseline
-                        st.success(
-                            "Initial assessment loaded automatically from Google Sheets."
-                            if lang == "en"
-                            else "Η αρχική αξιολόγηση φορτώθηκε αυτόματα από το Google Sheets."
-                        )
-                else:
-                    st.info(
-                        "No initial assessment was found for this worker code."
-                        if lang == "en"
-                        else "Δεν βρέθηκε αρχική αξιολόγηση για αυτόν τον κωδικό εργαζομένου."
-                    )
-            else:
-                st.info(
-                    "Enter the worker code above to find the initial assessment."
-                    if lang == "en"
-                    else "Γράψε πρώτα τον κωδικό εργαζομένου για να βρεθεί η αρχική αξιολόγηση."
-                )
-        else:
-            st.warning(
-                "Google Sheets storage is not connected to the deployed app yet. You can temporarily upload the initial JSON below."
-                if lang == "en"
-                else "Το Google Sheets δεν έχει συνδεθεί ακόμη με το deployed app. Προσωρινά μπορείς να ανεβάσεις το JSON της αρχικής αξιολόγησης παρακάτω."
-            )
-            baseline_file = st.file_uploader(
-                "Initial assessment JSON" if lang == "en" else "Αρχείο αρχικής αξιολόγησης (JSON)",
-                type=["json"],
-                key="baseline_report_upload",
-            )
-            if baseline_file is not None:
-                try:
-                    baseline_report = json.loads(baseline_file.getvalue().decode("utf-8"))
-                    if not isinstance(baseline_report, dict) or "assessment" not in baseline_report:
-                        raise ValueError("invalid report structure")
-                    baseline_assessment = baseline_report.get("assessment", {}) or {}
-                    parent_assessment_id = str(
-                        baseline_assessment.get("assessment_id", "")
-                        or baseline_report.get("assessment_id", "")
-                        or ""
-                    )
-                except Exception:
-                    baseline_report = None
-                    baseline_assessment = {}
-                    st.error(
-                        "The file could not be read as a valid ErgoFit assessment."
-                        if lang == "en"
-                        else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
-                    )
-
-        interventions_notes = st.text_area(
-            "Interventions implemented since the initial assessment"
-            if lang == "en"
-            else "Παρεμβάσεις που εφαρμόστηκαν μετά την αρχική αξιολόγηση",
-            placeholder=(
-                "e.g. chair adjustment, monitor repositioning, task changes, active breaks..."
-                if lang == "en"
-                else "π.χ. ρύθμιση καρέκλας, αλλαγή θέσης οθόνης, αλλαγές στην οργάνωση της εργασίας, ενεργά διαλείμματα..."
-            ),
-            key="interventions_notes",
-        )
-
-    default_age = int(baseline_assessment.get("age", 35) or 35) if baseline_assessment else 35
-    default_sex = str(baseline_assessment.get("sex", "female")) if baseline_assessment else "female"
-    if default_sex not in {"female", "male", "other"}:
-        default_sex = "female"
-    default_height = float(baseline_assessment.get("height", 175.0) or 175.0) if baseline_assessment else 175.0
-    default_weight = float(baseline_assessment.get("weight", 75.0) or 75.0) if baseline_assessment else 75.0
-
-    c1, c2 = st.columns([1, 1])
-    assessment_date = c1.date_input(t["assessment_date"], value=date.today())
-    age = c2.number_input(t["age"], min_value=18, max_value=80, value=max(18, min(80, default_age)))
-
-    c1, c2, c3 = st.columns(3)
-    sex_options = ["female", "male", "other"]
-    sex = c1.selectbox(
-        t["sex"],
-        sex_options,
-        index=sex_options.index(default_sex),
-        format_func=lambda x: {"female": t["female"], "male": t["male"], "other": t["other"]}[x],
-    )
-    height = c2.number_input(
-        t["height"], min_value=140.0, max_value=210.0,
-        value=max(140.0, min(210.0, default_height)), step=0.5
-    )
-    weight = c3.number_input(
-        t["weight"], min_value=40.0, max_value=200.0,
-        value=max(40.0, min(200.0, default_weight)), step=0.5
-    )
-    bmi_value = bmi(weight, height)
-    st.caption(
-        f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
-        if lang == "en"
-        else f"ΔΜΣ: {bmi_value:.1f} kg/m² — εμφανίζεται ως στοιχείο υγείας και όχι ως εργονομική βαθμολογία."
-    )
+    assessment_date = st.date_input(t["assessment_date"], value=date.today(), key="assessment_date")
 
     if quick_mode:
         pop_direct = elbow_direct = eye_direct = 0.0
@@ -338,8 +357,8 @@ with tabs[0]:
     pa_minutes = c2.number_input(t["pa_minutes"], min_value=0, max_value=1500, value=120, step=10)
     st.caption(
         "Physical activity and exercise are recorded as wellbeing/intervention context. They do not subtract points from a disease score."
-        if lang == "en" else
-        "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως στοιχεία ευεξίας και παρέμβασης. Δεν αφαιρούν πόντους από κάποια βαθμολογία κινδύνου νόσου."
+        if lang == "en"
+        else "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως στοιχεία ευεξίας και παρέμβασης. Δεν αφαιρούν πόντους από κάποια βαθμολογία κινδύνου νόσου."
     )
 
 # ---------------------------------------------------------------------
@@ -1021,6 +1040,8 @@ ctx = {
     "subject_id": subject_id,
     "company": company,
     "department": department,
+    "job_title": job_title,
+    "client_name_or_code": subject_id,
     "assessment_stage": assessment_stage,
     "parent_assessment_id": parent_assessment_id,
     "interventions_notes": interventions_notes,
@@ -1157,10 +1178,10 @@ with tabs[7]:
 
     subject_display = subject_id.strip() or ("Unidentified worker" if lang == "en" else "Χωρίς αναγνωριστικό")
     stage_label = (
-        "Before intervention" if assessment_stage == "baseline" and lang == "en"
-        else "Follow-up after intervention" if assessment_stage == "followup" and lang == "en"
-        else "Πριν τις παρεμβάσεις" if assessment_stage == "baseline"
-        else "Μετά τις παρεμβάσεις"
+        "1st Assessment" if assessment_stage == "baseline" and lang == "en"
+        else "2nd Assessment / Reassessment" if assessment_stage == "followup" and lang == "en"
+        else "1η Αξιολόγηση" if assessment_stage == "baseline"
+        else "2η Αξιολόγηση / Επαναξιολόγηση"
     )
 
     st.markdown(
