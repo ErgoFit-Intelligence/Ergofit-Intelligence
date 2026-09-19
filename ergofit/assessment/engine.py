@@ -275,13 +275,13 @@ def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
         findings.append(Finding(
             domain="Posture & movement",
             title=tr(
-                f"{len(posture_out)} joint-specific posture reference finding(s)",
-                f"{len(posture_out)} εύρημα/ευρήματα στάσης ανά άρθρωση"
+                f"{len(posture_out)} posture criterion finding(s)",
+                f"{len(posture_out)} εύρημα/ευρήματα κριτηρίων στάσης"
             ),
             status="attention",
             detail=tr(
-                "These are reference observations. v2 deliberately does not aggregate them into an overall posture percentage or disease-risk category.",
-                "Πρόκειται για παρατηρήσεις αναφοράς. Η v2 σκόπιμα δεν τις συγκεντρώνει σε συνολικό ποσοστό στάσης ή σε κατηγορία κινδύνου νόσου."
+                "These are posture-screening observations. v2 deliberately does not aggregate them into an overall posture percentage or disease-risk category.",
+                "Πρόκειται για παρατηρήσεις εργονομικής στάσης. Η v2 σκόπιμα δεν τις συγκεντρώνει σε συνολικό ποσοστό στάσης ή σε κατηγορία κινδύνου νόσου."
             ),
             evidence_ids=("jahn_2023_lbp_posture",),
         ))
