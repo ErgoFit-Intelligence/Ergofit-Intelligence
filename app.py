@@ -10,6 +10,11 @@ import streamlit as st
 from ergofit.assessment.engine import build_findings, evidence_ids_for_context
 from ergofit.assessment.recommendations import build_recommendations
 from ergofit.backend import submit_payload
+from ergofit.google_sheets import (
+    list_worker_assessments,
+    load_assessment_payload,
+    save_assessment,
+)
 from ergofit.i18n import get_text
 from ergofit.science.anthropometry import bmi, reference_from_stature
 from ergofit.science.evidence_registry import EVIDENCE, get_many
@@ -63,6 +68,19 @@ with st.sidebar:
 
 lang = st.session_state.lang
 t = get_text(lang)
+
+def _google_sheets_config():
+    try:
+        cfg = dict(st.secrets.get("google_sheets", {}))
+    except Exception:
+        cfg = {}
+    spreadsheet_id = str(cfg.pop("spreadsheet_id", "") or "").strip()
+    required = {"type", "project_id", "private_key", "client_email", "token_uri"}
+    ready = bool(spreadsheet_id and required.issubset(cfg.keys()))
+    return ready, spreadsheet_id, cfg
+
+sheets_ready, sheets_spreadsheet_id, sheets_credentials = _google_sheets_config()
+
 hero(t["hero_title"], t["hero_sub"])
 
 with st.expander(t["purpose"], expanded=False):
@@ -135,42 +153,115 @@ with tabs[0]:
         key="assessment_stage",
     )
 
+    id1, id2, id3 = st.columns([1.4, 1.3, 1.3])
+    subject_id = id1.text_input(t["subject_id"], value="", placeholder="π.χ. COS-024")
+    company = id2.text_input("Company" if lang == "en" else "Εταιρεία", value="")
+    department = id3.text_input("Department / area" if lang == "en" else "Τμήμα / χώρος", value="")
+
     baseline_report = None
-    interventions_notes = ""
     baseline_assessment = {}
+    parent_assessment_id = ""
+    interventions_notes = ""
 
     if assessment_stage == "followup":
-        st.info(
-            "Upload the JSON report from the initial assessment. The tool will compare the same worker before and after the interventions."
-            if lang == "en"
-            else "Ανέβασε το αρχείο JSON της αρχικής αξιολόγησης. Το εργαλείο θα συγκρίνει τον ίδιο εργαζόμενο πριν και μετά τις παρεμβάσεις."
-        )
-        baseline_file = st.file_uploader(
-            "Initial assessment JSON" if lang == "en" else "Αρχείο αρχικής αξιολόγησης (JSON)",
-            type=["json"],
-            key="baseline_report_upload",
-        )
-        if baseline_file is not None:
-            try:
-                baseline_report = json.loads(baseline_file.getvalue().decode("utf-8"))
-                if not isinstance(baseline_report, dict) or "assessment" not in baseline_report:
-                    raise ValueError("invalid report structure")
-                baseline_assessment = baseline_report.get("assessment", {}) or {}
-                baseline_date = baseline_assessment.get("assessment_date", "—")
-                baseline_subject = baseline_assessment.get("subject_id", "—")
-                st.success(
-                    f"Initial assessment loaded: {baseline_subject} · {baseline_date}"
+        st.markdown("#### " + ("Link to the initial assessment" if lang == "en" else "Σύνδεση με την αρχική αξιολόγηση"))
+
+        if sheets_ready:
+            if subject_id.strip():
+                try:
+                    previous = [
+                        r for r in list_worker_assessments(
+                            sheets_credentials,
+                            sheets_spreadsheet_id,
+                            subject_id.strip(),
+                        )
+                        if str(r.get("assessment_stage", "")) == "baseline"
+                    ]
+                except Exception as exc:
+                    previous = []
+                    st.error(
+                        f"Could not read Google Sheets: {exc}"
+                        if lang == "en"
+                        else f"Δεν ήταν δυνατή η ανάγνωση του Google Sheets: {exc}"
+                    )
+
+                if previous:
+                    options = [str(r.get("assessment_id", "")) for r in previous]
+                    labels = {
+                        str(r.get("assessment_id", "")): (
+                            f"{r.get('assessment_date', '—')} · ROSA {r.get('rosa_final', '—')} · {r.get('assessment_id', '')}"
+                        )
+                        for r in previous
+                    }
+                    selected_baseline = st.selectbox(
+                        "Select initial assessment" if lang == "en" else "Επίλεξε την αρχική αξιολόγηση",
+                        options,
+                        format_func=lambda x: labels.get(x, x),
+                        key="selected_baseline_assessment",
+                    )
+                    try:
+                        baseline_report = load_assessment_payload(
+                            sheets_credentials,
+                            sheets_spreadsheet_id,
+                            selected_baseline,
+                        )
+                    except Exception as exc:
+                        baseline_report = None
+                        st.error(
+                            f"Could not load the selected assessment: {exc}"
+                            if lang == "en"
+                            else f"Δεν ήταν δυνατή η φόρτωση της επιλεγμένης αξιολόγησης: {exc}"
+                        )
+                    if baseline_report:
+                        baseline_assessment = baseline_report.get("assessment", {}) or {}
+                        parent_assessment_id = selected_baseline
+                        st.success(
+                            "Initial assessment loaded automatically from Google Sheets."
+                            if lang == "en"
+                            else "Η αρχική αξιολόγηση φορτώθηκε αυτόματα από το Google Sheets."
+                        )
+                else:
+                    st.info(
+                        "No initial assessment was found for this worker code."
+                        if lang == "en"
+                        else "Δεν βρέθηκε αρχική αξιολόγηση για αυτόν τον κωδικό εργαζομένου."
+                    )
+            else:
+                st.info(
+                    "Enter the worker code above to find the initial assessment."
                     if lang == "en"
-                    else f"Η αρχική αξιολόγηση φορτώθηκε: {baseline_subject} · {baseline_date}"
+                    else "Γράψε πρώτα τον κωδικό εργαζομένου για να βρεθεί η αρχική αξιολόγηση."
                 )
-            except Exception:
-                baseline_report = None
-                baseline_assessment = {}
-                st.error(
-                    "The file could not be read as a valid ErgoFit assessment."
-                    if lang == "en"
-                    else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
-                )
+        else:
+            st.warning(
+                "Google Sheets storage is not connected to the deployed app yet. You can temporarily upload the initial JSON below."
+                if lang == "en"
+                else "Το Google Sheets δεν έχει συνδεθεί ακόμη με το deployed app. Προσωρινά μπορείς να ανεβάσεις το JSON της αρχικής αξιολόγησης παρακάτω."
+            )
+            baseline_file = st.file_uploader(
+                "Initial assessment JSON" if lang == "en" else "Αρχείο αρχικής αξιολόγησης (JSON)",
+                type=["json"],
+                key="baseline_report_upload",
+            )
+            if baseline_file is not None:
+                try:
+                    baseline_report = json.loads(baseline_file.getvalue().decode("utf-8"))
+                    if not isinstance(baseline_report, dict) or "assessment" not in baseline_report:
+                        raise ValueError("invalid report structure")
+                    baseline_assessment = baseline_report.get("assessment", {}) or {}
+                    parent_assessment_id = str(
+                        baseline_assessment.get("assessment_id", "")
+                        or baseline_report.get("assessment_id", "")
+                        or ""
+                    )
+                except Exception:
+                    baseline_report = None
+                    baseline_assessment = {}
+                    st.error(
+                        "The file could not be read as a valid ErgoFit assessment."
+                        if lang == "en"
+                        else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
+                    )
 
         interventions_notes = st.text_area(
             "Interventions implemented since the initial assessment"
@@ -184,18 +275,16 @@ with tabs[0]:
             key="interventions_notes",
         )
 
-    default_subject = str(baseline_assessment.get("subject_id", "")) if assessment_stage == "followup" else ""
-    default_age = int(baseline_assessment.get("age", 35) or 35) if assessment_stage == "followup" else 35
-    default_sex = str(baseline_assessment.get("sex", "female")) if assessment_stage == "followup" else "female"
+    default_age = int(baseline_assessment.get("age", 35) or 35) if baseline_assessment else 35
+    default_sex = str(baseline_assessment.get("sex", "female")) if baseline_assessment else "female"
     if default_sex not in {"female", "male", "other"}:
         default_sex = "female"
-    default_height = float(baseline_assessment.get("height", 175.0) or 175.0) if assessment_stage == "followup" else 175.0
-    default_weight = float(baseline_assessment.get("weight", 75.0) or 75.0) if assessment_stage == "followup" else 75.0
+    default_height = float(baseline_assessment.get("height", 175.0) or 175.0) if baseline_assessment else 175.0
+    default_weight = float(baseline_assessment.get("weight", 75.0) or 75.0) if baseline_assessment else 75.0
 
-    c1, c2, c3 = st.columns([2, 1, 1])
-    subject_id = c1.text_input(t["subject_id"], value=default_subject, placeholder="EF-001")
-    assessment_date = c2.date_input(t["assessment_date"], value=date.today())
-    age = c3.number_input(t["age"], min_value=18, max_value=80, value=max(18, min(80, default_age)))
+    c1, c2 = st.columns([1, 1])
+    assessment_date = c1.date_input(t["assessment_date"], value=date.today())
+    age = c2.number_input(t["age"], min_value=18, max_value=80, value=max(18, min(80, default_age)))
 
     c1, c2, c3 = st.columns(3)
     sex_options = ["female", "male", "other"]
@@ -930,7 +1019,10 @@ with tabs[5]:
 # ---------------------------------------------------------------------
 ctx = {
     "subject_id": subject_id,
+    "company": company,
+    "department": department,
     "assessment_stage": assessment_stage,
+    "parent_assessment_id": parent_assessment_id,
     "interventions_notes": interventions_notes,
     "assessment_date": str(assessment_date),
     "age": age,
@@ -1389,37 +1481,55 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
     report_json = json.dumps(report_payload, ensure_ascii=False, indent=2)
 
     st.divider()
-    st.markdown("### " + ("Report and follow-up" if lang == "en" else "Αναφορά και επανεκτίμηση"))
-    st.download_button(
-        t["download_json"],
-        data=report_json.encode("utf-8"),
-        file_name=f"ergofit_v2_{subject_id.strip() or 'assessment'}_{assessment_stage}.json",
-        mime="application/json",
-    )
-    st.caption(t["print_note"])
+    st.markdown("### " + ("Save assessment" if lang == "en" else "Αποθήκευση αξιολόγησης"))
 
-    if assessment_stage == "baseline":
-        st.info(
-            "Save this JSON. At the follow-up assessment, select 'After intervention' and upload it to generate the before/after comparison."
+    if sheets_ready:
+        st.caption(
+            "The assessment will be stored directly in the ErgoFit Google Sheets database."
             if lang == "en"
-            else "Αποθήκευσε αυτό το JSON. Στην επανεκτίμηση επίλεξε «Μετά τις παρεμβάσεις» και ανέβασέ το για να δημιουργηθεί αυτόματα η σύγκριση πριν/μετά."
+            else "Η αξιολόγηση θα αποθηκευτεί απευθείας στη βάση Google Sheets του ErgoFit."
+        )
+        consent = st.checkbox(
+            "I confirm that I am authorised to store these assessment data."
+            if lang == "en"
+            else "Επιβεβαιώνω ότι έχω την κατάλληλη εξουσιοδότηση για την αποθήκευση αυτών των δεδομένων αξιολόγησης.",
+            key="sheets_storage_consent",
+        )
+        if st.button(
+            "Save to Google Sheets" if lang == "en" else "Αποθήκευση στο Google Sheets",
+            type="primary",
+            disabled=(not consent or not subject_id.strip()),
+            key="save_to_google_sheets",
+        ):
+            ok, msg, saved_id = save_assessment(
+                sheets_credentials,
+                sheets_spreadsheet_id,
+                report_payload,
+            )
+            if ok:
+                st.session_state["last_saved_assessment_id"] = saved_id
+                st.success(
+                    f"Saved successfully · {saved_id}"
+                    if lang == "en"
+                    else f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}"
+                )
+            else:
+                st.error(msg)
+    else:
+        st.warning(
+            "The Google Sheet is ready, but the deployed Streamlit app still needs its Google service-account credentials in Streamlit Secrets before automatic saving can start."
+            if lang == "en"
+            else "Το Google Sheet είναι έτοιμο, αλλά το deployed Streamlit app χρειάζεται ακόμη τα διαπιστευτήρια Google service account στα Streamlit Secrets για να ξεκινήσει η αυτόματη αποθήκευση."
         )
 
-    st.divider()
-    st.markdown("#### " + ("Optional secure backend" if lang == "en" else "Προαιρετική ασφαλής αποθήκευση"))
-    try:
-        backend_cfg = st.secrets.get("backend", {})
-        webhook_url = backend_cfg.get("webhook_url", "") if backend_cfg else ""
-    except Exception:
-        webhook_url = ""
-
-    if not webhook_url:
-        st.info(t["backend_disabled"])
-    else:
-        consent = st.checkbox(t["consent"], key="backend_consent")
-        if st.button(t["submit"], type="primary", disabled=not consent):
-            ok, msg = submit_payload(webhook_url, report_payload)
-            (st.success if ok else st.error)(msg)
+    with st.expander("Backup / export" if lang == "en" else "Αντίγραφο ασφαλείας / εξαγωγή", expanded=False):
+        st.download_button(
+            t["download_json"],
+            data=report_json.encode("utf-8"),
+            file_name=f"ergofit_v2_{subject_id.strip() or 'assessment'}_{assessment_stage}.json",
+            mime="application/json",
+        )
+        st.caption(t["print_note"])
 
 st.divider()
 st.caption(
