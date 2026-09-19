@@ -15,7 +15,7 @@ TEXT = {
 
 **Σημαντικό.** Τα standards χρησιμοποιούνται ως design/compliance references. Ένα όριο standard δεν μετατρέπεται αυτόματα σε disease-risk threshold.
 """,
-        "tab_profile": "1 · Εργαζόμενος",
+        "tab_profile": "1 · Υγεία & σωματομετρία",
         "tab_symptoms": "2 · Συμπτώματα & έκθεση",
         "tab_workstation": "3 · Προσαρμογή θέσης εργασίας",
         "tab_chair": "4 · Καρέκλα",
@@ -23,7 +23,7 @@ TEXT = {
         "tab_rosa": "6 · ROSA",
         "tab_evidence": "7 · Επιστημονική τεκμηρίωση",
         "tab_summary": "8 · Σύνοψη - Αποτελέσματα",
-        "profile_title": "Στοιχεία εργαζομένου",
+        "profile_title": "Στοιχεία υγείας και σωματομετρίας",
         "symptoms_title": "Συμπτώματα και εργασιακή έκθεση",
         "workstation_title": "Προσαρμογή θέσης εργασίας",
         "chair_title": "Έλεγχος προσαρμογής και ρυθμίσεων καρέκλας",
@@ -112,7 +112,7 @@ TEXT = {
 
 **Important.** Standards are used as design/compliance references. A standard limit is not automatically treated as a disease-risk threshold.
 """,
-        "tab_profile": "1 · Worker",
+        "tab_profile": "1 · Health & anthropometry",
         "tab_symptoms": "2 · Symptoms & exposure",
         "tab_workstation": "3 · Workstation fit",
         "tab_chair": "4 · Chair",
@@ -120,7 +120,7 @@ TEXT = {
         "tab_rosa": "6 · ROSA",
         "tab_evidence": "7 · Evidence profile",
         "tab_summary": "8 · Summary - Results",
-        "profile_title": "Worker profile",
+        "profile_title": "Health context and anthropometry",
         "symptoms_title": "Symptoms and work exposure",
         "workstation_title": "Workstation fit",
         "chair_title": "Chair fit & adjustability screen",
