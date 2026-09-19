@@ -1248,20 +1248,17 @@ with tabs[7]:
                     else:
                         change_text = ("no change" if lang == "en" else "χωρίς μεταβολή")
 
-                    st.markdown(
-                        f"**{label}**  
-"
-                        + (
-                            f"Before: {before_score}/10 · After: {after_score}/10 · **{change_text}**  
-"
-                            f"Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'}"
-                            if lang == "en"
-                            else
-                            f"Πριν: {before_score}/10 · Μετά: {after_score}/10 · **{change_text}**  
-"
-                            f"Επίδραση στην εργασία: {'Ναι' if before_work else 'Όχι'} → {'Ναι' if after_work else 'Όχι'}"
-                        )
+                    comparison_text = (
+                        f"""**{label}**  
+Before: {before_score}/10 · After: {after_score}/10 · **{change_text}**  
+Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'}"""
+                        if lang == "en"
+                        else
+                        f"""**{label}**  
+Πριν: {before_score}/10 · Μετά: {after_score}/10 · **{change_text}**  
+Επίδραση στην εργασία: {'Ναι' if before_work else 'Όχι'} → {'Ναι' if after_work else 'Όχι'}"""
                     )
+                    st.markdown(comparison_text)
 
             # Compare selected ergonomic indicators with a known direction of improvement.
             harmful_flags = [
@@ -1287,10 +1284,10 @@ with tabs[7]:
                 after = bool(ctx.get(key, False))
                 if before and not after:
                     improvements.append(label)
-                elif after:
-                    remaining.append(label)
                 elif (not before) and after:
                     new_issues.append(label)
+                elif before and after:
+                    remaining.append(label)
 
             for key, label in beneficial_flags:
                 before = bool(baseline_assessment.get(key, False))
@@ -1337,6 +1334,11 @@ with tabs[7]:
             else:
                 st.caption("No clear improvement was identified in the selected comparison indicators." if lang == "en" else "Δεν εντοπίστηκε σαφής βελτίωση στους συγκεκριμένους δείκτες σύγκρισης.")
 
+            if new_issues:
+                st.markdown("#### " + ("New issues identified" if lang == "en" else "Νέα ζητήματα που εντοπίστηκαν"))
+                for item in dict.fromkeys(new_issues):
+                    st.markdown(f"- 🆕 {item}")
+
             if remaining:
                 st.markdown("#### " + ("Issues still requiring attention" if lang == "en" else "Ζητήματα που εξακολουθούν να χρειάζονται προσοχή"))
                 for item in dict.fromkeys(remaining):
@@ -1352,6 +1354,7 @@ with tabs[7]:
                 "followup_attention_findings": attention_count,
                 "interventions_notes": interventions_notes,
                 "improvements": list(dict.fromkeys(improvements)),
+                "new_issues": list(dict.fromkeys(new_issues)),
                 "remaining_issues": list(dict.fromkeys(remaining)),
             }
 
