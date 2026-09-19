@@ -22,7 +22,7 @@ from ergofit.science.standards import (
     POSTURE_LABELS_EL,
     POSTURE_REFERENCES,
 )
-from ergofit.ui.components import evidence_card, finding_card, recommendation_card
+from ergofit.ui.components import evidence_card, finding_card, group_evidence_by_region, recommendation_card
 from ergofit.ui.theme import apply_theme, hero
 
 
@@ -919,39 +919,62 @@ relevant_evidence = get_many(relevant_evidence_ids)
 with tabs[6]:
     st.subheader(t["evidence_title"])
     st.info(t["evidence_note"])
-    if findings:
-        st.markdown("### " + ("Assessment findings" if lang == "en" else "Ευρήματα αξιολόγησης"))
-        for f in findings:
-            finding_card(f, lang)
-            st.write("")
-    else:
-        st.success(
-            "No priority exposure finding was generated from the entered data."
-            if lang == "en"
-            else "Δεν προέκυψε εύρημα έκθεσης υψηλής προτεραιότητας από τα δεδομένα που καταχωρίστηκαν."
-        )
 
-    st.markdown("### " + ("Evidence linked to this assessment" if lang == "en" else "Επιστημονική τεκμηρίωση που συνδέεται με αυτή την αξιολόγηση"))
+    with st.expander(
+        "Findings from this assessment" if lang == "en" else "Ευρήματα αυτής της αξιολόγησης",
+        expanded=False,
+    ):
+        if findings:
+            for f in findings:
+                finding_card(f, lang)
+                st.write("")
+        else:
+            st.success(
+                "No priority exposure finding was generated from the entered data."
+                if lang == "en"
+                else "Δεν προέκυψε εύρημα έκθεσης υψηλής προτεραιότητας από τα δεδομένα που καταχωρίστηκαν."
+            )
+
+    st.markdown(
+        "### " + (
+            "Research evidence by body region"
+            if lang == "en"
+            else "Επιστημονικά ευρήματα ανά περιοχή σώματος"
+        )
+    )
+    st.caption(
+        "Each section keeps evidence for the same body region together. Every study starts with a plain-language explanation; statistical details are optional."
+        if lang == "en"
+        else "Οι έρευνες για την ίδια περιοχή σώματος εμφανίζονται μαζί. Κάθε μελέτη ξεκινά με απλή εξήγηση και οι στατιστικές λεπτομέρειες ανοίγουν μόνο αν τις χρειάζεσαι."
+    )
+
     if relevant_evidence:
-        for e in relevant_evidence:
-            evidence_card(e, lang)
-            st.write("")
+        for region_label, region_items in group_evidence_by_region(relevant_evidence, lang):
+            st.markdown(f"## {region_label}")
+            for e in region_items:
+                evidence_card(e, lang)
+                st.write("")
     else:
         st.caption(
             "No evidence cards are triggered until relevant exposure/symptom information is entered."
             if lang == "en"
-            else "Δεν εμφανίζονται κάρτες τεκμηρίωσης μέχρι να καταχωριστούν σχετικά στοιχεία έκθεσης ή συμπτωμάτων."
+            else "Δεν εμφανίζονται σχετικές μελέτες μέχρι να καταχωριστούν στοιχεία έκθεσης ή συμπτωμάτων."
         )
 
-    with st.expander("Full v2 evidence registry" if lang == "en" else "Πλήρες μητρώο επιστημονικής τεκμηρίωσης v2", expanded=False):
+    with st.expander(
+        "Full v2 evidence library" if lang == "en" else "Πλήρης βιβλιοθήκη επιστημονικής τεκμηρίωσης v2",
+        expanded=False,
+    ):
         st.caption(
-            "Registry entries are deliberately separated by outcome and population; they are not pooled into a universal points score."
+            "The full library is also organised by body region. Research estimates are not combined into a single disease-risk score."
             if lang == "en"
-            else "Οι εγγραφές διατηρούνται ξεχωριστές ανά έκβαση και πληθυσμό και δεν συγχωνεύονται σε μία καθολική βαθμολογία πόντων."
+            else "Η πλήρης βιβλιοθήκη είναι επίσης οργανωμένη ανά περιοχή σώματος. Τα αποτελέσματα των μελετών δεν συνδυάζονται σε μία ενιαία βαθμολογία κινδύνου νόσου."
         )
-        for e in EVIDENCE.values():
-            evidence_card(e, lang)
-            st.write("")
+        for region_label, region_items in group_evidence_by_region(list(EVIDENCE.values()), lang):
+            st.markdown(f"### {region_label}")
+            for e in region_items:
+                evidence_card(e, lang)
+                st.write("")
 
 # ---------------------------------------------------------------------
 # 8. Summary & export
