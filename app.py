@@ -386,37 +386,112 @@ with tabs[3]:
 with tabs[4]:
     st.subheader(t["posture_title"])
     st.info(t["posture_note"])
-    posture_completed = st.toggle("Assessment completed" if lang == "en" else "Η παρατήρηση στάσης ολοκληρώθηκε", value=False, key="posture_completed")
-    posture_out: list[dict] = []
-    if posture_completed:
-        for key, label, lo, hi, default in POSTURE_REFERENCES:
-            c1, c2, c3 = st.columns([3, 1, 2])
-            display_label = label if lang == "en" else POSTURE_LABELS_EL.get(key, label)
-            c1.markdown(f"**{display_label}**")
-            c1.caption(f"Reference: {lo}° to {hi}°" if lang == "en" else f"Τιμή αναφοράς: {lo}° έως {hi}°")
-            min_value = -45 if "wrist" in key else 0
-            angle = c2.number_input("°", min_value=min_value, max_value=180, value=default, step=5, key=f"posture_{key}", label_visibility="collapsed")
-            if lo <= angle <= hi:
-                c3.success(f"{angle}° · within reference" if lang == "en" else f"{angle}° · εντός τιμής αναφοράς")
-            else:
-                c3.warning(f"{angle}° · review" if lang == "en" else f"{angle}° · χρειάζεται έλεγχο")
-                posture_out.append({"key": key, "label": display_label, "value": angle, "reference": [lo, hi]})
+    st.caption(
+        "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance."
+        if lang == "en"
+        else "Η αξιολόγηση βασίζεται στις οδηγίες του ΕΛΙΝΥΑΕ για εργασία με οθόνες και εργονομικό σχεδιασμό. Δεν χρησιμοποιείται ένα μοναδικό «ιδανικό» σύνολο γωνιών για όλους."
+    )
 
-        movement_variability = st.selectbox(
-            "Movement / postural variability" if lang == "en" else "Μεταβλητότητα στάσης / κίνησης",
-            ["not_assessed", "good", "limited"],
-            format_func=lambda x: {
-                "not_assessed": "—",
-                "good": "Frequent / good" if lang == "en" else "Συχνή / καλή",
-                "limited": "Limited / static" if lang == "en" else "Περιορισμένη / στατική",
-            }[x],
-        )
+    posture_completed = st.toggle(
+        "Assessment completed" if lang == "en" else "Η παρατήρηση στάσης ολοκληρώθηκε",
+        value=False,
+        key="posture_completed",
+    )
+    posture_out: list[dict] = []
+
+    if posture_completed:
+        posture_checks = [
+            (
+                "dynamic_posture",
+                "Working posture changes regularly; prolonged static sitting is avoided.",
+                "Η στάση του σώματος αλλάζει τακτικά κατά τη διάρκεια της εργασίας και αποφεύγεται η παρατεταμένη στατική καθιστή θέση.",
+            ),
+            (
+                "back_supported",
+                "The back is supported and the trunk is not held for prolonged periods in a markedly bent or twisted posture.",
+                "Η πλάτη υποστηρίζεται επαρκώς και ο κορμός δεν παραμένει για μεγάλο διάστημα σε έντονη κάμψη ή στροφή.",
+            ),
+            (
+                "shoulders_relaxed",
+                "Shoulders are relaxed and not elevated.",
+                "Οι ώμοι είναι χαλαροί και δεν παραμένουν ανυψωμένοι.",
+            ),
+            (
+                "elbows_close",
+                "Elbows remain close to the body.",
+                "Οι αγκώνες παραμένουν κοντά στο σώμα.",
+            ),
+            (
+                "elbow_angle",
+                "During keyboard use, elbows are about 90–120°.",
+                "Κατά τη χρήση του πληκτρολογίου, οι αγκώνες είναι περίπου στις 90° ή σε ελαφρά μεγαλύτερη γωνία.",
+            ),
+            (
+                "wrists_neutral",
+                "Wrists and hands remain straight and in-line with the forearms.",
+                "Οι καρποί παραμένουν σε ουδέτερη θέση, χωρίς έκταση ή ωλένια απόκλιση.",
+            ),
+            (
+                "forearms_supported",
+                "Forearms are adequately supported without elevating the shoulders.",
+                "Οι πήχεις/αντιβράχια στηρίζονται επαρκώς χωρίς να προκαλείται ανύψωση των ώμων.",
+            ),
+            (
+                "feet_supported",
+                "Feet are fully supported on the floor or on a stable footrest.",
+                "Τα πέλματα στηρίζονται πλήρως στο δάπεδο ή σε σταθερό υποπόδιο.",
+            ),
+            (
+                "leg_clearance",
+                "There is adequate clearance for the thighs, knees, legs and feet.",
+                "Υπάρχει επαρκής ελεύθερος χώρος για τους μηρούς, τα γόνατα, τις κνήμες και τα πέλματα.",
+            ),
+        ]
+
+        posture_results: dict[str, bool | None] = {}
+        for key, label_en, label_el in posture_checks:
+            result = yes_no_unknown(label_en if lang == "en" else label_el, f"posture_{key}")
+            posture_results[key] = result
+            if result is False:
+                posture_out.append({
+                    "key": key,
+                    "label": label_en if lang == "en" else label_el,
+                    "value": "needs_review",
+                    "reference": "ELINYAE" if lang == "el" else "OSHA",
+                })
+
+        dynamic = posture_results.get("dynamic_posture")
+        movement_variability = "good" if dynamic is True else ("limited" if dynamic is False else "not_assessed")
+
         if movement_variability == "limited":
             st.warning(
-                "Static posture flagged. Duration and variation should be addressed even when individual angles look acceptable."
+                "Prolonged static posture was flagged. Postural variation should be increased."
                 if lang == "en"
-                else "Εντοπίστηκε περιορισμένη μεταβλητότητα στάσης. Η διάρκεια και η εναλλαγή θέσεων πρέπει να αξιολογηθούν ακόμη και όταν οι επιμέρους γωνίες είναι αποδεκτές."
+                else "Εντοπίστηκε παρατεταμένη στατική στάση. Χρειάζεται μεγαλύτερη εναλλαγή θέσεων και κίνηση κατά τη διάρκεια της εργασίας."
             )
+
+        with st.expander(
+            "Optional angle recording" if lang == "en" else "Προαιρετική καταγραφή γωνίας αγκώνα",
+            expanded=False,
+        ):
+            elbow_angle_observed = st.number_input(
+                "Observed elbow angle (°)" if lang == "en" else "Μετρημένη γωνία αγκώνα (°)",
+                min_value=0,
+                max_value=180,
+                value=0,
+                step=5,
+                help=(
+                    "0 = not measured. OSHA uses 90–120° as a neutral reference."
+                    if lang == "en"
+                    else "0 = δεν μετρήθηκε. Το ΕΛΙΝΥΑΕ αναφέρει περίπου 90° ή ελαφρά μεγαλύτερη γωνία κατά τη χρήση πληκτρολογίου."
+                ),
+            )
+            if elbow_angle_observed > 0:
+                st.caption(
+                    f"Recorded: {elbow_angle_observed}°. This value is documented, not converted into a disease-risk score."
+                    if lang == "en"
+                    else f"Καταγράφηκαν {elbow_angle_observed}°. Η μέτρηση τεκμηριώνεται αλλά δεν μετατρέπεται σε βαθμολογία κινδύνου νόσου."
+                )
     else:
         movement_variability = "not_assessed"
         st.caption(
