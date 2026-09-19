@@ -551,19 +551,22 @@ with tabs[5]:
         st.markdown("### A · Chair" if lang == "en" else "### A · Καρέκλα")
 
         st.markdown("#### A.1 · Chair height" if lang == "en" else "#### A.1 · Ύψος καρέκλας")
-        a1_primary = st.radio(
+        a1_choice = st.radio(
             "Select the picture/condition that best matches the worker" if lang == "en"
             else "Επίλεξε την εικόνα/κατάσταση που ταιριάζει περισσότερο στον εργαζόμενο",
-            [1, 2, 3],
+            ["neutral", "too_low", "too_high", "no_foot_contact"],
             format_func=lambda v: {
-                1: "Knees at about 90° (+1)" if lang == "en" else "Γόνατα περίπου στις 90° (+1)",
-                2: "Too low OR too high: knee angle <90° or >90° (+2)" if lang == "en"
-                   else "Πολύ χαμηλά ή πολύ ψηλά: γωνία γόνατος <90° ή >90° (+2)",
-                3: "No foot contact with the floor (+3)" if lang == "en"
-                   else "Τα πέλματα δεν ακουμπούν στο δάπεδο (+3)",
+                "neutral": "Knees at about 90° (+1)" if lang == "en" else "Γόνατα περίπου στις 90° (+1)",
+                "too_low": "Chair too low: knee angle <90° (+2)" if lang == "en"
+                           else "Η καρέκλα είναι πολύ χαμηλά: γωνία γόνατος <90° (+2)",
+                "too_high": "Chair too high: knee angle >90° (+2)" if lang == "en"
+                            else "Η καρέκλα είναι πολύ ψηλά: γωνία γόνατος >90° (+2)",
+                "no_foot_contact": "No foot contact with the floor (+3)" if lang == "en"
+                                   else "Τα πέλματα δεν ακουμπούν στο δάπεδο (+3)",
             }[v],
             key="rosa_a1_primary",
         )
+        a1_primary = {"neutral": 1, "too_low": 2, "too_high": 2, "no_foot_contact": 3}[a1_choice]
         a1_extra = 0
         if st.checkbox(
             "Insufficient space under the desk / cannot comfortably move the legs (+1)" if lang == "en"
@@ -635,20 +638,22 @@ with tabs[5]:
             a3 += 1
 
         st.markdown("#### A.4 · Back support" if lang == "en" else "#### A.4 · Στήριξη πλάτης")
-        a4_primary = st.radio(
+        a4_choice = st.radio(
             "Select back-support condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει τη στήριξη της πλάτης",
-            [1, 2, 3],
+            ["adequate", "no_lumbar", "bad_angle", "no_back_support"],
             format_func=lambda v: {
-                1: "Adequate lumbar support; backrest about 95–110° (+1)" if lang == "en"
-                   else "Επαρκής οσφυϊκή στήριξη και κλίση πλάτης περίπου 95–110° (+1)",
-                2: "No/poor lumbar support OR backrest angle <95° or >110° (+2)" if lang == "en"
-                   else "Ανεπαρκής/λανθασμένη οσφυϊκή στήριξη ή κλίση πλάτης <95° ή >110° (+2)",
-                3: "No back support / stool / worker leaning forward without support (+3)" if lang == "en"
-                   else "Χωρίς στήριξη πλάτης, π.χ. σκαμπό ή εργασία με τον κορμό μπροστά χωρίς στήριξη (+3)",
+                "adequate": "Adequate lumbar support; backrest about 95–110° (+1)" if lang == "en"
+                            else "Επαρκής οσφυϊκή στήριξη και κλίση πλάτης περίπου 95–110° (+1)",
+                "no_lumbar": "No lumbar support OR lumbar support not positioned in the small of the back (+2)" if lang == "en"
+                             else "Δεν υπάρχει οσφυϊκή στήριξη ή δεν είναι σωστά τοποθετημένη στην οσφυϊκή περιοχή (+2)",
+                "bad_angle": "Backrest angled too far back (>110°) or too far forward (<95°) (+2)" if lang == "en"
+                             else "Η πλάτη είναι υπερβολικά πίσω (>110°) ή υπερβολικά μπροστά (<95°) (+2)",
+                "no_back_support": "No back support / stool / worker leaning forward without support (+3)" if lang == "en"
+                                   else "Χωρίς στήριξη πλάτης, π.χ. σκαμπό ή εργασία με τον κορμό μπροστά χωρίς στήριξη (+3)",
             }[v],
             key="rosa_a4_primary",
         )
-        a4 = a4_primary
+        a4 = {"adequate": 1, "no_lumbar": 2, "bad_angle": 2, "no_back_support": 3}[a4_choice]
         if st.checkbox(
             "Work surface too high; shoulders shrugged (+1)" if lang == "en"
             else "Η επιφάνεια εργασίας είναι πολύ ψηλά και προκαλεί ανύψωση των ώμων (+1)",
