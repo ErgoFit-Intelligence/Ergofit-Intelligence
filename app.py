@@ -186,6 +186,11 @@ with tabs[0]:
 
     default_subject = str(baseline_assessment.get("subject_id", "")) if assessment_stage == "followup" else ""
     default_age = int(baseline_assessment.get("age", 35) or 35) if assessment_stage == "followup" else 35
+    default_sex = str(baseline_assessment.get("sex", "female")) if assessment_stage == "followup" else "female"
+    if default_sex not in {"female", "male", "other"}:
+        default_sex = "female"
+    default_height = float(baseline_assessment.get("height", 175.0) or 175.0) if assessment_stage == "followup" else 175.0
+    default_weight = float(baseline_assessment.get("weight", 75.0) or 75.0) if assessment_stage == "followup" else 75.0
 
     c1, c2, c3 = st.columns([2, 1, 1])
     subject_id = c1.text_input(t["subject_id"], value=default_subject, placeholder="EF-001")
@@ -193,13 +198,21 @@ with tabs[0]:
     age = c3.number_input(t["age"], min_value=18, max_value=80, value=max(18, min(80, default_age)))
 
     c1, c2, c3 = st.columns(3)
+    sex_options = ["female", "male", "other"]
     sex = c1.selectbox(
         t["sex"],
-        ["female", "male", "other"],
+        sex_options,
+        index=sex_options.index(default_sex),
         format_func=lambda x: {"female": t["female"], "male": t["male"], "other": t["other"]}[x],
     )
-    height = c2.number_input(t["height"], min_value=140.0, max_value=210.0, value=175.0, step=0.5)
-    weight = c3.number_input(t["weight"], min_value=40.0, max_value=200.0, value=75.0, step=0.5)
+    height = c2.number_input(
+        t["height"], min_value=140.0, max_value=210.0,
+        value=max(140.0, min(210.0, default_height)), step=0.5
+    )
+    weight = c3.number_input(
+        t["weight"], min_value=40.0, max_value=200.0,
+        value=max(40.0, min(200.0, default_weight)), step=0.5
+    )
     bmi_value = bmi(weight, height)
     st.caption(
         f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
