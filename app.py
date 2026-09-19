@@ -1506,9 +1506,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
 
     if sheets_ready:
         st.caption(
-            "The assessment will be stored directly in the ErgoFit Google Sheets database."
+            (
+                "The 1st assessment will create the client record and the first line of the before/after block in Google Sheets."
+                if assessment_stage == "baseline"
+                else "The 2nd assessment will be linked to the same client, fill the second line and automatically calculate the third difference line."
+            )
             if lang == "en"
-            else "Η αξιολόγηση θα αποθηκευτεί απευθείας στη βάση Google Sheets του ErgoFit."
+            else (
+                "Η 1η αξιολόγηση θα δημιουργήσει την εγγραφή του πελάτη και την πρώτη γραμμή του μπλοκ Πριν/Μετά στο Google Sheets."
+                if assessment_stage == "baseline"
+                else "Η 2η αξιολόγηση θα συνδεθεί με τον ίδιο πελάτη, θα συμπληρώσει τη δεύτερη γραμμή και θα υπολογίσει αυτόματα την τρίτη γραμμή με τις διαφορές."
+            )
         )
         consent = st.checkbox(
             "I confirm that I am authorised to store these assessment data."
@@ -1530,9 +1538,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             if ok:
                 st.session_state["last_saved_assessment_id"] = saved_id
                 st.success(
-                    f"Saved successfully · {saved_id}"
+                    (
+                        f"Saved successfully · {saved_id}. The client and 1st assessment were added to Google Sheets."
+                        if assessment_stage == "baseline"
+                        else f"Saved successfully · {saved_id}. The 2nd assessment and the before/after difference row were updated."
+                    )
                     if lang == "en"
-                    else f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}"
+                    else (
+                        f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}. Ο πελάτης και η 1η αξιολόγηση καταχωρίστηκαν στο Google Sheets."
+                        if assessment_stage == "baseline"
+                        else f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}. Η 2η αξιολόγηση και η γραμμή διαφορών Πριν/Μετά ενημερώθηκαν."
+                    )
                 )
             else:
                 st.error(msg)
