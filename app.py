@@ -351,7 +351,7 @@ with tabs[3]:
         for idx, (key, label) in enumerate(CHAIR_FIT_ITEMS):
             with (ca if idx < (len(CHAIR_FIT_ITEMS)+1)//2 else cb):
                 display_label = label if lang == "en" else CHAIR_FIT_LABELS_EL.get(key, label)
-                chair_results[key] = st.checkbox(display_label, value=True, key=f"chair_{key}")
+                chair_results[key] = st.checkbox(display_label, value=False, key=f"chair_{key}")
         chair_failed = [key for key, ok in chair_results.items() if not ok]
         st.metric("Items confirmed" if lang == "en" else "Κριτήρια που πληρούνται", f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
         st.caption(
