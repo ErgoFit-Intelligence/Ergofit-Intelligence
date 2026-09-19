@@ -515,7 +515,7 @@ with tabs[5]:
         "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
     )
 
-    ROSA_WORKSHEET_IMAGE = "assets/rosa_banner.webp"
+    ROSA_WORKSHEET_IMAGE = "assets/rosa_banner.jpg"
     ROSA_WORKSHEET_PDF = "https://7488314.fs1.hubspotusercontent-na1.net/hubfs/7488314/Infosheets/ROSA_Worksheet_TuMeke.pdf"
 
     with st.expander(
