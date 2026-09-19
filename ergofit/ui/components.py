@@ -342,7 +342,7 @@ def evidence_card(e: EvidenceItem, lang: str = "en") -> None:
     st.markdown(
         f"""
         <div class="ef-card">
-          <div class="ef-kicker">{"What the research says" if lang == "en" else "Τι δείχνει η έρευνα"}</div>
+          <div class="ef-kicker">{"WHAT THE RESEARCH SAYS" if lang == "en" else "ΤΙ ΔΕΙΧΝΕΙ Η ΕΡΕΥΝΑ"}</div>
           <h4>{html.escape(title)}</h4>
           <div style="font-size:1.02rem;line-height:1.58;margin-top:8px">{html.escape(simple)}</div>
         </div>
