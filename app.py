@@ -121,10 +121,76 @@ tabs = st.tabs([
 # ---------------------------------------------------------------------
 with tabs[0]:
     st.subheader(t["profile_title"])
+
+    assessment_stage = st.radio(
+        "Assessment stage" if lang == "en" else "Στάδιο αξιολόγησης",
+        ["baseline", "followup"],
+        format_func=lambda x: (
+            "Before intervention (baseline)" if x == "baseline" and lang == "en"
+            else "Follow-up after intervention" if x == "followup" and lang == "en"
+            else "Πριν τις παρεμβάσεις (αρχική αξιολόγηση)" if x == "baseline"
+            else "Μετά τις παρεμβάσεις (επανεκτίμηση)"
+        ),
+        horizontal=True,
+        key="assessment_stage",
+    )
+
+    baseline_report = None
+    interventions_notes = ""
+    baseline_assessment = {}
+
+    if assessment_stage == "followup":
+        st.info(
+            "Upload the JSON report from the initial assessment. The tool will compare the same worker before and after the interventions."
+            if lang == "en"
+            else "Ανέβασε το αρχείο JSON της αρχικής αξιολόγησης. Το εργαλείο θα συγκρίνει τον ίδιο εργαζόμενο πριν και μετά τις παρεμβάσεις."
+        )
+        baseline_file = st.file_uploader(
+            "Initial assessment JSON" if lang == "en" else "Αρχείο αρχικής αξιολόγησης (JSON)",
+            type=["json"],
+            key="baseline_report_upload",
+        )
+        if baseline_file is not None:
+            try:
+                baseline_report = json.loads(baseline_file.getvalue().decode("utf-8"))
+                if not isinstance(baseline_report, dict) or "assessment" not in baseline_report:
+                    raise ValueError("invalid report structure")
+                baseline_assessment = baseline_report.get("assessment", {}) or {}
+                baseline_date = baseline_assessment.get("assessment_date", "—")
+                baseline_subject = baseline_assessment.get("subject_id", "—")
+                st.success(
+                    f"Initial assessment loaded: {baseline_subject} · {baseline_date}"
+                    if lang == "en"
+                    else f"Η αρχική αξιολόγηση φορτώθηκε: {baseline_subject} · {baseline_date}"
+                )
+            except Exception:
+                baseline_report = None
+                baseline_assessment = {}
+                st.error(
+                    "The file could not be read as a valid ErgoFit assessment."
+                    if lang == "en"
+                    else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
+                )
+
+        interventions_notes = st.text_area(
+            "Interventions implemented since the initial assessment"
+            if lang == "en"
+            else "Παρεμβάσεις που εφαρμόστηκαν μετά την αρχική αξιολόγηση",
+            placeholder=(
+                "e.g. chair adjustment, monitor repositioning, task changes, active breaks..."
+                if lang == "en"
+                else "π.χ. ρύθμιση καρέκλας, αλλαγή θέσης οθόνης, αλλαγές στην οργάνωση της εργασίας, ενεργά διαλείμματα..."
+            ),
+            key="interventions_notes",
+        )
+
+    default_subject = str(baseline_assessment.get("subject_id", "")) if assessment_stage == "followup" else ""
+    default_age = int(baseline_assessment.get("age", 35) or 35) if assessment_stage == "followup" else 35
+
     c1, c2, c3 = st.columns([2, 1, 1])
-    subject_id = c1.text_input(t["subject_id"], value="", placeholder="EF-001")
+    subject_id = c1.text_input(t["subject_id"], value=default_subject, placeholder="EF-001")
     assessment_date = c2.date_input(t["assessment_date"], value=date.today())
-    age = c3.number_input(t["age"], min_value=18, max_value=80, value=35)
+    age = c3.number_input(t["age"], min_value=18, max_value=80, value=max(18, min(80, default_age)))
 
     c1, c2, c3 = st.columns(3)
     sex = c1.selectbox(
@@ -851,6 +917,8 @@ with tabs[5]:
 # ---------------------------------------------------------------------
 ctx = {
     "subject_id": subject_id,
+    "assessment_stage": assessment_stage,
+    "interventions_notes": interventions_notes,
     "assessment_date": str(assessment_date),
     "age": age,
     "sex": sex,
@@ -977,66 +1045,349 @@ with tabs[6]:
                 st.write("")
 
 # ---------------------------------------------------------------------
-# 8. Summary & export
+# 8. Summary & Results
 # ---------------------------------------------------------------------
 with tabs[7]:
     st.subheader(t["summary_title"])
+
     subject_display = subject_id.strip() or ("Unidentified worker" if lang == "en" else "Χωρίς αναγνωριστικό")
+    stage_label = (
+        "Before intervention" if assessment_stage == "baseline" and lang == "en"
+        else "Follow-up after intervention" if assessment_stage == "followup" and lang == "en"
+        else "Πριν τις παρεμβάσεις" if assessment_stage == "baseline"
+        else "Μετά τις παρεμβάσεις"
+    )
+
     st.markdown(
-        f"""<div class="ef-summary"><div class="ef-kicker">ERGOFIT INTELLIGENCE V2</div>
-        <h3 style="margin:.2rem 0!important">{subject_display}</h3>
-        <div>{assessment_date} · BMI {bmi_value:.1f} · ROSA {rosa['final']}/10</div>
-        <div style="margin-top:8px;color:#5b6475">{"No disease probability is generated. The report separates ergonomic exposure, symptoms, context and intervention evidence." if lang == "en" else "Δεν υπολογίζεται πιθανότητα νόσου. Η αναφορά διαχωρίζει την εργονομική έκθεση, τα συμπτώματα, το πλαίσιο υγείας και την τεκμηρίωση των παρεμβάσεων."}</div></div>""",
+        f"""<div class="ef-summary">
+        <div class="ef-kicker">{"ASSESSMENT SUMMARY" if lang == "en" else "ΣΥΝΟΨΗ ΑΞΙΟΛΟΓΗΣΗΣ"}</div>
+        <h3 style="margin:.25rem 0!important">{subject_display}</h3>
+        <div><b>{"Stage" if lang == "en" else "Στάδιο"}:</b> {stage_label} &nbsp;·&nbsp; <b>{"Date" if lang == "en" else "Ημερομηνία"}:</b> {assessment_date}</div>
+        <div style="margin-top:8px;color:#5b6475">
+        {"This report summarises identified ergonomic exposures, reported symptoms, ROSA results and preventive actions. It does not calculate an individual probability of disease." if lang == "en" else "Η αναφορά συνοψίζει τους εργονομικούς παράγοντες έκθεσης, τα αναφερόμενα συμπτώματα, το ROSA και τα προτεινόμενα μέτρα πρόληψης/βελτίωσης. Δεν υπολογίζει προσωπική πιθανότητα εμφάνισης πάθησης."}
+        </div></div>""",
         unsafe_allow_html=True,
     )
 
-    s1, s2, s3 = st.columns(3)
-    s1.metric("Priority findings" if lang == "en" else "Ευρήματα υψηλής προτεραιότητας", sum(f.status == "priority" for f in findings))
-    s2.metric("Attention findings" if lang == "en" else "Ευρήματα που χρειάζονται προσοχή", sum(f.status == "attention" for f in findings))
-    if rosa["final"] > 0:
-        s3.metric(
-            "ROSA",
-            f"{rosa['final']} / 10",
-            ("Action level" if rosa['final'] >= 5 else "Below action level")
-            if lang == "en"
-            else ("Επίπεδο δράσης" if rosa['final'] >= 5 else "Κάτω από το επίπεδο δράσης")
-        )
-    else:
-        s3.metric("ROSA", "Not assessed" if lang == "en" else "Δεν αξιολογήθηκε")
+    priority_count = sum(f.status == "priority" for f in findings)
+    attention_count = sum(f.status == "attention" for f in findings)
+    symptom_count = len(symptom_details)
 
-    st.markdown("### " + ("Key findings" if lang == "en" else "Κύρια ευρήματα"))
+    st.markdown("### " + ("Overall picture" if lang == "en" else "Συνολική εικόνα"))
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("ROSA", f"{rosa['final']} / 10" if rosa["final"] > 0 else ("Not assessed" if lang == "en" else "Δεν αξιολογήθηκε"))
+    m2.metric(
+        "High-priority issues" if lang == "en" else "Θέματα άμεσης προτεραιότητας",
+        priority_count,
+    )
+    m3.metric(
+        "Issues needing attention" if lang == "en" else "Θέματα που χρειάζονται προσοχή",
+        attention_count,
+    )
+    m4.metric(
+        "Symptomatic regions" if lang == "en" else "Περιοχές με συμπτώματα",
+        symptom_count,
+    )
+
+    if rosa["final"] >= 5:
+        st.warning(
+            "ROSA reached the validated action level (≥5), so further ergonomic investigation and intervention are indicated."
+            if lang == "en"
+            else "Το ROSA έφτασε το τεκμηριωμένο επίπεδο δράσης (≥5), επομένως ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση."
+        )
+    elif rosa["final"] > 0:
+        st.info(
+            "ROSA is below the action level of 5. This does not mean that all ergonomic issues or symptoms are absent."
+            if lang == "en"
+            else "Το ROSA βρίσκεται κάτω από το επίπεδο δράσης 5. Αυτό δεν σημαίνει ότι απουσιάζουν όλα τα εργονομικά ζητήματα ή τα συμπτώματα."
+        )
+
+    st.markdown("### " + ("Reported symptoms" if lang == "en" else "Αναφερόμενα συμπτώματα"))
+    if symptom_details:
+        for region, item in symptom_details.items():
+            label = item.get("label", region)
+            severity = int(item.get("severity", 0))
+            interference = bool(item.get("interference", False))
+            st.markdown(
+                f"- **{label}:** {severity}/10 · " +
+                (
+                    ("affects work" if interference else "does not affect work")
+                    if lang == "en"
+                    else ("επηρεάζει την εργασία" if interference else "δεν επηρεάζει την εργασία")
+                )
+            )
+    else:
+        st.caption("No musculoskeletal symptoms were reported." if lang == "en" else "Δεν αναφέρθηκαν μυοσκελετικά συμπτώματα.")
+
+    if digital_eye_strain:
+        st.markdown(
+            "- **Digital eye strain / visual fatigue reported**"
+            if lang == "en"
+            else "- **Αναφέρθηκε κόπωση ματιών από τη χρήση της οθόνης**"
+        )
+
+    st.markdown("### " + ("Identified ergonomic factors" if lang == "en" else "Εντοπισμένοι εργονομικοί παράγοντες"))
     if findings:
-        for f in findings:
-            finding_card(f, lang)
-            st.write("")
+        priority_findings = [f for f in findings if f.status == "priority"]
+        attention_findings = [f for f in findings if f.status == "attention"]
+        information_findings = [f for f in findings if f.status == "information"]
+
+        if priority_findings:
+            st.markdown("#### " + ("Immediate priority" if lang == "en" else "Άμεση προτεραιότητα"))
+            for f in priority_findings:
+                finding_card(f, lang)
+                st.write("")
+        if attention_findings:
+            st.markdown("#### " + ("Needs attention" if lang == "en" else "Χρειάζεται προσοχή"))
+            for f in attention_findings:
+                finding_card(f, lang)
+                st.write("")
+        if information_findings:
+            with st.expander("Additional context" if lang == "en" else "Πρόσθετες πληροφορίες", expanded=False):
+                for f in information_findings:
+                    finding_card(f, lang)
+                    st.write("")
     else:
         st.success(
             "No priority ergonomic exposure was identified from the entered information."
             if lang == "en"
-            else "Δεν εντοπίστηκε εργονομική έκθεση υψηλής προτεραιότητας από τα στοιχεία που καταχωρίστηκαν."
+            else "Δεν εντοπίστηκε εργονομικός παράγοντας υψηλής προτεραιότητας από τα στοιχεία που καταχωρίστηκαν."
         )
 
-    st.markdown("### " + ("Recommendations" if lang == "en" else "Συστάσεις"))
-    for r in recommendations:
-        recommendation_card(r, lang)
-        st.write("")
+    st.markdown("### " + ("Preventive and improvement measures" if lang == "en" else "Μέτρα πρόληψης και βελτίωσης"))
+    now_recs = [r for r in recommendations if r.priority == "now"]
+    soon_recs = [r for r in recommendations if r.priority == "soon"]
+    maintain_recs = [r for r in recommendations if r.priority == "maintain"]
+
+    if now_recs:
+        st.markdown("#### " + ("Implement first" if lang == "en" else "Να εφαρμοστούν πρώτα"))
+        for r in now_recs:
+            recommendation_card(r, lang)
+            st.write("")
+    if soon_recs:
+        st.markdown("#### " + ("Next actions" if lang == "en" else "Επόμενες ενέργειες"))
+        for r in soon_recs:
+            recommendation_card(r, lang)
+            st.write("")
+    if maintain_recs:
+        with st.expander("Good practices to maintain" if lang == "en" else "Καλές πρακτικές που πρέπει να διατηρηθούν", expanded=False):
+            for r in maintain_recs:
+                recommendation_card(r, lang)
+                st.write("")
+
+    # -------------------------------------------------------------
+    # Before / after comparison for follow-up assessments
+    # -------------------------------------------------------------
+    comparison_payload = None
+    if assessment_stage == "followup":
+        st.divider()
+        st.markdown("### " + ("Before vs after interventions" if lang == "en" else "Σύγκριση πριν και μετά τις παρεμβάσεις"))
+
+        if baseline_report is None:
+            st.warning(
+                "Upload the initial assessment JSON in the Worker tab to generate the before/after comparison."
+                if lang == "en"
+                else "Ανέβασε το JSON της αρχικής αξιολόγησης στην καρτέλα «Εργαζόμενος» για να δημιουργηθεί η σύγκριση πριν/μετά."
+            )
+        else:
+            baseline_findings = baseline_report.get("findings", []) or []
+            baseline_priority = sum(f.get("status") == "priority" for f in baseline_findings if isinstance(f, dict))
+            baseline_attention = sum(f.get("status") == "attention" for f in baseline_findings if isinstance(f, dict))
+            baseline_rosa_obj = baseline_assessment.get("rosa", {}) or {}
+            baseline_rosa = int(baseline_rosa_obj.get("final", baseline_assessment.get("rosa_final", 0)) or 0)
+
+            st.caption(
+                "The comparison evaluates change in ergonomic exposure indicators, symptoms and ROSA. It does not estimate a change in personal disease probability."
+                if lang == "en"
+                else "Η σύγκριση αξιολογεί τη μεταβολή σε εργονομικούς δείκτες έκθεσης, συμπτώματα και ROSA. Δεν εκτιμά μεταβολή στην προσωπική πιθανότητα εμφάνισης πάθησης."
+            )
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric(
+                "ROSA after" if lang == "en" else "ROSA μετά",
+                f"{rosa['final']} / 10",
+                (f"{rosa['final'] - baseline_rosa:+d} vs before" if lang == "en" else f"{rosa['final'] - baseline_rosa:+d} σε σχέση με πριν"),
+                delta_color="inverse",
+            )
+            c2.metric(
+                "High-priority issues after" if lang == "en" else "Θέματα άμεσης προτεραιότητας μετά",
+                priority_count,
+                (f"{priority_count - baseline_priority:+d} vs before" if lang == "en" else f"{priority_count - baseline_priority:+d} σε σχέση με πριν"),
+                delta_color="inverse",
+            )
+            c3.metric(
+                "Attention issues after" if lang == "en" else "Θέματα που χρειάζονται προσοχή μετά",
+                attention_count,
+                (f"{attention_count - baseline_attention:+d} vs before" if lang == "en" else f"{attention_count - baseline_attention:+d} σε σχέση με πριν"),
+                delta_color="inverse",
+            )
+
+            if interventions_notes.strip():
+                st.markdown("#### " + ("Interventions implemented" if lang == "en" else "Παρεμβάσεις που εφαρμόστηκαν"))
+                st.write(interventions_notes.strip())
+
+            baseline_symptoms = baseline_assessment.get("symptom_details", {}) or {}
+            current_symptoms = symptom_details or {}
+            all_regions = list(dict.fromkeys(list(baseline_symptoms.keys()) + list(current_symptoms.keys())))
+            if all_regions:
+                st.markdown("#### " + ("Change in symptoms" if lang == "en" else "Μεταβολή συμπτωμάτων"))
+                for region in all_regions:
+                    before = baseline_symptoms.get(region, {}) or {}
+                    after = current_symptoms.get(region, {}) or {}
+                    label = after.get("label") or before.get("label") or region
+                    before_score = int(before.get("severity", 0) or 0)
+                    after_score = int(after.get("severity", 0) or 0)
+                    before_work = bool(before.get("interference", False))
+                    after_work = bool(after.get("interference", False))
+                    change = after_score - before_score
+
+                    if change < 0:
+                        change_text = ("improved" if lang == "en" else "βελτίωση")
+                    elif change > 0:
+                        change_text = ("increased symptoms" if lang == "en" else "αύξηση συμπτωμάτων")
+                    else:
+                        change_text = ("no change" if lang == "en" else "χωρίς μεταβολή")
+
+                    st.markdown(
+                        f"**{label}**  
+"
+                        + (
+                            f"Before: {before_score}/10 · After: {after_score}/10 · **{change_text}**  
+"
+                            f"Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'}"
+                            if lang == "en"
+                            else
+                            f"Πριν: {before_score}/10 · Μετά: {after_score}/10 · **{change_text}**  
+"
+                            f"Επίδραση στην εργασία: {'Ναι' if before_work else 'Όχι'} → {'Ναι' if after_work else 'Όχι'}"
+                        )
+                    )
+
+            # Compare selected ergonomic indicators with a known direction of improvement.
+            harmful_flags = [
+                ("digital_eye_strain", "Digital eye strain" if lang == "en" else "Κόπωση ματιών από τη χρήση οθόνης"),
+                ("high_repetition", "High hand/wrist repetition" if lang == "en" else "Υψηλή επανάληψη κινήσεων χεριού/καρπού"),
+                ("hand_force", "Forceful hand/finger exertion" if lang == "en" else "Έντονη άσκηση δύναμης με χέρι/δάκτυλα"),
+                ("forearm_rotation", "Forearm rotation exposure" if lang == "en" else "Παρατεταμένη/επαναλαμβανόμενη στροφή αντιβραχίου"),
+                ("arm_elevation", "Sustained arm elevation" if lang == "en" else "Παρατεταμένη ανύψωση βραχίονα"),
+                ("glare", "Glare/reflections" if lang == "en" else "Θάμβωση/αντανακλάσεις"),
+            ]
+            beneficial_flags = [
+                ("active_breaks", "Active breaks / postural changes" if lang == "en" else "Ενεργά διαλείμματα / αλλαγές στάσης"),
+                ("keyboard_close", "Keyboard/mouse close to the body" if lang == "en" else "Πληκτρολόγιο/ποντίκι κοντά στο σώμα"),
+                ("forearm_support", "Forearm support" if lang == "en" else "Στήριξη αντιβραχίων"),
+            ]
+
+            improvements = []
+            remaining = []
+            new_issues = []
+
+            for key, label in harmful_flags:
+                before = bool(baseline_assessment.get(key, False))
+                after = bool(ctx.get(key, False))
+                if before and not after:
+                    improvements.append(label)
+                elif after:
+                    remaining.append(label)
+                elif (not before) and after:
+                    new_issues.append(label)
+
+            for key, label in beneficial_flags:
+                before = bool(baseline_assessment.get(key, False))
+                after = bool(ctx.get(key, False))
+                if (not before) and after:
+                    improvements.append(label)
+                elif not after:
+                    remaining.append(label)
+
+            baseline_chair_issues = len(baseline_assessment.get("chair_failed", []) or [])
+            current_chair_issues = len(chair_failed or [])
+            if current_chair_issues < baseline_chair_issues:
+                improvements.append(
+                    f"Chair fit/adjustability issues: {baseline_chair_issues} → {current_chair_issues}"
+                    if lang == "en"
+                    else f"Ζητήματα προσαρμογής/ρύθμισης καρέκλας: {baseline_chair_issues} → {current_chair_issues}"
+                )
+            elif current_chair_issues > 0:
+                remaining.append(
+                    f"{current_chair_issues} chair fit/adjustability issue(s)"
+                    if lang == "en"
+                    else f"{current_chair_issues} ζητήματα προσαρμογής/ρύθμισης καρέκλας"
+                )
+
+            baseline_posture_issues = len(baseline_assessment.get("posture_out", []) or [])
+            current_posture_issues = len(posture_out or [])
+            if current_posture_issues < baseline_posture_issues:
+                improvements.append(
+                    f"Posture findings: {baseline_posture_issues} → {current_posture_issues}"
+                    if lang == "en"
+                    else f"Ευρήματα στάσης: {baseline_posture_issues} → {current_posture_issues}"
+                )
+            elif current_posture_issues > 0:
+                remaining.append(
+                    f"{current_posture_issues} posture finding(s)"
+                    if lang == "en"
+                    else f"{current_posture_issues} ευρήματα στάσης"
+                )
+
+            st.markdown("#### " + ("Observed improvements" if lang == "en" else "Βελτιώσεις που καταγράφηκαν"))
+            if improvements:
+                for item in dict.fromkeys(improvements):
+                    st.markdown(f"- ✅ {item}")
+            else:
+                st.caption("No clear improvement was identified in the selected comparison indicators." if lang == "en" else "Δεν εντοπίστηκε σαφής βελτίωση στους συγκεκριμένους δείκτες σύγκρισης.")
+
+            if remaining:
+                st.markdown("#### " + ("Issues still requiring attention" if lang == "en" else "Ζητήματα που εξακολουθούν να χρειάζονται προσοχή"))
+                for item in dict.fromkeys(remaining):
+                    st.markdown(f"- ⚠️ {item}")
+
+            comparison_payload = {
+                "baseline_assessment_date": baseline_assessment.get("assessment_date"),
+                "baseline_rosa": baseline_rosa,
+                "followup_rosa": rosa["final"],
+                "baseline_priority_findings": baseline_priority,
+                "followup_priority_findings": priority_count,
+                "baseline_attention_findings": baseline_attention,
+                "followup_attention_findings": attention_count,
+                "interventions_notes": interventions_notes,
+                "improvements": list(dict.fromkeys(improvements)),
+                "remaining_issues": list(dict.fromkeys(remaining)),
+            }
+
+            st.info(
+                "A follow-up assessment is most useful when it is performed after the agreed measures have had enough time to be implemented and used in normal work."
+                if lang == "en"
+                else "Η επανεκτίμηση έχει μεγαλύτερη αξία όταν γίνεται αφού τα συμφωνημένα μέτρα έχουν εφαρμοστεί και έχουν χρησιμοποιηθεί για επαρκές διάστημα στην κανονική εργασία."
+            )
 
     report_payload = {
-        "version": "2.0.0-alpha",
+        "version": "2.1.0-alpha",
         "intended_purpose": "Office ergonomic decision support; not diagnosis or individual disease-probability prediction",
         "assessment": ctx,
         "findings": [f.to_dict() for f in findings],
         "recommendations": [r.to_dict() for r in recommendations],
         "evidence": [e.to_dict() for e in relevant_evidence],
+        "comparison": comparison_payload,
     }
     report_json = json.dumps(report_payload, ensure_ascii=False, indent=2)
+
+    st.divider()
+    st.markdown("### " + ("Report and follow-up" if lang == "en" else "Αναφορά και επανεκτίμηση"))
     st.download_button(
         t["download_json"],
         data=report_json.encode("utf-8"),
-        file_name=f"ergofit_v2_{subject_id.strip() or 'assessment'}.json",
+        file_name=f"ergofit_v2_{subject_id.strip() or 'assessment'}_{assessment_stage}.json",
         mime="application/json",
     )
     st.caption(t["print_note"])
+
+    if assessment_stage == "baseline":
+        st.info(
+            "Save this JSON. At the follow-up assessment, select 'After intervention' and upload it to generate the before/after comparison."
+            if lang == "en"
+            else "Αποθήκευσε αυτό το JSON. Στην επανεκτίμηση επίλεξε «Μετά τις παρεμβάσεις» και ανέβασέ το για να δημιουργηθεί αυτόματα η σύγκριση πριν/μετά."
+        )
 
     st.divider()
     st.markdown("#### " + ("Optional secure backend" if lang == "en" else "Προαιρετική ασφαλής αποθήκευση"))
