@@ -506,92 +506,284 @@ with tabs[4]:
 with tabs[5]:
     st.subheader(t["rosa_title"])
     st.info(t["rosa_note"])
-    st.caption("Source: Sonne, Villalta & Andrews (2012), Applied Ergonomics 43(1):98–108.")
+    st.caption(
+        "Scoring follows the ROSA worksheet structure developed by Sonne, Villalta & Andrews. "
+        "The visual worksheet shown below is the TuMeke rendition based on ROSA."
+        if lang == "en"
+        else
+        "Η βαθμολόγηση ακολουθεί τη δομή του ROSA των Sonne, Villalta & Andrews. "
+        "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
+    )
 
-    rosa_completed = st.toggle("Assessment completed" if lang == "en" else "Η αξιολόγηση ROSA ολοκληρώθηκε", value=False, key="rosa_completed")
+    ROSA_WORKSHEET_IMAGE = "https://cdn.prod.website-files.com/63e4fd179545f210580f863a/6843144967b0871bb871c97f_ROSA_V1.jpg"
+    ROSA_WORKSHEET_PDF = "https://7488314.fs1.hubspotusercontent-na1.net/hubfs/7488314/Infosheets/ROSA_Worksheet_TuMeke.pdf"
+
+    with st.expander(
+        "Visual ROSA worksheet & icons" if lang == "en" else "Οπτικός οδηγός ROSA με τα εικονίδια",
+        expanded=True,
+    ):
+        st.markdown(
+            f'<img src="{ROSA_WORKSHEET_IMAGE}" style="width:100%;max-width:1500px;border-radius:10px;border:1px solid #d9dde6;" />',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"[Open worksheet PDF]({ROSA_WORKSHEET_PDF})"
+            if lang == "en"
+            else f"[Άνοιγμα του worksheet σε PDF]({ROSA_WORKSHEET_PDF})"
+        )
+        st.caption(
+            "Use the pictures as the primary visual reference; the controls below reproduce the same scoring logic in an interactive format."
+            if lang == "en"
+            else
+            "Χρησιμοποίησε τις εικόνες ως βασικό οπτικό οδηγό. Τα πεδία από κάτω ακολουθούν την ίδια λογική βαθμολόγησης σε διαδραστική μορφή."
+        )
+
+    rosa_completed = st.toggle(
+        "Assessment completed" if lang == "en" else "Η αξιολόγηση ROSA ολοκληρώθηκε",
+        value=False,
+        key="rosa_completed",
+    )
+
     if rosa_completed:
+        # -----------------------------
+        # Section A — Chair
+        # -----------------------------
         st.markdown("### A · Chair" if lang == "en" else "### A · Καρέκλα")
-        a1c, a2c = st.columns(2)
-        with a1c:
-            st.markdown("**A.1 Chair height**" if lang == "en" else "**A.1 Ύψος καρέκλας**")
-            a1 = 1
-            a1 += rosa_checkbox("Πολύ χαμηλή", "Too low", 2, "rosa_a1_low")
-            a1 += rosa_checkbox("Πολύ υψηλή", "Too high", 2, "rosa_a1_high")
-            a1 += rosa_checkbox("Πόδια χωρίς στήριξη", "No foot support", 3, "rosa_a1_nofoot")
-            a1 += rosa_checkbox("Περιορισμένος χώρος κάτω από γραφείο", "Insufficient under-desk space", 1, "rosa_a1_cramp")
-            a1 += rosa_checkbox("Μη ρυθμιζόμενη", "Non-adjustable", 1, "rosa_a1_nonadj")
-            st.markdown("**A.3 Armrests**" if lang == "en" else "**A.3 Μπράτσα καρέκλας**")
-            a3 = 1
-            a3 += rosa_checkbox("Πολύ ψηλά/χαμηλά", "Too high/low", 2, "rosa_a3_high")
-            a3 += rosa_checkbox("Σκληρή/φθαρμένη επιφάνεια", "Hard/damaged surface", 1, "rosa_a3_hard")
-            a3 += rosa_checkbox("Πολύ μεγάλη απόσταση", "Too wide apart", 1, "rosa_a3_wide")
-            a3 += rosa_checkbox("Μη ρυθμιζόμενα", "Non-adjustable", 1, "rosa_a3_nonadj")
-        with a2c:
-            st.markdown("**A.2 Seat pan depth**" if lang == "en" else "**A.2 Βάθος έδρας**")
-            a2 = 1
-            a2 += rosa_checkbox("Πολύ βαθιά έδρα", "Pan too long", 2, "rosa_a2_long")
-            a2 += rosa_checkbox("Πολύ ρηχή έδρα", "Pan too short", 2, "rosa_a2_short")
-            a2 += rosa_checkbox("Μη ρυθμιζόμενο βάθος", "Depth non-adjustable", 1, "rosa_a2_nonadj")
-            st.markdown("**A.4 Back support**" if lang == "en" else "**A.4 Στήριξη πλάτης**")
-            a4 = 1
-            a4 += rosa_checkbox("Ανεπαρκής οσφυϊκή στήριξη", "No/poor lumbar support", 2, "rosa_a4_lumbar")
-            a4 += rosa_checkbox("Υπερβολική/ανεπαρκής κλίση πλάτης", "Backrest angle outside ROSA reference", 2, "rosa_a4_angle")
-            a4 += rosa_checkbox("Χωρίς στήριξη πλάτης / σκύψιμο εμπρός", "No back support / leaning forward", 3, "rosa_a4_noback")
-            a4 += rosa_checkbox("Επιφάνεια πολύ ψηλά", "Work surface too high", 1, "rosa_a4_highdesk")
-            a4 += rosa_checkbox("Πλάτη μη ρυθμιζόμενη", "Backrest non-adjustable", 1, "rosa_a4_nonadj")
+
+        st.markdown("#### A.1 · Chair height" if lang == "en" else "#### A.1 · Ύψος καρέκλας")
+        a1_primary = st.radio(
+            "Select the picture/condition that best matches the worker" if lang == "en"
+            else "Επίλεξε την εικόνα/κατάσταση που ταιριάζει περισσότερο στον εργαζόμενο",
+            [1, 2, 3],
+            format_func=lambda v: {
+                1: "Knees at about 90° (+1)" if lang == "en" else "Γόνατα περίπου στις 90° (+1)",
+                2: "Too low OR too high: knee angle <90° or >90° (+2)" if lang == "en"
+                   else "Πολύ χαμηλά ή πολύ ψηλά: γωνία γόνατος <90° ή >90° (+2)",
+                3: "No foot contact with the floor (+3)" if lang == "en"
+                   else "Τα πέλματα δεν ακουμπούν στο δάπεδο (+3)",
+            }[v],
+            key="rosa_a1_primary",
+        )
+        a1_extra = 0
+        if st.checkbox(
+            "Insufficient space under the desk / cannot comfortably move the legs (+1)" if lang == "en"
+            else "Ανεπαρκής χώρος κάτω από το γραφείο / δεν υπάρχει επαρκής χώρος κίνησης των ποδιών (+1)",
+            key="rosa_a1_cramp",
+        ):
+            a1_extra += 1
+        if st.checkbox(
+            "Chair height is non-adjustable (+1)" if lang == "en"
+            else "Το ύψος της καρέκλας δεν ρυθμίζεται (+1)",
+            key="rosa_a1_nonadj",
+        ):
+            a1_extra += 1
+        a1 = a1_primary + a1_extra
+
+        st.markdown("#### A.2 · Seat pan depth" if lang == "en" else "#### A.2 · Βάθος έδρας")
+        a2_primary = st.radio(
+            "Select seat-depth condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει το βάθος της έδρας",
+            [1, 2, 3],
+            format_func=lambda v: {
+                1: "About 3 in / 7–8 cm between the back of the knee and seat edge (+1)" if lang == "en"
+                   else "Περίπου 7–8 cm κενό μεταξύ του πίσω μέρους του γόνατος και της άκρης της έδρας (+1)",
+                2: "Too long: less than ~7–8 cm of space (+2)" if lang == "en"
+                   else "Πολύ βαθιά έδρα: κενό μικρότερο από περίπου 7–8 cm (+2)",
+                3: "Too short: more than ~7–8 cm of space (+2)" if lang == "en"
+                   else "Πολύ ρηχή έδρα: κενό μεγαλύτερο από περίπου 7–8 cm (+2)",
+            }[v],
+            key="rosa_a2_primary",
+        )
+        # ROSA gives both too-long and too-short conditions a score of 2.
+        a2 = 1 if a2_primary == 1 else 2
+        if st.checkbox(
+            "Seat depth is non-adjustable (+1)" if lang == "en"
+            else "Το βάθος της έδρας δεν ρυθμίζεται (+1)",
+            key="rosa_a2_nonadj",
+        ):
+            a2 += 1
+
+        st.markdown("#### A.3 · Armrests" if lang == "en" else "#### A.3 · Μπράτσα καρέκλας")
+        a3_primary = st.radio(
+            "Select armrest condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει τα μπράτσα",
+            [1, 2],
+            format_func=lambda v: {
+                1: "Elbows supported in line with the shoulders; shoulders relaxed (+1)" if lang == "en"
+                   else "Οι αγκώνες στηρίζονται κοντά στο σώμα και οι ώμοι είναι χαλαροί (+1)",
+                2: "Armrests too high or too low; shoulders shrugged or arms unsupported (+2)" if lang == "en"
+                   else "Τα μπράτσα είναι πολύ ψηλά ή πολύ χαμηλά: οι ώμοι ανυψώνονται ή τα χέρια δεν στηρίζονται (+2)",
+            }[v],
+            key="rosa_a3_primary",
+        )
+        a3 = a3_primary
+        if st.checkbox(
+            "Armrest surface is hard/damaged (+1)" if lang == "en"
+            else "Η επιφάνεια των μπράτσων είναι σκληρή ή φθαρμένη (+1)",
+            key="rosa_a3_hard",
+        ):
+            a3 += 1
+        if st.checkbox(
+            "Armrests are too far apart (+1)" if lang == "en"
+            else "Τα μπράτσα απέχουν υπερβολικά μεταξύ τους (+1)",
+            key="rosa_a3_wide",
+        ):
+            a3 += 1
+        if st.checkbox(
+            "Armrests are non-adjustable (+1)" if lang == "en"
+            else "Τα μπράτσα δεν ρυθμίζονται (+1)",
+            key="rosa_a3_nonadj",
+        ):
+            a3 += 1
+
+        st.markdown("#### A.4 · Back support" if lang == "en" else "#### A.4 · Στήριξη πλάτης")
+        a4_primary = st.radio(
+            "Select back-support condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει τη στήριξη της πλάτης",
+            [1, 2, 3],
+            format_func=lambda v: {
+                1: "Adequate lumbar support; backrest about 95–110° (+1)" if lang == "en"
+                   else "Επαρκής οσφυϊκή στήριξη και κλίση πλάτης περίπου 95–110° (+1)",
+                2: "No/poor lumbar support OR backrest angle <95° or >110° (+2)" if lang == "en"
+                   else "Ανεπαρκής/λανθασμένη οσφυϊκή στήριξη ή κλίση πλάτης <95° ή >110° (+2)",
+                3: "No back support / stool / worker leaning forward without support (+3)" if lang == "en"
+                   else "Χωρίς στήριξη πλάτης, π.χ. σκαμπό ή εργασία με τον κορμό μπροστά χωρίς στήριξη (+3)",
+            }[v],
+            key="rosa_a4_primary",
+        )
+        a4 = a4_primary
+        if st.checkbox(
+            "Work surface too high; shoulders shrugged (+1)" if lang == "en"
+            else "Η επιφάνεια εργασίας είναι πολύ ψηλά και προκαλεί ανύψωση των ώμων (+1)",
+            key="rosa_a4_highdesk",
+        ):
+            a4 += 1
+        if st.checkbox(
+            "Backrest is non-adjustable (+1)" if lang == "en"
+            else "Η πλάτη της καρέκλας δεν ρυθμίζεται (+1)",
+            key="rosa_a4_nonadj",
+        ):
+            a4 += 1
+
         dur_chair = duration_selector("dur_chair")
-    
+
+        a_cols = st.columns(5)
+        a_cols[0].metric("A.1", a1)
+        a_cols[1].metric("A.2", a2)
+        a_cols[2].metric("A.3", a3)
+        a_cols[3].metric("A.4", a4)
+        a_cols[4].metric("Duration" if lang == "en" else "Διάρκεια", f"{dur_chair:+d}")
+
         st.divider()
+
+        # -----------------------------
+        # Section B — Monitor & Phone
+        # -----------------------------
         st.markdown("### B · Monitor & phone" if lang == "en" else "### B · Οθόνη & τηλέφωνο")
-        b1c, b2c = st.columns(2)
-        with b1c:
-            st.markdown("**B.1 Monitor**" if lang == "en" else "**B.1 Οθόνη**")
-            b1 = 1
-            b1 += rosa_checkbox("Οθόνη πολύ χαμηλά", "Monitor too low", 2, "rosa_b1_low")
-            b1 += rosa_checkbox("Οθόνη πολύ μακριά", "Monitor too far", 1, "rosa_b1_far")
-            b1 += rosa_checkbox("Οθόνη πολύ ψηλά", "Monitor too high", 3, "rosa_b1_high")
-            b1 += rosa_checkbox("Στροφή αυχένα >30°", "Neck twist >30°", 1, "rosa_b1_twist")
-            b1 += rosa_checkbox("Θάμβωση / αντανάκλαση", "Glare", 1, "rosa_b1_glare")
-            b1 += rosa_checkbox("Έγγραφα χωρίς βάση στήριξης", "Documents without holder", 1, "rosa_b1_docs")
-            dur_monitor = duration_selector("dur_monitor")
-        with b2c:
-            st.markdown("**B.2 Phone**" if lang == "en" else "**B.2 Τηλέφωνο**")
-            b2 = 1
-            b2 += rosa_checkbox("Τηλέφωνο μακριά", "Phone too far", 2, "rosa_b2_far")
-            b2 += rosa_checkbox("Κράτημα με αυχένα/ώμο", "Neck/shoulder hold", 2, "rosa_b2_hold")
-            b2 += rosa_checkbox("Χωρίς δυνατότητα hands-free", "No hands-free option", 1, "rosa_b2_hands")
-            dur_phone = duration_selector("dur_phone")
-    
+
+        st.markdown("#### B.1 · Monitor" if lang == "en" else "#### B.1 · Οθόνη")
+        b1_primary = st.radio(
+            "Select monitor-height condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει καλύτερα το ύψος της οθόνης",
+            [1, 2, 3],
+            format_func=lambda v: {
+                1: "Arm's-length distance (about 40–75 cm) and screen at eye level (+1)" if lang == "en"
+                   else "Απόσταση περίπου όσο το μήκος του χεριού (40–75 cm) και οθόνη στο ύψος των ματιών (+1)",
+                2: "Monitor too low (below ~30° viewing angle) (+2)" if lang == "en"
+                   else "Η οθόνη είναι πολύ χαμηλά (κάτω από περίπου 30°) (+2)",
+                3: "Monitor too high, producing neck extension (+3)" if lang == "en"
+                   else "Η οθόνη είναι πολύ ψηλά και προκαλεί έκταση του αυχένα (+3)",
+            }[v],
+            key="rosa_b1_primary",
+        )
+        b1 = b1_primary
+        if st.checkbox("Monitor too far away (+1)" if lang == "en" else "Η οθόνη βρίσκεται πολύ μακριά (+1)", key="rosa_b1_far"):
+            b1 += 1
+        if st.checkbox("Neck rotation >30° (+1)" if lang == "en" else "Στροφή αυχένα >30° (+1)", key="rosa_b1_twist"):
+            b1 += 1
+        if st.checkbox("Glare on screen (+1)" if lang == "en" else "Θάμβωση / αντανακλάσεις στην οθόνη (+1)", key="rosa_b1_glare"):
+            b1 += 1
+        if st.checkbox("Documents used without a document holder (+1)" if lang == "en" else "Χρήση εγγράφων χωρίς βάση στήριξης εγγράφων (+1)", key="rosa_b1_docs"):
+            b1 += 1
+        dur_monitor = duration_selector("dur_monitor")
+
+        st.markdown("#### B.2 · Phone" if lang == "en" else "#### B.2 · Τηλέφωνο")
+        b2 = 1
+        st.caption(
+            "Baseline: headset or one-hand phone use with a neutral neck posture (+1). Add any conditions that apply."
+            if lang == "en"
+            else "Βασική συνθήκη: headset ή χρήση τηλεφώνου με το ένα χέρι και ουδέτερη θέση αυχένα (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+        )
+        if st.checkbox("Phone is too far to reach (>30 cm) (+2)" if lang == "en" else "Το τηλέφωνο βρίσκεται πολύ μακριά (>30 cm) (+2)", key="rosa_b2_far"):
+            b2 += 2
+        if st.checkbox("Phone held between neck and shoulder (+2)" if lang == "en" else "Το τηλέφωνο συγκρατείται μεταξύ αυχένα και ώμου (+2)", key="rosa_b2_hold"):
+            b2 += 2
+        if st.checkbox("No hands-free option available (+1)" if lang == "en" else "Δεν υπάρχει δυνατότητα hands-free / ακουστικών (+1)", key="rosa_b2_hands"):
+            b2 += 1
+        dur_phone = duration_selector("dur_phone")
+
         st.divider()
+
+        # -----------------------------
+        # Section C — Mouse & Keyboard
+        # -----------------------------
         st.markdown("### C · Mouse & keyboard" if lang == "en" else "### C · Ποντίκι & πληκτρολόγιο")
-        c1c, c2c = st.columns(2)
-        with c1c:
-            st.markdown("**C.1 Mouse**" if lang == "en" else "**C.1 Ποντίκι**")
-            c1r = 1
-            c1r += rosa_checkbox("Τέντωμα χεριού προς το ποντίκι", "Reaching to mouse", 2, "rosa_c1_reach")
-            c1r += rosa_checkbox("Ποντίκι/πληκτρολόγιο σε διαφορετικά επίπεδα", "Mouse/keyboard on different surfaces", 2, "rosa_c1_diff")
-            c1r += rosa_checkbox("Λαβή με τα δάκτυλα (pinch grip)", "Pinch grip", 1, "rosa_c1_pinch")
-            c1r += rosa_checkbox("Στήριγμα παλάμης μπροστά από το ποντίκι", "Palmrest in front of mouse", 1, "rosa_c1_palm")
-            dur_mouse = duration_selector("dur_mouse")
-        with c2c:
-            st.markdown("**C.2 Keyboard**" if lang == "en" else "**C.2 Πληκτρολόγιο**")
-            c2r = 1
-            c2r += rosa_checkbox("Έκταση καρπού / θετική κλίση πληκτρολογίου", "Wrist extension / positive keyboard angle", 2, "rosa_c2_ext")
-            c2r += rosa_checkbox("Απόκλιση καρπού", "Wrist deviation", 1, "rosa_c2_dev")
-            c2r += rosa_checkbox("Πληκτρολόγιο πολύ ψηλά", "Keyboard too high", 1, "rosa_c2_high")
-            c2r += rosa_checkbox("Τέντωμα χεριού προς αντικείμενα πάνω από το ύψος των ώμων", "Reaching overhead", 1, "rosa_c2_over")
-            c2r += rosa_checkbox("Μη ρυθμιζόμενη βάση πληκτρολογίου", "Platform non-adjustable", 1, "rosa_c2_nonadj")
-            dur_keyboard = duration_selector("dur_keyboard")
-    
+
+        st.markdown("#### C.1 · Mouse" if lang == "en" else "#### C.1 · Ποντίκι")
+        c1r = 1
+        st.caption(
+            "Baseline: mouse in line with the shoulder (+1). Add any conditions that apply."
+            if lang == "en"
+            else "Βασική συνθήκη: το ποντίκι βρίσκεται στην ίδια γραμμή με τον ώμο (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+        )
+        if st.checkbox("Reaching to use the mouse (+2)" if lang == "en" else "Χρειάζεται τέντωμα του χεριού για χρήση του ποντικιού (+2)", key="rosa_c1_reach"):
+            c1r += 2
+        if st.checkbox("Mouse and keyboard are on different surfaces/heights (+2)" if lang == "en" else "Ποντίκι και πληκτρολόγιο βρίσκονται σε διαφορετικές επιφάνειες/ύψη (+2)", key="rosa_c1_diff"):
+            c1r += 2
+        if st.checkbox("Pinch grip on mouse (+1)" if lang == "en" else "Το ποντίκι χρησιμοποιείται με λαβή τύπου pinch grip (+1)", key="rosa_c1_pinch"):
+            c1r += 1
+        if st.checkbox("Palmrest in front of the mouse (+1)" if lang == "en" else "Υπάρχει στήριγμα παλάμης μπροστά από το ποντίκι (+1)", key="rosa_c1_palm"):
+            c1r += 1
+        dur_mouse = duration_selector("dur_mouse")
+
+        st.markdown("#### C.2 · Keyboard" if lang == "en" else "#### C.2 · Πληκτρολόγιο")
+        c2r = 1
+        st.caption(
+            "Baseline: wrists straight and shoulders relaxed (+1). Add any conditions that apply."
+            if lang == "en"
+            else "Βασική συνθήκη: οι καρποί είναι ευθείς/ουδέτεροι και οι ώμοι χαλαροί (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+        )
+        if st.checkbox(
+            "Wrist extension / positive keyboard angle (>15° wrist extension) (+2)" if lang == "en"
+            else "Έκταση καρπού / θετική κλίση πληκτρολογίου (>15° έκταση καρπού) (+2)",
+            key="rosa_c2_ext",
+        ):
+            c2r += 2
+        if st.checkbox("Wrist deviation while typing (+1)" if lang == "en" else "Απόκλιση καρπού κατά την πληκτρολόγηση (+1)", key="rosa_c2_dev"):
+            c2r += 1
+        if st.checkbox("Keyboard too high; shoulders shrugged (+1)" if lang == "en" else "Το πληκτρολόγιο είναι πολύ ψηλά και οι ώμοι ανυψώνονται (+1)", key="rosa_c2_high"):
+            c2r += 1
+        if st.checkbox("Reaching to overhead items (+1)" if lang == "en" else "Χρειάζεται προσέγγιση αντικειμένων πάνω από το ύψος των ώμων (+1)", key="rosa_c2_over"):
+            c2r += 1
+        if st.checkbox("Keyboard platform is non-adjustable (+1)" if lang == "en" else "Η βάση/επιφάνεια του πληκτρολογίου δεν ρυθμίζεται (+1)", key="rosa_c2_nonadj"):
+            c2r += 1
+        dur_keyboard = duration_selector("dur_keyboard")
+
         rosa = compute_rosa(
             a1, a2, a3, a4, dur_chair,
             b1, b2, dur_monitor, dur_phone,
             c1r, c2r, dur_mouse, dur_keyboard,
         )
+
+        st.divider()
+        st.markdown("### " + ("ROSA results" if lang == "en" else "Αποτελέσματα ROSA"))
         r1, r2, r3 = st.columns(3)
         r1.metric("Chair ROSA" if lang == "en" else "ROSA καρέκλας", f"{rosa['chair']} / 10")
         r2.metric("Monitor & peripherals" if lang == "en" else "Οθόνη & περιφερειακά", f"{rosa['monitor_peripherals']} / 10")
         r3.metric("ROSA final" if lang == "en" else "Τελικό ROSA", f"{rosa['final']} / 10")
+
+        st.caption(
+            f"Section B: {rosa['section_b']} · Section C: {rosa['section_c']}"
+            if lang == "en"
+            else f"Ενότητα B: {rosa['section_b']} · Ενότητα C: {rosa['section_c']}"
+        )
+
         if rosa["final"] >= 5:
             st.error(
                 "ROSA action level reached (≥5): further ergonomic investigation/intervention indicated."
