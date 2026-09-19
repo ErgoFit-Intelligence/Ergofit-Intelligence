@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from datetime import date
 from pathlib import Path
@@ -515,38 +516,60 @@ with tabs[5]:
         "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
     )
 
-    ROSA_WORKSHEET_IMAGE = "https://raw.githubusercontent.com/ErgoFit-Intelligence/Ergofit-Intelligence/main/assets/rosa_banner.jpg"
-    ROSA_WORKSHEET_PDF = "https://7488314.fs1.hubspotusercontent-na1.net/hubfs/7488314/Infosheets/ROSA_Worksheet_TuMeke.pdf"
+    ROSA_BANNER_PATH = ASSETS / "rosa_banner.jpg"
+    ROSA_PDF_PATH = ASSETS / "ROSA.pdf"
 
     with st.expander(
         "Visual ROSA worksheet & icons" if lang == "en" else "Οπτικός οδηγός ROSA με τα εικονίδια",
         expanded=True,
     ):
-        # Render via the browser instead of st.image/Pillow. Streamlit executes
-        # tab contents eagerly, so a PIL decoding error here would otherwise
-        # crash the whole app even when the ROSA tab is not selected.
-        st.markdown(
-            f"""
-            <div style="width:100%; margin:0 0 12px 0;">
-              <img
-                src="{ROSA_WORKSHEET_IMAGE}?v=2"
-                alt="ErgoFit ROSA checklist"
-                style="width:100%; height:auto; display:block; border-radius:10px; border:1px solid #d9dde6;"
-              />
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"[Open worksheet PDF]({ROSA_WORKSHEET_PDF})"
-            if lang == "en"
-            else f"[Άνοιγμα του worksheet σε PDF]({ROSA_WORKSHEET_PDF})"
-        )
+        # Keep ROSA media fully local to the deployed app. This avoids broken
+        # external URLs and avoids PIL decoding inside st.image.
+        if ROSA_BANNER_PATH.exists() and ROSA_PDF_PATH.exists():
+            try:
+                banner_b64 = base64.b64encode(ROSA_BANNER_PATH.read_bytes()).decode("ascii")
+                pdf_bytes = ROSA_PDF_PATH.read_bytes()
+                pdf_b64 = base64.b64encode(pdf_bytes).decode("ascii")
+
+                st.markdown(
+                    f"""
+                    <a href="data:application/pdf;base64,{pdf_b64}" target="_blank"
+                       style="display:block;text-decoration:none;">
+                      <img
+                        src="data:image/jpeg;base64,{banner_b64}"
+                        alt="ErgoFit ROSA checklist"
+                        style="width:100%;height:auto;display:block;border-radius:12px;border:1px solid #d9dde6;"
+                      />
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                st.download_button(
+                    "Download ROSA worksheet PDF" if lang == "en" else "Λήψη του ROSA worksheet σε PDF",
+                    data=pdf_bytes,
+                    file_name="ROSA.pdf",
+                    mime="application/pdf",
+                    key="download_rosa_pdf",
+                )
+            except Exception:
+                st.warning(
+                    "The ROSA visual guide could not be loaded. The assessment below remains available."
+                    if lang == "en"
+                    else "Ο οπτικός οδηγός ROSA δεν μπόρεσε να φορτωθεί. Η αξιολόγηση από κάτω παραμένει διαθέσιμη."
+                )
+        else:
+            st.warning(
+                "ROSA media files are unavailable."
+                if lang == "en"
+                else "Τα αρχεία του οπτικού οδηγού ROSA δεν είναι διαθέσιμα."
+            )
+
         st.caption(
-            "Use the pictures as the primary visual reference; the controls below reproduce the same scoring logic in an interactive format."
+            "Click the banner to open the worksheet, or use the PDF download button. The controls below follow the same scoring structure."
             if lang == "en"
             else
-            "Χρησιμοποίησε τις εικόνες ως βασικό οπτικό οδηγό. Τα πεδία από κάτω ακολουθούν την ίδια λογική βαθμολόγησης σε διαδραστική μορφή."
+            "Πάτησε πάνω στην εικόνα για να ανοίξεις το worksheet ή χρησιμοποίησε το κουμπί λήψης PDF. Τα πεδία από κάτω ακολουθούν την ίδια δομή βαθμολόγησης."
         )
 
     rosa_completed = st.toggle(
