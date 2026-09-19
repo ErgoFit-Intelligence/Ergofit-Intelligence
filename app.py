@@ -515,16 +515,16 @@ with tabs[5]:
         "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
     )
 
-    ROSA_WORKSHEET_IMAGE = "https://cdn.prod.website-files.com/63e4fd179545f210580f863a/6843144967b0871bb871c97f_ROSA_V1.jpg"
+    ROSA_WORKSHEET_IMAGE = "assets/rosa_banner.webp"
     ROSA_WORKSHEET_PDF = "https://7488314.fs1.hubspotusercontent-na1.net/hubfs/7488314/Infosheets/ROSA_Worksheet_TuMeke.pdf"
 
     with st.expander(
         "Visual ROSA worksheet & icons" if lang == "en" else "Οπτικός οδηγός ROSA με τα εικονίδια",
         expanded=True,
     ):
-        st.markdown(
-            f'<img src="{ROSA_WORKSHEET_IMAGE}" style="width:100%;max-width:1500px;border-radius:10px;border:1px solid #d9dde6;" />',
-            unsafe_allow_html=True,
+        st.image(
+            ROSA_WORKSHEET_IMAGE,
+            use_container_width=True,
         )
         st.markdown(
             f"[Open worksheet PDF]({ROSA_WORKSHEET_PDF})"
