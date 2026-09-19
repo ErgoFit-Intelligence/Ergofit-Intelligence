@@ -60,6 +60,14 @@ EVIDENCE_TITLE_EL = {
     "Forearm rotation exposure and lateral epicondylitis": "Έκθεση σε στροφή αντιβραχίου και έξω επικονδυλίτιδα",
     "Non-neutral posture and chronic low-back pain": "Μη ουδέτερη στάση και χρόνιος πόνος στη μέση",
     "Arm elevation and specific shoulder disorders": "Ανύψωση βραχίονα και ειδικές παθήσεις ώμου",
+    "Overweight and carpal tunnel syndrome": "Αυξημένο σωματικό βάρος και σύνδρομο καρπιαίου σωλήνα",
+    "Obesity and carpal tunnel syndrome": "Παχυσαρκία και σύνδρομο καρπιαίου σωλήνα",
+    "Arm support plus alternative mouse for neck/shoulder disorders": "Στήριξη άνω άκρου και εναλλακτικό ποντίκι για ενοχλήσεις αυχένα/ώμου",
+    "Active breaks / postural change in office workers": "Ενεργά διαλείμματα και αλλαγές στάσης σε εργαζομένους γραφείου",
+    "Physical activity plus ergonomics and back-pain intensity": "Φυσική δραστηριότητα μαζί με εργονομική παρέμβαση για πόνο στη μέση",
+    "Workplace micro-exercise for neck/shoulder pain": "Μικρές ασκήσεις στον χώρο εργασίας για πόνο αυχένα/ώμου",
+    "Sleep problems and subsequent chronic musculoskeletal pain": "Προβλήματα ύπνου και μεταγενέστερος χρόνιος μυοσκελετικός πόνος",
+    "Office-chair interventions and musculoskeletal outcomes": "Παρεμβάσεις με καρέκλα γραφείου και μυοσκελετικά συμπτώματα",
 }
 
 EVIDENCE_REGION_ORDER = [
@@ -288,11 +296,25 @@ def _technical_effect(e: EvidenceItem, lang: str) -> str:
     if e.estimate is None:
         return "Δεν δίνεται ένας ενιαίος συγκεντρωτικός αριθμός." if lang == "el" else "No single pooled numerical estimate was reported."
 
+    if lang == "el":
+        measure = {
+            "RR": "Σχετικός κίνδυνος (RR)",
+            "OR": "Λόγος πιθανοτήτων (OR)",
+            "HR": "Λόγος κινδύνων (HR)",
+            "SMD": "Τυποποιημένη μέση διαφορά (SMD)",
+            "Hedges g": "Hedges g",
+        }.get(e.effect_measure, e.effect_measure)
+        estimate = f"{e.estimate:.2f}".replace(".", ",")
+        value = f"{measure}: {estimate}"
+        if e.ci_low is not None and e.ci_high is not None:
+            low = f"{e.ci_low:.2f}".replace(".", ",")
+            high = f"{e.ci_high:.2f}".replace(".", ",")
+            value += f" · 95% διάστημα εμπιστοσύνης: {low}–{high}"
+        return value
+
     value = f"{e.effect_measure} {e.estimate:.2f}"
     if e.ci_low is not None and e.ci_high is not None:
         value += f" (95% CI {e.ci_low:.2f}–{e.ci_high:.2f})"
-    if lang == "el":
-        value = value.replace(".", ",")
     return value
 
 
