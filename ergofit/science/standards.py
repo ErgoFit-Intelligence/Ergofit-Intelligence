@@ -73,3 +73,37 @@ EN1335_LABELS_EL = {
     "armrest_height_mm": "Ύψος μπράτσων",
     "hip_clearance_mm": "Ελεύθερος χώρος λεκάνης",
 }
+
+
+# Slovenian display labels. Internal keys and numeric references remain language-neutral.
+CHAIR_FIT_LABELS_SL = {
+    "seat_height_adjustable": "Višina sedeža je nastavljiva tako, da so stopala podprta in stegna udobno nameščena.",
+    "seat_depth_fit": "Globina sedeža omogoča dovolj prostora za koleni in podpira večji del stegen.",
+    "backrest_support": "Naslon podpira trup in ledveni del brez vsiljevanja statične drže.",
+    "backrest_adjustable": "Naslon in nagib sta nastavljiva glede na uporabnika in nalogo.",
+    "armrests_fit": "Nasloni za roke podpirajo podlakti brez dvigovanja ramen ali odmikanja komolcev od telesa.",
+    "armrests_clear_desk": "Nasloni za roke ne ovirajo približevanja delovni površini.",
+    "seat_width_fit": "Širina sedeža omogoča dovolj prostora za boke.",
+    "stable_base": "Stol je stabilen in primeren glede na tla in kolesca.",
+    "controls_usable": "Nastavitveni mehanizmi so razumljivi in dosegljivi iz sedečega položaja.",
+}
+
+POSTURE_LABELS_SL = {
+    "trunk_inclination": "Nagib trupa od navpičnice",
+    "hip_angle": "Kot trup–stegno / kolk",
+    "knee_angle": "Kot stegno–golen / koleno",
+    "ankle_angle": "Kot golen–stopalo / gleženj",
+    "shoulder_abduction": "Abdukcija rame",
+    "shoulder_flexion": "Fleksija rame",
+    "elbow_angle": "Kot komolca",
+    "wrist_flex_ext": "Fleksija/ekstenzija zapestja",
+    "wrist_deviation": "Radialni/ulnarni odklon zapestja",
+}
+
+EN1335_LABELS_SL = {
+    "seat_height_mm": "Višina sedeža",
+    "seat_depth_adjustable_mm": "Nastavljiva globina sedeža",
+    "seat_pad_width_mm": "Širina sedeža",
+    "armrest_height_mm": "Višina naslonov za roke",
+    "hip_clearance_mm": "Prostor za boke",
+}
