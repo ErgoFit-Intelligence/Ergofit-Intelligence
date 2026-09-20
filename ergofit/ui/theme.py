@@ -79,10 +79,11 @@ def apply_theme(asset_dir: Path) -> None:
 def hero(title: str, subtitle: str) -> None:
     logo_uri = st.session_state.get("_ef_logo_uri", "")
     img = f'<img src="{logo_uri}" alt="ErgoFit Intelligence">' if logo_uri else ""
+    subtitle_html = f"<p>{subtitle}</p>" if subtitle.strip() else ""
     st.markdown(
         f"""
         <div class="ef-hero">
-          <div class="copy"><div class="eyebrow">ERGOFIT · INTELLIGENCE · V2</div><h1>{title}</h1><p>{subtitle}</p></div>
+          <div class="copy"><div class="eyebrow">ERGOFIT · INTELLIGENCE · V2</div><h1>{title}</h1>{subtitle_html}</div>
           {img}
         </div>
         """,
