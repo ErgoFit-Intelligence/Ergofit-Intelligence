@@ -4,7 +4,7 @@ TEXT = {
     "el": {
         "app_title": "ErgoFit Intelligence v2",
         "hero_title": "Εργονομική αξιολόγηση γραφείου",
-        "hero_sub": "Εργονομική έκθεση, συμπτώματα, ROSA και προφίλ επιστημονικής τεκμηρίωσης — χωρίς ψευδή ακρίβεια στην πρόβλεψη νόσου.",
+        "hero_sub": "",
         "language": "Γλώσσα / Language",
         "quick": "⚡ Γρήγορη αξιολόγηση",
         "purpose": "ℹ️ Σκοπός και όρια του εργαλείου",
@@ -101,7 +101,7 @@ TEXT = {
     "en": {
         "app_title": "ErgoFit Intelligence v2",
         "hero_title": "Office ergonomic assessment",
-        "hero_sub": "Exposure, symptoms, ROSA and evidence profile — without false precision in disease prediction.",
+        "hero_sub": "",
         "language": "Language / Γλώσσα",
         "quick": "⚡ Quick Mode",
         "purpose": "ℹ️ Intended purpose and limits",
