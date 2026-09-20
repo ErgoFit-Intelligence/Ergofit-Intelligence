@@ -1,4 +1,4 @@
-name: Python syntax check
+name: Python and PDF smoke check
 
 on:
   push:
@@ -7,12 +7,76 @@ on:
     branches: [main]
 
 jobs:
-  syntax:
+  smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Compile Python sources
         run: python -m compileall -q app.py ergofit
+      - name: Generate sample PDF report
+        run: |
+          python - <<'PY'
+          from io import BytesIO
+          from PIL import Image
+          from ergofit.reporting import build_assessment_pdf
+
+          img = Image.new("RGB", (800, 500), "white")
+          bio = BytesIO()
+          img.save(bio, format="JPEG")
+
+          payload = {
+              "version": "2.3.0-alpha",
+              "assessment": {
+                  "subject_id": "TEST-001",
+                  "company": "Demo Company",
+                  "department": "Office",
+                  "job_title": "Administrator",
+                  "assessment_stage": "baseline",
+                  "assessment_date": "2026-09-20",
+                  "age": 36,
+                  "sex": "female",
+                  "height": 168,
+                  "weight": 69,
+                  "bmi": 24.4,
+                  "computer_hours": 7,
+                  "sitting_hours": 6,
+                  "active_breaks": False,
+                  "symptom_details": {
+                      "Neck": {
+                          "label": "Neck",
+                          "severity": 6,
+                          "duration": ">12_weeks",
+                          "frequency": "daily",
+                          "interference": True,
+                          "work_modification": True,
+                          "absence_days_4w": 0,
+                      }
+                  },
+                  "chair_failed": ["seat_depth_fit"],
+                  "posture_out": [{"key": "shoulders_relaxed"}],
+                  "rosa": {"chair": 4, "section_b": 4, "section_c": 3, "monitor_peripherals": 4, "final": 5, "action": "action"},
+                  "rosa_final": 5,
+              },
+              "findings": [
+                  {"status": "priority", "title": "ROSA action level reached", "detail": "Further ergonomic review is indicated."}
+              ],
+              "recommendations": [
+                  {"priority": "now", "title": "Adjust workstation", "action": "Review monitor and chair fit.", "rationale": "Reduce modifiable exposure."}
+              ],
+              "comparison": {},
+          }
+          pdf = build_assessment_pdf(
+              payload,
+              photos=[{"name": "workstation.jpg", "comment": "Monitor position documented.", "data": bio.getvalue()}],
+              logo_path="assets/logo.png",
+              lang="el",
+          )
+          assert pdf.startswith(b"%PDF-"), "PDF signature missing"
+          assert len(pdf) > 10000, "PDF unexpectedly small"
+          print(f"PDF smoke test OK: {len(pdf)} bytes")
+          PY
