@@ -584,6 +584,58 @@ def build_assessment_pdf(
             (_t(lang, "Attention issues before / after", "Θέματα προσοχής πριν / μετά", "Težave, ki zahtevajo pozornost, prej / potem"), f"{comparison.get('baseline_attention_findings', '-')} -> {comparison.get('followup_attention_findings', '-')}"),
         ]
         story += [_kv_table(comp_rows, styles, bold_font)]
+
+        symptom_changes = comparison.get("symptom_changes") or []
+        if symptom_changes:
+            story += [Paragraph(_t(lang, "Change in symptoms", "Μεταβολή συμπτωμάτων", "Sprememba simptomov"), styles["h2"])]
+            change_data = [[
+                Paragraph(f"<b>{_t(lang, 'Region', 'Περιοχή', 'Predel')}</b>", styles["small"]),
+                Paragraph(f"<b>{_t(lang, 'Before', 'Πριν', 'Prej')}</b>", styles["small"]),
+                Paragraph(f"<b>{_t(lang, 'After', 'Μετά', 'Potem')}</b>", styles["small"]),
+                Paragraph(f"<b>{_t(lang, 'Work impact', 'Επίδραση στην εργασία', 'Vpliv na delo')}</b>", styles["small"]),
+            ]]
+            for item in symptom_changes:
+                before_text = f"{item.get('before_score', 0)}/10"
+                after_text = f"{item.get('after_score', 0)}/10"
+                before_dur = _duration_label(str(item.get("before_duration", "not_recorded")), lang)
+                after_dur = _duration_label(str(item.get("after_duration", "not_recorded")), lang)
+                before_freq = _frequency_label(str(item.get("before_frequency", "not_recorded")), lang)
+                after_freq = _frequency_label(str(item.get("after_frequency", "not_recorded")), lang)
+                if before_dur != "-":
+                    before_text += f" | {before_dur}"
+                if before_freq != "-":
+                    before_text += f" | {before_freq}"
+                if after_dur != "-":
+                    after_text += f" | {after_dur}"
+                if after_freq != "-":
+                    after_text += f" | {after_freq}"
+
+                impact_text = (
+                    f"{_yes_no(item.get('before_work_impact'), lang)} -> "
+                    f"{_yes_no(item.get('after_work_impact'), lang)}"
+                )
+                change_data.append([
+                    Paragraph(_escape(item.get("label") or item.get("region") or "-"), styles["small"]),
+                    Paragraph(_escape(before_text), styles["small"]),
+                    Paragraph(_escape(after_text), styles["small"]),
+                    Paragraph(_escape(impact_text), styles["small"]),
+                ])
+
+            ct = Table(change_data, colWidths=[42 * mm, 45 * mm, 45 * mm, 38 * mm], repeatRows=1)
+            ct.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+                ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("BOX", (0, 0), (-1, -1), 0.35, BORDER),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, BORDER),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, LIGHT_BLUE]),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]))
+            story += [ct, Spacer(1, 3 * mm)]
+
         if comparison.get("interventions_notes"):
             story += [Paragraph(_t(lang, "Interventions implemented", "Παρεμβάσεις που εφαρμόστηκαν", "Izvedeni ukrepi"), styles["h2"]),
                       Paragraph(_escape(comparison.get("interventions_notes")), styles["body"])]
