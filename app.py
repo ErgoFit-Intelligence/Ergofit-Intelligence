@@ -141,7 +141,7 @@ def duration_selector(key: str):
 
 
 def rosa_checkbox(label_el: str, label_en: str, points: int, key: str) -> int:
-    label = label_el if lang == "el" else label_en
+    label = translate(lang, label_en, label_el)
     return points if st.checkbox(f"{label} (+{points})", key=key) else 0
 
 
