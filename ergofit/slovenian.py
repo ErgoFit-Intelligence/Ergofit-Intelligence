@@ -45,6 +45,7 @@ SL_TEXT = {
     "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance.": "Slovenska različica uporablja terminologijo, usklajeno z evropskimi ergonomskimi načeli za delo z zasloni in standardi EN/ISO; lokalne zakonske zahteve je treba preveriti ločeno.",
     "0 = not measured. OSHA uses 90–120° as a neutral reference.": "0 = ni izmerjeno. Kot 90–120° se uporablja kot orientacijska nevtralna referenca, ne kot univerzalni klinični prag.",
     "The visual worksheet shown below is the TuMeke rendition based on ROSA.": "Spodnji vizualni obrazec je prikaz ROSA po različici TuMeke.",
+    "Scoring follows the ROSA worksheet structure developed by Sonne, Villalta & Andrews. The visual worksheet shown below is the TuMeke rendition based on ROSA.": "Točkovanje sledi strukturi obrazca ROSA, ki so jo razvili Sonne, Villalta in Andrews. Spodnji vizualni obrazec je prikaz ROSA po različici TuMeke.",
     "Upload the initial assessment JSON in the Worker tab to generate the before/after comparison.": "Za primerjavo pred/po naloži JSON prve ocene v razdelku zaposlenega.",
     "Working posture changes regularly; prolonged static sitting is avoided.": "Delovna drža se redno spreminja; dolgotrajnemu statičnemu sedenju se izogiba.",
     "The back is supported and the trunk is not held for prolonged periods in a markedly bent or twisted posture.": "Hrbet je podprt in trup ni dalj časa v izrazito upognjenem ali zasukanem položaju.",
