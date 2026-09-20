@@ -25,7 +25,7 @@ jobs:
           from PIL import Image
           from ergofit.reporting import build_assessment_pdf
 
-          img = Image.new("RGB", (800, 500), "white")
+          img = Image.new("RGB", (800, 500), "#0B1F3A")
           bio = BytesIO()
           img.save(bio, format="JPEG")
 
