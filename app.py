@@ -15,15 +15,19 @@ from ergofit.backend import (
     save_assessment_webapp,
 )
 from ergofit.i18n import get_text
+from ergofit.slovenian import translate
 from ergofit.science.anthropometry import bmi, reference_from_stature
 from ergofit.science.evidence_registry import EVIDENCE, get_many
 from ergofit.science.rosa import compute_rosa
 from ergofit.science.standards import (
     CHAIR_FIT_ITEMS,
     CHAIR_FIT_LABELS_EL,
+    CHAIR_FIT_LABELS_SL,
     EN1335_LABELS_EL,
+    EN1335_LABELS_SL,
     EN1335_TYPE_A_REFERENCE,
     POSTURE_LABELS_EL,
+    POSTURE_LABELS_SL,
     POSTURE_REFERENCES,
 )
 from ergofit.ui.components import evidence_card, finding_card, group_evidence_by_region, recommendation_card
@@ -47,14 +51,21 @@ if "lang" not in st.session_state:
 with st.sidebar:
     st.session_state.lang = st.radio(
         "Γλώσσα / Language",
-        ["el", "en"],
-        format_func=lambda x: "🇬🇷 Ελληνικά" if x == "el" else "🇬🇧 English",
+        ["el", "en", "sl"],
+        format_func=lambda x: {"el": "🇬🇷 Ελληνικά", "en": "🇬🇧 English", "sl": "🇸🇮 Slovenščina"}[x],
         horizontal=True,
     )
-    quick_mode = st.toggle("⚡ Quick Mode" if st.session_state.lang == "en" else "⚡ Γρήγορη αξιολόγηση", value=False)
+    quick_mode = st.toggle(
+        "⚡ Quick Mode" if st.session_state.lang == "en"
+        else "⚡ Hitra ocena" if st.session_state.lang == "sl"
+        else "⚡ Γρήγορη αξιολόγηση",
+        value=False,
+    )
     st.caption(
         "Quick Mode hides direct anthropometry, psychosocial context and advanced mechanical exposures."
         if st.session_state.lang == "en"
+        else "Hitra ocena skrije neposredne antropometrične meritve, psihosocialni kontekst in napredne mehanske izpostavljenosti."
+        if st.session_state.lang == "sl"
         else "Η Γρήγορη αξιολόγηση κρύβει τις άμεσες σωματομετρικές μετρήσεις, το ψυχοκοινωνικό πλαίσιο και τις προχωρημένες μηχανικές εκθέσεις."
     )
     st.divider()
@@ -62,6 +73,8 @@ with st.sidebar:
     st.caption(
         "Evidence architecture: exposure → symptoms → intervention. No disease probability score."
         if st.session_state.lang == "en"
+        else "Arhitektura dokazov: izpostavljenost → simptomi → ukrep. Orodje ne izračunava verjetnosti bolezni."
+        if st.session_state.lang == "sl"
         else "Αρχιτεκτονική τεκμηρίωσης: έκθεση → συμπτώματα → παρέμβαση. Δεν υπολογίζεται πιθανότητα νόσου."
     )
 
@@ -92,7 +105,7 @@ def yes_no_unknown(label: str, key: str, help_text: str | None = None):
         label,
         options,
         format_func=lambda v: (
-            "— Not assessed —" if v is None and lang == "en" else
+            ("— Ni ocenjeno —" if lang == "sl" else "— Not assessed —") if v is None and lang in {"en", "sl"} else
             "— Δεν αξιολογήθηκε —" if v is None else
             t["yes"] if v is True else t["no"]
         ),
@@ -113,9 +126,14 @@ def duration_selector(key: str):
         0: "30–60 min continuous or 1–4 h/day (0)",
         1: ">1 h continuous or >4 h/day (+1)",
     }
-    labels = labels_el if lang == "el" else labels_en
+    labels_sl = {
+        -1: "<30 min neprekinjeno ali <1 h/dan (−1)",
+        0: "30–60 min neprekinjeno ali 1–4 h/dan (0)",
+        1: ">1 h neprekinjeno ali >4 h/dan (+1)",
+    }
+    labels = labels_el if lang == "el" else (labels_sl if lang == "sl" else labels_en)
     return st.radio(
-        "Διάρκεια χρήσης" if lang == "el" else "Duration of use",
+        "Διάρκεια χρήσης" if lang == "el" else ("Trajanje uporabe" if lang == "sl" else "Duration of use"),
         options,
         format_func=lambda x: labels[x],
         key=key,
@@ -130,10 +148,10 @@ def rosa_checkbox(label_el: str, label_en: str, points: int, key: str) -> int:
 def symptom_duration_label(value: str) -> str:
     labels = {
         "not_recorded": "—",
-        "<1_week": "<1 week" if lang == "en" else "<1 εβδομάδα",
-        "1_6_weeks": "1–6 weeks" if lang == "en" else "1–6 εβδομάδες",
-        "6_12_weeks": "6–12 weeks" if lang == "en" else "6–12 εβδομάδες",
-        ">12_weeks": ">12 weeks" if lang == "en" else ">12 εβδομάδες",
+        "<1_week": translate(lang, "<1 week", "<1 εβδομάδα"),
+        "1_6_weeks": translate(lang, "1–6 weeks", "1–6 εβδομάδες"),
+        "6_12_weeks": translate(lang, "6–12 weeks", "6–12 εβδομάδες"),
+        ">12_weeks": translate(lang, ">12 weeks", ">12 εβδομάδες"),
     }
     return labels.get(value, "—")
 
@@ -141,10 +159,10 @@ def symptom_duration_label(value: str) -> str:
 def symptom_frequency_label(value: str) -> str:
     labels = {
         "not_recorded": "—",
-        "occasional": "Occasional" if lang == "en" else "Περιστασιακά",
-        "1_2_days_week": "1–2 days/week" if lang == "en" else "1–2 ημέρες/εβδομάδα",
-        "3_5_days_week": "3–5 days/week" if lang == "en" else "3–5 ημέρες/εβδομάδα",
-        "daily": "Daily / almost daily" if lang == "en" else "Καθημερινά / σχεδόν καθημερινά",
+        "occasional": translate(lang, "Occasional", "Περιστασιακά"),
+        "1_2_days_week": translate(lang, "1–2 days/week", "1–2 ημέρες/εβδομάδα"),
+        "3_5_days_week": translate(lang, "3–5 days/week", "3–5 ημέρες/εβδομάδα"),
+        "daily": translate(lang, "Daily / almost daily", "Καθημερινά / σχεδόν καθημερινά"),
     }
     return labels.get(value, "—")
 
@@ -157,40 +175,40 @@ def region_exposure_text(region: str, ctx: dict) -> str:
 
     if region in {"Neck", "Shoulder(s)"}:
         if max(float(ctx.get("computer_hours", 0)), float(ctx.get("mouse_hours", 0))) > 4:
-            factors.append("computer/mouse >4 h" if lang == "en" else "Η/Υ ή ποντίκι >4 ώρες")
+            factors.append(translate(lang, "computer/mouse >4 h", "Η/Υ ή ποντίκι >4 ώρες"))
         if ctx.get("forearm_support") is False:
-            factors.append("limited forearm support" if lang == "en" else "περιορισμένη στήριξη αντιβραχίων")
+            factors.append(translate(lang, "limited forearm support", "περιορισμένη στήριξη αντιβραχίων"))
         if region == "Shoulder(s)" and ctx.get("arm_elevation"):
-            factors.append("sustained arm elevation" if lang == "en" else "παρατεταμένη ανύψωση βραχίονα")
+            factors.append(translate(lang, "sustained arm elevation", "παρατεταμένη ανύψωση βραχίονα"))
         if {"shoulders_relaxed", "elbows_close", "forearms_supported"} & posture_keys:
-            factors.append("posture finding" if lang == "en" else "εύρημα στάσης")
+            factors.append(translate(lang, "posture finding", "εύρημα στάσης"))
     elif region == "Elbow / forearm / wrist / hand":
         if ctx.get("high_repetition"):
-            factors.append("high repetition" if lang == "en" else "υψηλή επανάληψη")
+            factors.append(translate(lang, "high repetition", "υψηλή επανάληψη"))
         if ctx.get("hand_force"):
-            factors.append("hand force" if lang == "en" else "δύναμη χεριού")
+            factors.append(translate(lang, "hand force", "δύναμη χεριού"))
         if ctx.get("forearm_rotation"):
-            factors.append("forearm rotation" if lang == "en" else "στροφή αντιβραχίου")
+            factors.append(translate(lang, "forearm rotation", "στροφή αντιβραχίου"))
         if ctx.get("forearm_support") is False:
-            factors.append("limited forearm support" if lang == "en" else "περιορισμένη στήριξη αντιβραχίων")
+            factors.append(translate(lang, "limited forearm support", "περιορισμένη στήριξη αντιβραχίων"))
     elif region == "Low back":
         if float(ctx.get("sitting_hours", 0)) >= 6:
-            factors.append("high sitting exposure*" if lang == "en" else "υψηλή καθιστική έκθεση*")
+            factors.append(translate(lang, "high sitting exposure*", "υψηλή καθιστική έκθεση*"))
         if ctx.get("long_sitting_bout") in {"60–120 min", ">120 min"}:
-            factors.append("long static bouts" if lang == "en" else "μεγάλα στατικά διαστήματα")
+            factors.append(translate(lang, "long static bouts", "μεγάλα στατικά διαστήματα"))
         if chair_issues:
-            factors.append("chair-fit findings" if lang == "en" else "ευρήματα προσαρμογής καρέκλας")
+            factors.append(translate(lang, "chair-fit findings", "ευρήματα προσαρμογής καρέκλας"))
         if {"dynamic_posture", "back_supported"} & posture_keys:
-            factors.append("posture/movement finding" if lang == "en" else "εύρημα στάσης/κίνησης")
+            factors.append(translate(lang, "posture/movement finding", "εύρημα στάσης/κίνησης"))
     elif region == "Lower limbs":
         if {"feet_supported", "leg_clearance"} & posture_keys:
-            factors.append("support/clearance finding" if lang == "en" else "εύρημα στήριξης/ελεύθερου χώρου")
+            factors.append(translate(lang, "support/clearance finding", "εύρημα στήριξης/ελεύθερου χώρου"))
 
     if rosa_final >= 5 and region in {"Neck", "Shoulder(s)", "Elbow / forearm / wrist / hand", "Low back"}:
-        factors.append("ROSA action level" if lang == "en" else "ROSA σε επίπεδο δράσης")
+        factors.append(translate(lang, "ROSA action level", "ROSA σε επίπεδο δράσης"))
 
     if not factors:
-        return "No specific ergonomic factor identified" if lang == "en" else "Δεν εντοπίστηκε ειδικός εργονομικός παράγοντας"
+        return translate(lang, "No specific ergonomic factor identified", "Δεν εντοπίστηκε ειδικός εργονομικός παράγοντας")
     return " · ".join(dict.fromkeys(factors))
 
 
@@ -208,46 +226,42 @@ def region_action_text(region: str, item: dict, ctx: dict) -> str:
         or item.get("frequency") == "daily"
     )
     exposure_present = not region_exposure_text(region, ctx).startswith(
-        "No specific" if lang == "en" else "Δεν εντοπίστηκε"
+        translate(lang, "No specific", "Δεν εντοπίστηκε")
     )
 
     if has_symptom and (work_impact or persistent_or_recurrent):
         return (
-            "Ergonomic intervention + follow-up; consider clinical/occupational-health review if persistent or worsening"
-            if lang == "en"
-            else "Εργονομική παρέμβαση + επανέλεγχος· εξέταση από κατάλληλο επαγγελματία υγείας αν επιμένει ή επιδεινώνεται"
+            translate(lang, "Ergonomic intervention + follow-up; consider clinical/occupational-health review if persistent or worsening", "Εργονομική παρέμβαση + επανέλεγχος· εξέταση από κατάλληλο επαγγελματία υγείας αν επιμένει ή επιδεινώνεται")
         )
     if has_symptom and exposure_present:
-        return "Ergonomic review + symptom monitoring" if lang == "en" else "Εργονομικός έλεγχος + παρακολούθηση συμπτωμάτων"
+        return translate(lang, "Ergonomic review + symptom monitoring", "Εργονομικός έλεγχος + παρακολούθηση συμπτωμάτων")
     if has_symptom:
-        return "Monitor symptoms and reassess if they persist/worsen" if lang == "en" else "Παρακολούθηση συμπτωμάτων και επανέλεγχος αν επιμένουν/επιδεινώνονται"
+        return translate(lang, "Monitor symptoms and reassess if they persist/worsen", "Παρακολούθηση συμπτωμάτων και επανέλεγχος αν επιμένουν/επιδεινώνονται")
     if exposure_present:
-        return "Prevention / exposure management" if lang == "en" else "Πρόληψη / διαχείριση έκθεσης"
-    return "Maintain current conditions" if lang == "en" else "Διατήρηση καλών συνθηκών"
+        return translate(lang, "Prevention / exposure management", "Πρόληψη / διαχείριση έκθεσης")
+    return translate(lang, "Maintain current conditions", "Διατήρηση καλών συνθηκών")
 
 
 # ---------------------------------------------------------------------
 # Client profile — shared by both assessments
 # ---------------------------------------------------------------------
-st.markdown("## " + ("1 · Client details" if lang == "en" else "1 · Στοιχεία πελάτη"))
+st.markdown("## " + (translate(lang, "1 · Client details", "1 · Στοιχεία πελάτη")))
 st.caption(
-    "These details identify the person being assessed and are shared by the first and second assessment."
-    if lang == "en"
-    else "Τα στοιχεία αυτά αφορούν τον ίδιο πελάτη/εργαζόμενο και χρησιμοποιούνται τόσο στην 1η όσο και στη 2η αξιολόγηση."
+    translate(lang, "These details identify the person being assessed and are shared by the first and second assessment.", "Τα στοιχεία αυτά αφορούν τον ίδιο πελάτη/εργαζόμενο και χρησιμοποιούνται τόσο στην 1η όσο και στη 2η αξιολόγηση.")
 )
 
 p1, p2, p3 = st.columns([1.3, 1.2, 1.2])
 subject_id = p1.text_input(
-    "Client name or code" if lang == "en" else "Όνομα ή κωδικός πελάτη",
+    translate(lang, "Client name or code", "Όνομα ή κωδικός πελάτη"),
     value="",
     placeholder="π.χ. COS-024",
     key="client_subject_id",
 )
-company = p2.text_input("Company" if lang == "en" else "Εταιρεία", value="", key="client_company")
-department = p3.text_input("Department / area" if lang == "en" else "Τμήμα / χώρος", value="", key="client_department")
+company = p2.text_input(translate(lang, "Company", "Εταιρεία"), value="", key="client_company")
+department = p3.text_input(translate(lang, "Department / area", "Τμήμα / χώρος"), value="", key="client_department")
 
 p1, p2, p3 = st.columns([1.4, 1, 1])
-job_title = p1.text_input("Job title" if lang == "en" else "Θέση εργασίας", value="", key="client_job_title")
+job_title = p1.text_input(translate(lang, "Job title", "Θέση εργασίας"), value="", key="client_job_title")
 age = p2.number_input(t["age"], min_value=18, max_value=80, value=35, key="client_age")
 sex_options = ["female", "male", "other"]
 sex = p3.selectbox(
@@ -268,9 +282,9 @@ st.caption(
 )
 
 st.divider()
-st.markdown("## " + ("2 · Assessment" if lang == "en" else "2 · Αξιολόγηση"))
+st.markdown("## " + (translate(lang, "2 · Assessment", "2 · Αξιολόγηση")))
 assessment_stage = st.radio(
-    "Choose assessment" if lang == "en" else "Επίλεξε αξιολόγηση",
+    translate(lang, "Choose assessment", "Επίλεξε αξιολόγηση"),
     ["baseline", "followup"],
     format_func=lambda x: (
         "1st Assessment" if x == "baseline" and lang == "en"
@@ -288,7 +302,7 @@ parent_assessment_id = ""
 interventions_notes = ""
 
 if assessment_stage == "followup":
-    st.markdown("### " + ("Connection with the 1st assessment" if lang == "en" else "Σύνδεση με την 1η αξιολόγηση"))
+    st.markdown("### " + (translate(lang, "Connection with the 1st assessment", "Σύνδεση με την 1η αξιολόγηση")))
 
     if sheets_ready:
         if subject_id.strip():
@@ -318,7 +332,7 @@ if assessment_stage == "followup":
                     for r in previous
                 }
                 selected_baseline = st.selectbox(
-                    "Select the 1st assessment" if lang == "en" else "Επίλεξε την 1η αξιολόγηση",
+                    translate(lang, "Select the 1st assessment", "Επίλεξε την 1η αξιολόγηση"),
                     options,
                     format_func=lambda x: labels.get(x, x),
                     key="selected_baseline_assessment",
@@ -340,30 +354,22 @@ if assessment_stage == "followup":
                     baseline_assessment = baseline_report.get("assessment", {}) or {}
                     parent_assessment_id = selected_baseline
                     st.success(
-                        "The 1st assessment was loaded automatically. The final section will compare it with the reassessment."
-                        if lang == "en"
-                        else "Η 1η αξιολόγηση φορτώθηκε αυτόματα. Στην τελική ενότητα θα συγκριθεί με την επαναξιολόγηση."
+                        translate(lang, "The 1st assessment was loaded automatically. The final section will compare it with the reassessment.", "Η 1η αξιολόγηση φορτώθηκε αυτόματα. Στην τελική ενότητα θα συγκριθεί με την επαναξιολόγηση.")
                     )
             else:
                 st.info(
-                    "No 1st assessment was found for this client code."
-                    if lang == "en"
-                    else "Δεν βρέθηκε 1η αξιολόγηση για αυτόν τον κωδικό πελάτη."
+                    translate(lang, "No 1st assessment was found for this client code.", "Δεν βρέθηκε 1η αξιολόγηση για αυτόν τον κωδικό πελάτη.")
                 )
         else:
             st.info(
-                "Enter the client name/code above first."
-                if lang == "en"
-                else "Συμπλήρωσε πρώτα το όνομα ή τον κωδικό πελάτη."
+                translate(lang, "Enter the client name/code above first.", "Συμπλήρωσε πρώτα το όνομα ή τον κωδικό πελάτη.")
             )
     else:
         st.warning(
-            "Google Sheets automatic connection is not active in the deployed app yet. Until it is activated, the 1st assessment can be loaded from its JSON backup."
-            if lang == "en"
-            else "Η αυτόματη σύνδεση του deployed app με το Google Sheets δεν έχει ενεργοποιηθεί ακόμη. Μέχρι να ενεργοποιηθεί, η 1η αξιολόγηση μπορεί να φορτωθεί από το αντίγραφο JSON."
+            translate(lang, "Google Sheets automatic connection is not active in the deployed app yet. Until it is activated, the 1st assessment can be loaded from its JSON backup.", "Η αυτόματη σύνδεση του deployed app με το Google Sheets δεν έχει ενεργοποιηθεί ακόμη. Μέχρι να ενεργοποιηθεί, η 1η αξιολόγηση μπορεί να φορτωθεί από το αντίγραφο JSON.")
         )
         baseline_file = st.file_uploader(
-            "1st assessment JSON" if lang == "en" else "Αρχείο 1ης αξιολόγησης (JSON)",
+            translate(lang, "1st assessment JSON", "Αρχείο 1ης αξιολόγησης (JSON)"),
             type=["json"],
             key="baseline_report_upload",
         )
@@ -382,19 +388,13 @@ if assessment_stage == "followup":
                 baseline_report = None
                 baseline_assessment = {}
                 st.error(
-                    "The file could not be read as a valid ErgoFit assessment."
-                    if lang == "en"
-                    else "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit."
+                    translate(lang, "The file could not be read as a valid ErgoFit assessment.", "Το αρχείο δεν αναγνωρίστηκε ως έγκυρη αξιολόγηση ErgoFit.")
                 )
 
     interventions_notes = st.text_area(
-        "Interventions implemented between the two assessments"
-        if lang == "en"
-        else "Παρεμβάσεις που εφαρμόστηκαν μεταξύ 1ης και 2ης αξιολόγησης",
+        translate(lang, "Interventions implemented between the two assessments", "Παρεμβάσεις που εφαρμόστηκαν μεταξύ 1ης και 2ης αξιολόγησης"),
         placeholder=(
-            "e.g. chair adjustment, monitor repositioning, task changes, active breaks..."
-            if lang == "en"
-            else "π.χ. ρύθμιση καρέκλας, αλλαγή θέσης οθόνης, αλλαγές στην οργάνωση της εργασίας, ενεργά διαλείμματα..."
+            translate(lang, "e.g. chair adjustment, monitor repositioning, task changes, active breaks...", "π.χ. ρύθμιση καρέκλας, αλλαγή θέσης οθόνης, αλλαγές στην οργάνωση της εργασίας, ενεργά διαλείμματα...")
         ),
         key="interventions_notes",
     )
@@ -407,9 +407,7 @@ stage_heading = (
 )
 st.markdown(f"### {stage_heading}")
 st.caption(
-    "Complete all sections below for this assessment."
-    if lang == "en"
-    else "Συμπλήρωσε όλες τις παρακάτω ενότητες για τη συγκεκριμένη αξιολόγηση."
+    translate(lang, "Complete all sections below for this assessment.", "Συμπλήρωσε όλες τις παρακάτω ενότητες για τη συγκεκριμένη αξιολόγηση.")
 )
 
 # Ordered workflow; Streamlit evaluates all tabs so later tabs can consume earlier values.
@@ -438,12 +436,12 @@ with tabs[0]:
             eye_direct = a3.number_input(t["eye_height"], min_value=0.0, max_value=100.0, value=0.0, step=0.5)
 
     anthro = reference_from_stature(height, sex, pop_direct, elbow_direct, eye_direct)
-    st.markdown("#### " + ("Body-fit references" if lang == "en" else "Σωματομετρικές τιμές αναφοράς"))
+    st.markdown("#### " + (translate(lang, "Body-fit references", "Σωματομετρικές τιμές αναφοράς")))
     a1, a2, a3 = st.columns(3)
     _src = lambda s: s if lang == "en" else ("άμεση μέτρηση" if s == "direct" else "εκτίμηση")
-    a1.metric("Popliteal height" if lang == "en" else "Ύψος πίσω από το γόνατο", f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
-    a2.metric("Seated elbow height" if lang == "en" else "Ύψος αγκώνα από την έδρα", f"{anthro.seated_elbow_cm:.1f} cm", _src(anthro.source_elbow))
-    a3.metric("Seated eye height" if lang == "en" else "Ύψος ματιών από την έδρα", f"{anthro.seated_eye_cm:.1f} cm", _src(anthro.source_eye))
+    a1.metric(translate(lang, "Popliteal height", "Ύψος πίσω από το γόνατο"), f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
+    a2.metric(translate(lang, "Seated elbow height", "Ύψος αγκώνα από την έδρα"), f"{anthro.seated_elbow_cm:.1f} cm", _src(anthro.source_elbow))
+    a3.metric(translate(lang, "Seated eye height", "Ύψος ματιών από την έδρα"), f"{anthro.seated_eye_cm:.1f} cm", _src(anthro.source_eye))
 
     c1, c2, c3 = st.columns(3)
     diabetes = c1.checkbox(t["diabetes"])
@@ -454,9 +452,7 @@ with tabs[0]:
     exercise = c1.checkbox(t["exercise"])
     pa_minutes = c2.number_input(t["pa_minutes"], min_value=0, max_value=1500, value=120, step=10)
     st.caption(
-        "Physical activity and exercise are recorded as wellbeing/intervention context. They do not subtract points from a disease score."
-        if lang == "en"
-        else "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως στοιχεία ευεξίας και παρέμβασης. Δεν αφαιρούν πόντους από κάποια βαθμολογία κινδύνου νόσου."
+        translate(lang, "Physical activity and exercise are recorded as wellbeing/intervention context. They do not subtract points from a disease score.", "Η φυσική δραστηριότητα και η άσκηση καταγράφονται ως στοιχεία ευεξίας και παρέμβασης. Δεν αφαιρούν πόντους από κάποια βαθμολογία κινδύνου νόσου.")
     )
 
 # ---------------------------------------------------------------------
@@ -474,16 +470,14 @@ with tabs[1]:
         t["symptom_regions"],
         region_options,
         format_func=lambda x: region_labels[x],
-        placeholder="Choose options" if lang == "en" else "Επίλεξε περιοχές",
+        placeholder=translate(lang, "Choose options", "Επίλεξε περιοχές"),
     )
 
     symptom_details: dict[str, dict] = {}
     if symptom_regions:
-        st.markdown("#### " + ("Symptoms by body region" if lang == "en" else "Συμπτώματα ανά περιοχή σώματος"))
+        st.markdown("#### " + (translate(lang, "Symptoms by body region", "Συμπτώματα ανά περιοχή σώματος")))
         st.caption(
-            "Record intensity and work interference separately for each selected region."
-            if lang == "en"
-            else "Κατέγραψε ξεχωριστά την ένταση και το αν επηρεάζεται η εργασία για κάθε περιοχή που επέλεξες."
+            translate(lang, "Record intensity and work interference separately for each selected region.", "Κατέγραψε ξεχωριστά την ένταση και το αν επηρεάζεται η εργασία για κάθε περιοχή που επέλεξες.")
         )
         for region in symptom_regions:
             region_label = region_labels[region]
@@ -497,33 +491,33 @@ with tabs[1]:
 
             c1, c2 = st.columns(2)
             duration = c1.selectbox(
-                "How long has this problem been present?" if lang == "en" else "Πόσο καιρό υπάρχει αυτό το πρόβλημα;",
+                translate(lang, "How long has this problem been present?", "Πόσο καιρό υπάρχει αυτό το πρόβλημα;"),
                 ["not_recorded", "<1_week", "1_6_weeks", "6_12_weeks", ">12_weeks"],
                 format_func=lambda v: {
-                    "not_recorded": "— Not recorded —" if lang == "en" else "— Δεν καταγράφηκε —",
-                    "<1_week": "<1 week" if lang == "en" else "<1 εβδομάδα",
-                    "1_6_weeks": "1–6 weeks" if lang == "en" else "1–6 εβδομάδες",
-                    "6_12_weeks": "6–12 weeks" if lang == "en" else "6–12 εβδομάδες",
-                    ">12_weeks": ">12 weeks" if lang == "en" else ">12 εβδομάδες",
+                    "not_recorded": translate(lang, "— Not recorded —", "— Δεν καταγράφηκε —"),
+                    "<1_week": translate(lang, "<1 week", "<1 εβδομάδα"),
+                    "1_6_weeks": translate(lang, "1–6 weeks", "1–6 εβδομάδες"),
+                    "6_12_weeks": translate(lang, "6–12 weeks", "6–12 εβδομάδες"),
+                    ">12_weeks": translate(lang, ">12 weeks", ">12 εβδομάδες"),
                 }[v],
                 key=f"duration_{region}",
             )
             frequency = c2.selectbox(
-                "How often is it present?" if lang == "en" else "Πόσο συχνά εμφανίζεται;",
+                translate(lang, "How often is it present?", "Πόσο συχνά εμφανίζεται;"),
                 ["not_recorded", "occasional", "1_2_days_week", "3_5_days_week", "daily"],
                 format_func=lambda v: {
-                    "not_recorded": "— Not recorded —" if lang == "en" else "— Δεν καταγράφηκε —",
-                    "occasional": "Occasionally" if lang == "en" else "Περιστασιακά",
-                    "1_2_days_week": "1–2 days/week" if lang == "en" else "1–2 ημέρες/εβδομάδα",
-                    "3_5_days_week": "3–5 days/week" if lang == "en" else "3–5 ημέρες/εβδομάδα",
-                    "daily": "Daily / almost daily" if lang == "en" else "Καθημερινά / σχεδόν καθημερινά",
+                    "not_recorded": translate(lang, "— Not recorded —", "— Δεν καταγράφηκε —"),
+                    "occasional": translate(lang, "Occasionally", "Περιστασιακά"),
+                    "1_2_days_week": translate(lang, "1–2 days/week", "1–2 ημέρες/εβδομάδα"),
+                    "3_5_days_week": translate(lang, "3–5 days/week", "3–5 ημέρες/εβδομάδα"),
+                    "daily": translate(lang, "Daily / almost daily", "Καθημερινά / σχεδόν καθημερινά"),
                 }[v],
                 key=f"frequency_{region}",
             )
 
             c1, c2 = st.columns(2)
             previous_episode = c1.selectbox(
-                "Previous similar episode?" if lang == "en" else "Έχει υπάρξει παρόμοιο επεισόδιο στο παρελθόν;",
+                translate(lang, "Previous similar episode?", "Έχει υπάρξει παρόμοιο επεισόδιο στο παρελθόν;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
                     ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
@@ -531,7 +525,7 @@ with tabs[1]:
                 key=f"previous_episode_{region}",
             )
             interference = c2.selectbox(
-                "Does it interfere with work?" if lang == "en" else "Επηρεάζει την εργασία;",
+                translate(lang, "Does it interfere with work?", "Επηρεάζει την εργασία;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
                     ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
@@ -541,7 +535,7 @@ with tabs[1]:
 
             c1, c2 = st.columns(2)
             work_modification = c1.selectbox(
-                "Do you change pace/task/posture because of it?" if lang == "en" else "Αλλάζεις ρυθμό, εργασία ή στάση εξαιτίας του συμπτώματος;",
+                translate(lang, "Do you change pace/task/posture because of it?", "Αλλάζεις ρυθμό, εργασία ή στάση εξαιτίας του συμπτώματος;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
                     ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
@@ -549,8 +543,7 @@ with tabs[1]:
                 key=f"work_modification_{region}",
             )
             absence_days_4w = c2.number_input(
-                "Work absence due to this symptom in the last 4 weeks (days)" if lang == "en"
-                else "Απουσία από την εργασία λόγω του συμπτώματος τις τελευταίες 4 εβδομάδες (ημέρες)",
+                translate(lang, "Work absence due to this symptom in the last 4 weeks (days)", "Απουσία από την εργασία λόγω του συμπτώματος τις τελευταίες 4 εβδομάδες (ημέρες)"),
                 min_value=0,
                 max_value=28,
                 value=0,
@@ -569,18 +562,16 @@ with tabs[1]:
                 "absence_days_4w": absence_days_4w,
             }
             st.caption(
-                "These fields describe the symptom history and functional impact. They are not converted into a personal disease-probability score."
-                if lang == "en"
-                else "Τα πεδία αυτά περιγράφουν την πορεία του συμπτώματος και τη λειτουργική του επίδραση. Δεν μετατρέπονται σε προσωπική πιθανότητα νόσου."
+                translate(lang, "These fields describe the symptom history and functional impact. They are not converted into a personal disease-probability score.", "Τα πεδία αυτά περιγράφουν την πορεία του συμπτώματος και τη λειτουργική του επίδραση. Δεν μετατρέπονται σε προσωπική πιθανότητα νόσου.")
             )
             st.divider()
 
     symptom_severity = max((d["severity"] for d in symptom_details.values()), default=0)
     symptom_interference = any(d["interference"] for d in symptom_details.values()) if symptom_details else False
 
-    digital_eye_strain = st.checkbox("Digital eye strain / visual fatigue" if lang == "en" else "Κόπωση ματιών από τη χρήση της οθόνης")
+    digital_eye_strain = st.checkbox(translate(lang, "Digital eye strain / visual fatigue", "Κόπωση ματιών από τη χρήση της οθόνης"))
 
-    st.markdown("#### " + ("Work exposure" if lang == "en" else "Εργασιακή έκθεση"))
+    st.markdown("#### " + (translate(lang, "Work exposure", "Εργασιακή έκθεση")))
     c1, c2, c3 = st.columns(3)
     computer_hours = c1.number_input(t["computer_hours"], min_value=0.0, max_value=16.0, value=0.0, step=0.5)
     mouse_hours = c2.number_input(t["mouse_hours"], min_value=0.0, max_value=16.0, value=0.0, step=0.5)
@@ -594,11 +585,9 @@ with tabs[1]:
     )
 
     if not quick_mode:
-        st.markdown("#### " + ("Advanced upper-limb / shoulder exposure" if lang == "en" else "Προχωρημένη έκθεση άνω άκρου / ώμου"))
+        st.markdown("#### " + (translate(lang, "Advanced upper-limb / shoulder exposure", "Προχωρημένη έκθεση άνω άκρου / ώμου")))
         st.caption(
-            "Only flag these when the actual task exposure exists. They should not be inferred from ordinary computer use."
-            if lang == "en" else
-            "Ενεργοποίησέ τα μόνο όταν υπάρχει πραγματική έκθεση στη συγκεκριμένη εργασία. Δεν πρέπει να συμπεραίνονται από απλή χρήση υπολογιστή."
+            translate(lang, "Only flag these when the actual task exposure exists. They should not be inferred from ordinary computer use.", "Ενεργοποίησέ τα μόνο όταν υπάρχει πραγματική έκθεση στη συγκεκριμένη εργασία. Δεν πρέπει να συμπεραίνονται από απλή χρήση υπολογιστή.")
         )
         high_repetition = st.checkbox(t["repetition"])
         hand_force = st.checkbox(t["force"])
@@ -621,9 +610,7 @@ with tabs[1]:
 with tabs[2]:
     st.subheader(t["workstation_title"])
     st.caption(
-        "Measured values are compared with body-fit/design references. Differences are prompts for observation, not validated disease thresholds."
-        if lang == "en" else
-        "Οι μετρήσεις συγκρίνονται με σωματομετρικές και σχεδιαστικές τιμές αναφοράς. Οι αποκλίσεις αποτελούν ενδείξεις για περαιτέρω παρατήρηση και όχι επικυρωμένα όρια κινδύνου νόσου."
+        translate(lang, "Measured values are compared with body-fit/design references. Differences are prompts for observation, not validated disease thresholds.", "Οι μετρήσεις συγκρίνονται με σωματομετρικές και σχεδιαστικές τιμές αναφοράς. Οι αποκλίσεις αποτελούν ενδείξεις για περαιτέρω παρατήρηση και όχι επικυρωμένα όρια κινδύνου νόσου.")
     )
     c1, c2, c3 = st.columns(3)
     seat_height = c1.number_input(t["chair_actual"], min_value=0.0, max_value=70.0, value=0.0, step=0.5)
@@ -651,31 +638,27 @@ with tabs[2]:
     st.markdown("#### " + t["reference_fit"])
     r1, r2 = st.columns(2)
     r1.metric(
-        "Seat/body reference" if lang == "en" else "Αναφορά ύψους έδρας",
+        translate(lang, "Seat/body reference", "Αναφορά ύψους έδρας"),
         f"{anthro.popliteal_cm:.1f} cm",
         anthro.source_popliteal if lang == "en" else ("άμεση μέτρηση" if anthro.source_popliteal == "direct" else "εκτίμηση")
     )
     r2.metric(
-        "Work-surface/elbow reference" if lang == "en" else "Αναφορά επιφάνειας εργασίας / αγκώνα",
+        translate(lang, "Work-surface/elbow reference", "Αναφορά επιφάνειας εργασίας / αγκώνα"),
         f"{anthro.desk_reference_cm:.1f} cm",
-        "body-fit reference" if lang == "en" else "σωματομετρική αναφορά"
+        translate(lang, "body-fit reference", "σωματομετρική αναφορά")
     )
     st.info(
-        "Monitor v2 uses actual viewing distance + vertical position rather than a universal 'eye level − 5 cm' formula."
-        if lang == "en" else
-        "Στη v2 η οθόνη αξιολογείται με την πραγματική απόσταση θέασης και την κατακόρυφη θέση της και όχι με έναν καθολικό τύπο «ύψος ματιών − 5 cm»."
+        translate(lang, "Monitor v2 uses actual viewing distance + vertical position rather than a universal 'eye level − 5 cm' formula.", "Στη v2 η οθόνη αξιολογείται με την πραγματική απόσταση θέασης και την κατακόρυφη θέση της και όχι με έναν καθολικό τύπο «ύψος ματιών − 5 cm».")
     )
 
-    with st.expander("DSE environment" if lang == "en" else "Περιβάλλον εργασίας με οθόνη", expanded=False):
+    with st.expander(translate(lang, "DSE environment", "Περιβάλλον εργασίας με οθόνη"), expanded=False):
         e1, e2 = st.columns(2)
-        lighting_ok = yes_no_unknown("Lighting is adequate" if lang == "en" else "Ο φωτισμός είναι επαρκής", "lighting_ok")
-        noise_ok = yes_no_unknown("Noise is acceptable for the task" if lang == "en" else "Ο θόρυβος είναι αποδεκτός για τη συγκεκριμένη εργασία", "noise_ok")
-        thermal_ok = yes_no_unknown("Thermal comfort is acceptable" if lang == "en" else "Η θερμική άνεση είναι αποδεκτή", "thermal_ok")
-        software_ok = yes_no_unknown("Software/interface supports the task without avoidable strain" if lang == "en" else "Το λογισμικό/η διεπαφή υποστηρίζει την εργασία χωρίς περιττή επιβάρυνση", "software_ok")
+        lighting_ok = yes_no_unknown(translate(lang, "Lighting is adequate", "Ο φωτισμός είναι επαρκής"), "lighting_ok")
+        noise_ok = yes_no_unknown(translate(lang, "Noise is acceptable for the task", "Ο θόρυβος είναι αποδεκτός για τη συγκεκριμένη εργασία"), "noise_ok")
+        thermal_ok = yes_no_unknown(translate(lang, "Thermal comfort is acceptable", "Η θερμική άνεση είναι αποδεκτή"), "thermal_ok")
+        software_ok = yes_no_unknown(translate(lang, "Software/interface supports the task without avoidable strain", "Το λογισμικό/η διεπαφή υποστηρίζει την εργασία χωρίς περιττή επιβάρυνση"), "software_ok")
         st.caption(
-            "These fields support a broader EU display-screen assessment and are kept separate from musculoskeletal disease scoring."
-            if lang == "en"
-            else "Τα πεδία αυτά υποστηρίζουν μια πληρέστερη αξιολόγηση εργασίας με οθόνη σύμφωνα με την ευρωπαϊκή προσέγγιση και παραμένουν ξεχωριστά από οποιαδήποτε βαθμολόγηση μυοσκελετικής νόσου."
+            translate(lang, "These fields support a broader EU display-screen assessment and are kept separate from musculoskeletal disease scoring.", "Τα πεδία αυτά υποστηρίζουν μια πληρέστερη αξιολόγηση εργασίας με οθόνη σύμφωνα με την ευρωπαϊκή προσέγγιση και παραμένουν ξεχωριστά από οποιαδήποτε βαθμολόγηση μυοσκελετικής νόσου.")
         )
 
 # ---------------------------------------------------------------------
@@ -685,11 +668,9 @@ with tabs[3]:
     st.subheader(t["chair_title"])
     st.info(t["chair_screen_note"])
     st.caption(
-        "Reference: EN 1335 / ISO 9241-5 design principles. Full conformity requires the official standard and its complete test method."
-        if lang == "en"
-        else "Αναφορά: αρχές σχεδιασμού EN 1335 / ISO 9241-5. Η πλήρης συμμόρφωση απαιτεί το επίσημο πρότυπο και την ολοκληρωμένη μέθοδο δοκιμής του."
+        translate(lang, "Reference: EN 1335 / ISO 9241-5 design principles. Full conformity requires the official standard and its complete test method.", "Αναφορά: αρχές σχεδιασμού EN 1335 / ISO 9241-5. Η πλήρης συμμόρφωση απαιτεί το επίσημο πρότυπο και την ολοκληρωμένη μέθοδο δοκιμής του.")
     )
-    chair_completed = st.toggle("Assessment completed" if lang == "en" else "Ο έλεγχος καρέκλας ολοκληρώθηκε", value=False, key="chair_completed")
+    chair_completed = st.toggle(translate(lang, "Assessment completed", "Ο έλεγχος καρέκλας ολοκληρώθηκε"), value=False, key="chair_completed")
     chair_results: dict[str, bool] = {}
     if chair_completed:
         ca, cb = st.columns(2)
@@ -698,31 +679,25 @@ with tabs[3]:
                 display_label = label if lang == "en" else CHAIR_FIT_LABELS_EL.get(key, label)
                 chair_results[key] = st.checkbox(display_label, value=False, key=f"chair_{key}")
         chair_failed = [key for key, ok in chair_results.items() if not ok]
-        st.metric("Items confirmed" if lang == "en" else "Κριτήρια που πληρούνται", f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
+        st.metric(translate(lang, "Items confirmed", "Κριτήρια που πληρούνται"), f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
         st.caption(
-            "No compliance percentage or clinical risk band is generated."
-            if lang == "en"
-            else "Δεν παράγεται ποσοστό συμμόρφωσης ή κλινική κατηγορία κινδύνου."
+            translate(lang, "No compliance percentage or clinical risk band is generated.", "Δεν παράγεται ποσοστό συμμόρφωσης ή κλινική κατηγορία κινδύνου.")
         )
     else:
         chair_failed = []
         st.caption(
-            "Mark the section as completed before chair findings are included in the report."
-            if lang == "en"
-            else "Σημείωσε ότι ο έλεγχος ολοκληρώθηκε ώστε τα ευρήματα της καρέκλας να συμπεριληφθούν στην αναφορά."
+            translate(lang, "Mark the section as completed before chair findings are included in the report.", "Σημείωσε ότι ο έλεγχος ολοκληρώθηκε ώστε τα ευρήματα της καρέκλας να συμπεριληφθούν στην αναφορά.")
         )
 
     with st.expander(
-        "EN 1335 Type A reference dimensions — audit note" if lang == "en" else "Διαστάσεις αναφοράς EN 1335 Type A — σημείωση ελέγχου",
+        translate(lang, "EN 1335 Type A reference dimensions — audit note", "Διαστάσεις αναφοράς EN 1335 Type A — σημείωση ελέγχου"),
         expanded=False,
     ):
         for k, v in EN1335_TYPE_A_REFERENCE.items():
             label = k.replace("_", " ") if lang == "en" else EN1335_LABELS_EL.get(k, k)
             st.write(f"- **{label}:** {v}")
         st.caption(
-            "Displayed for reference only; the screen above is not a product-certification procedure."
-            if lang == "en"
-            else "Οι τιμές εμφανίζονται μόνο ως αναφορά. Η παραπάνω ενότητα δεν αποτελεί διαδικασία πιστοποίησης προϊόντος."
+            translate(lang, "Displayed for reference only; the screen above is not a product-certification procedure.", "Οι τιμές εμφανίζονται μόνο ως αναφορά. Η παραπάνω ενότητα δεν αποτελεί διαδικασία πιστοποίησης προϊόντος.")
         )
 
 # ---------------------------------------------------------------------
@@ -732,13 +707,11 @@ with tabs[4]:
     st.subheader(t["posture_title"])
     st.info(t["posture_note"])
     st.caption(
-        "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance."
-        if lang == "en"
-        else "Η αξιολόγηση βασίζεται στις οδηγίες του ΕΛΙΝΥΑΕ για εργασία με οθόνες και εργονομικό σχεδιασμό. Δεν χρησιμοποιείται ένα μοναδικό «ιδανικό» σύνολο γωνιών για όλους."
+        translate(lang, "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance.", "Η αξιολόγηση βασίζεται στις οδηγίες του ΕΛΙΝΥΑΕ για εργασία με οθόνες και εργονομικό σχεδιασμό. Δεν χρησιμοποιείται ένα μοναδικό «ιδανικό» σύνολο γωνιών για όλους.")
     )
 
     posture_completed = st.toggle(
-        "Assessment completed" if lang == "en" else "Η παρατήρηση στάσης ολοκληρώθηκε",
+        translate(lang, "Assessment completed", "Η παρατήρηση στάσης ολοκληρώθηκε"),
         value=False,
         key="posture_completed",
     )
@@ -810,25 +783,21 @@ with tabs[4]:
 
         if movement_variability == "limited":
             st.warning(
-                "Prolonged static posture was flagged. Postural variation should be increased."
-                if lang == "en"
-                else "Εντοπίστηκε παρατεταμένη στατική στάση. Χρειάζεται μεγαλύτερη εναλλαγή θέσεων και κίνηση κατά τη διάρκεια της εργασίας."
+                translate(lang, "Prolonged static posture was flagged. Postural variation should be increased.", "Εντοπίστηκε παρατεταμένη στατική στάση. Χρειάζεται μεγαλύτερη εναλλαγή θέσεων και κίνηση κατά τη διάρκεια της εργασίας.")
             )
 
         with st.expander(
-            "Optional angle recording" if lang == "en" else "Προαιρετική καταγραφή γωνίας αγκώνα",
+            translate(lang, "Optional angle recording", "Προαιρετική καταγραφή γωνίας αγκώνα"),
             expanded=False,
         ):
             elbow_angle_observed = st.number_input(
-                "Observed elbow angle (°)" if lang == "en" else "Μετρημένη γωνία αγκώνα (°)",
+                translate(lang, "Observed elbow angle (°)", "Μετρημένη γωνία αγκώνα (°)"),
                 min_value=0,
                 max_value=180,
                 value=0,
                 step=5,
                 help=(
-                    "0 = not measured. OSHA uses 90–120° as a neutral reference."
-                    if lang == "en"
-                    else "0 = δεν μετρήθηκε. Το ΕΛΙΝΥΑΕ αναφέρει περίπου 90° ή ελαφρά μεγαλύτερη γωνία κατά τη χρήση πληκτρολογίου."
+                    translate(lang, "0 = not measured. OSHA uses 90–120° as a neutral reference.", "0 = δεν μετρήθηκε. Το ΕΛΙΝΥΑΕ αναφέρει περίπου 90° ή ελαφρά μεγαλύτερη γωνία κατά τη χρήση πληκτρολογίου.")
                 ),
             )
             if elbow_angle_observed > 0:
@@ -840,9 +809,7 @@ with tabs[4]:
     else:
         movement_variability = "not_assessed"
         st.caption(
-            "Mark the section as completed before posture findings are included in the report."
-            if lang == "en"
-            else "Σημείωσε ότι η παρατήρηση στάσης ολοκληρώθηκε ώστε τα σχετικά ευρήματα να συμπεριληφθούν στην αναφορά."
+            translate(lang, "Mark the section as completed before posture findings are included in the report.", "Σημείωσε ότι η παρατήρηση στάσης ολοκληρώθηκε ώστε τα σχετικά ευρήματα να συμπεριληφθούν στην αναφορά.")
         )
 
 # ---------------------------------------------------------------------
@@ -853,10 +820,7 @@ with tabs[5]:
     st.info(t["rosa_note"])
     st.caption(
         "Scoring follows the ROSA worksheet structure developed by Sonne, Villalta & Andrews. "
-        "The visual worksheet shown below is the TuMeke rendition based on ROSA."
-        if lang == "en"
-        else
-        "Η βαθμολόγηση ακολουθεί τη δομή του ROSA των Sonne, Villalta & Andrews. "
+        translate(lang, "The visual worksheet shown below is the TuMeke rendition based on ROSA.", "Η βαθμολόγηση ακολουθεί τη δομή του ROSA των Sonne, Villalta & Andrews. ")
         "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
     )
 
@@ -864,7 +828,7 @@ with tabs[5]:
     ROSA_PDF_PATH = ASSETS / "ROSA.pdf"
 
     with st.expander(
-        "Visual ROSA worksheet & icons" if lang == "en" else "Οπτικός οδηγός ROSA με τα εικονίδια",
+        translate(lang, "Visual ROSA worksheet & icons", "Οπτικός οδηγός ROSA με τα εικονίδια"),
         expanded=True,
     ):
         # Keep ROSA media fully local to the deployed app. This avoids broken
@@ -890,7 +854,7 @@ with tabs[5]:
                 )
 
                 st.download_button(
-                    "Download ROSA worksheet PDF" if lang == "en" else "Λήψη του ROSA worksheet σε PDF",
+                    translate(lang, "Download ROSA worksheet PDF", "Λήψη του ROSA worksheet σε PDF"),
                     data=pdf_bytes,
                     file_name="ROSA.pdf",
                     mime="application/pdf",
@@ -898,26 +862,19 @@ with tabs[5]:
                 )
             except Exception:
                 st.warning(
-                    "The ROSA visual guide could not be loaded. The assessment below remains available."
-                    if lang == "en"
-                    else "Ο οπτικός οδηγός ROSA δεν μπόρεσε να φορτωθεί. Η αξιολόγηση από κάτω παραμένει διαθέσιμη."
+                    translate(lang, "The ROSA visual guide could not be loaded. The assessment below remains available.", "Ο οπτικός οδηγός ROSA δεν μπόρεσε να φορτωθεί. Η αξιολόγηση από κάτω παραμένει διαθέσιμη.")
                 )
         else:
             st.warning(
-                "ROSA media files are unavailable."
-                if lang == "en"
-                else "Τα αρχεία του οπτικού οδηγού ROSA δεν είναι διαθέσιμα."
+                translate(lang, "ROSA media files are unavailable.", "Τα αρχεία του οπτικού οδηγού ROSA δεν είναι διαθέσιμα.")
             )
 
         st.caption(
-            "Click the banner to open the worksheet, or use the PDF download button. The controls below follow the same scoring structure."
-            if lang == "en"
-            else
-            "Πάτησε πάνω στην εικόνα για να ανοίξεις το worksheet ή χρησιμοποίησε το κουμπί λήψης PDF. Τα πεδία από κάτω ακολουθούν την ίδια δομή βαθμολόγησης."
+            translate(lang, "Click the banner to open the worksheet, or use the PDF download button. The controls below follow the same scoring structure.", "Πάτησε πάνω στην εικόνα για να ανοίξεις το worksheet ή χρησιμοποίησε το κουμπί λήψης PDF. Τα πεδία από κάτω ακολουθούν την ίδια δομή βαθμολόγησης.")
         )
 
     rosa_completed = st.toggle(
-        "Assessment completed" if lang == "en" else "Η αξιολόγηση ROSA ολοκληρώθηκε",
+        translate(lang, "Assessment completed", "Η αξιολόγηση ROSA ολοκληρώθηκε"),
         value=False,
         key="rosa_completed",
     )
@@ -926,121 +883,100 @@ with tabs[5]:
         # -----------------------------
         # Section A — Chair
         # -----------------------------
-        st.markdown("### A · Chair" if lang == "en" else "### A · Καρέκλα")
+        st.markdown(translate(lang, "### A · Chair", "### A · Καρέκλα"))
 
-        st.markdown("#### A.1 · Chair height" if lang == "en" else "#### A.1 · Ύψος καρέκλας")
+        st.markdown(translate(lang, "#### A.1 · Chair height", "#### A.1 · Ύψος καρέκλας"))
         a1_choice = st.radio(
-            "Select the picture/condition that best matches the worker" if lang == "en"
-            else "Επίλεξε την εικόνα/κατάσταση που ταιριάζει περισσότερο στον εργαζόμενο",
+            translate(lang, "Select the picture/condition that best matches the worker", "Επίλεξε την εικόνα/κατάσταση που ταιριάζει περισσότερο στον εργαζόμενο"),
             ["neutral", "too_low", "too_high", "no_foot_contact"],
             format_func=lambda v: {
-                "neutral": "Knees at about 90° (+1)" if lang == "en" else "Γόνατα περίπου στις 90° (+1)",
-                "too_low": "Chair too low: knee angle <90° (+2)" if lang == "en"
-                           else "Η καρέκλα είναι πολύ χαμηλά: γωνία γόνατος <90° (+2)",
-                "too_high": "Chair too high: knee angle >90° (+2)" if lang == "en"
-                            else "Η καρέκλα είναι πολύ ψηλά: γωνία γόνατος >90° (+2)",
-                "no_foot_contact": "No foot contact with the floor (+3)" if lang == "en"
-                                   else "Τα πέλματα δεν ακουμπούν στο δάπεδο (+3)",
+                "neutral": translate(lang, "Knees at about 90° (+1)", "Γόνατα περίπου στις 90° (+1)"),
+                "too_low": translate(lang, "Chair too low: knee angle <90° (+2)", "Η καρέκλα είναι πολύ χαμηλά: γωνία γόνατος <90° (+2)"),
+                "too_high": translate(lang, "Chair too high: knee angle >90° (+2)", "Η καρέκλα είναι πολύ ψηλά: γωνία γόνατος >90° (+2)"),
+                "no_foot_contact": translate(lang, "No foot contact with the floor (+3)", "Τα πέλματα δεν ακουμπούν στο δάπεδο (+3)"),
             }[v],
             key="rosa_a1_primary",
         )
         a1_primary = {"neutral": 1, "too_low": 2, "too_high": 2, "no_foot_contact": 3}[a1_choice]
         a1_extra = 0
         if st.checkbox(
-            "Insufficient space under the desk / cannot comfortably move the legs (+1)" if lang == "en"
-            else "Ανεπαρκής χώρος κάτω από το γραφείο / δεν υπάρχει επαρκής χώρος κίνησης των ποδιών (+1)",
+            translate(lang, "Insufficient space under the desk / cannot comfortably move the legs (+1)", "Ανεπαρκής χώρος κάτω από το γραφείο / δεν υπάρχει επαρκής χώρος κίνησης των ποδιών (+1)"),
             key="rosa_a1_cramp",
         ):
             a1_extra += 1
         if st.checkbox(
-            "Chair height is non-adjustable (+1)" if lang == "en"
-            else "Το ύψος της καρέκλας δεν ρυθμίζεται (+1)",
+            translate(lang, "Chair height is non-adjustable (+1)", "Το ύψος της καρέκλας δεν ρυθμίζεται (+1)"),
             key="rosa_a1_nonadj",
         ):
             a1_extra += 1
         a1 = a1_primary + a1_extra
 
-        st.markdown("#### A.2 · Seat pan depth" if lang == "en" else "#### A.2 · Βάθος έδρας")
+        st.markdown(translate(lang, "#### A.2 · Seat pan depth", "#### A.2 · Βάθος έδρας"))
         a2_primary = st.radio(
-            "Select seat-depth condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει το βάθος της έδρας",
+            translate(lang, "Select seat-depth condition", "Επίλεξε την κατάσταση που περιγράφει το βάθος της έδρας"),
             [1, 2, 3],
             format_func=lambda v: {
-                1: "About 3 in / 7–8 cm between the back of the knee and seat edge (+1)" if lang == "en"
-                   else "Περίπου 7–8 cm κενό μεταξύ του πίσω μέρους του γόνατος και της άκρης της έδρας (+1)",
-                2: "Too long: less than ~7–8 cm of space (+2)" if lang == "en"
-                   else "Πολύ βαθιά έδρα: κενό μικρότερο από περίπου 7–8 cm (+2)",
-                3: "Too short: more than ~7–8 cm of space (+2)" if lang == "en"
-                   else "Πολύ ρηχή έδρα: κενό μεγαλύτερο από περίπου 7–8 cm (+2)",
+                1: translate(lang, "About 3 in / 7–8 cm between the back of the knee and seat edge (+1)", "Περίπου 7–8 cm κενό μεταξύ του πίσω μέρους του γόνατος και της άκρης της έδρας (+1)"),
+                2: translate(lang, "Too long: less than ~7–8 cm of space (+2)", "Πολύ βαθιά έδρα: κενό μικρότερο από περίπου 7–8 cm (+2)"),
+                3: translate(lang, "Too short: more than ~7–8 cm of space (+2)", "Πολύ ρηχή έδρα: κενό μεγαλύτερο από περίπου 7–8 cm (+2)"),
             }[v],
             key="rosa_a2_primary",
         )
         # ROSA gives both too-long and too-short conditions a score of 2.
         a2 = 1 if a2_primary == 1 else 2
         if st.checkbox(
-            "Seat depth is non-adjustable (+1)" if lang == "en"
-            else "Το βάθος της έδρας δεν ρυθμίζεται (+1)",
+            translate(lang, "Seat depth is non-adjustable (+1)", "Το βάθος της έδρας δεν ρυθμίζεται (+1)"),
             key="rosa_a2_nonadj",
         ):
             a2 += 1
 
-        st.markdown("#### A.3 · Armrests" if lang == "en" else "#### A.3 · Μπράτσα καρέκλας")
+        st.markdown(translate(lang, "#### A.3 · Armrests", "#### A.3 · Μπράτσα καρέκλας"))
         a3_primary = st.radio(
-            "Select armrest condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει τα μπράτσα",
+            translate(lang, "Select armrest condition", "Επίλεξε την κατάσταση που περιγράφει τα μπράτσα"),
             [1, 2],
             format_func=lambda v: {
-                1: "Elbows supported in line with the shoulders; shoulders relaxed (+1)" if lang == "en"
-                   else "Οι αγκώνες στηρίζονται κοντά στο σώμα και οι ώμοι είναι χαλαροί (+1)",
-                2: "Armrests too high or too low; shoulders shrugged or arms unsupported (+2)" if lang == "en"
-                   else "Τα μπράτσα είναι πολύ ψηλά ή πολύ χαμηλά: οι ώμοι ανυψώνονται ή τα χέρια δεν στηρίζονται (+2)",
+                1: translate(lang, "Elbows supported in line with the shoulders; shoulders relaxed (+1)", "Οι αγκώνες στηρίζονται κοντά στο σώμα και οι ώμοι είναι χαλαροί (+1)"),
+                2: translate(lang, "Armrests too high or too low; shoulders shrugged or arms unsupported (+2)", "Τα μπράτσα είναι πολύ ψηλά ή πολύ χαμηλά: οι ώμοι ανυψώνονται ή τα χέρια δεν στηρίζονται (+2)"),
             }[v],
             key="rosa_a3_primary",
         )
         a3 = a3_primary
         if st.checkbox(
-            "Armrest surface is hard/damaged (+1)" if lang == "en"
-            else "Η επιφάνεια των μπράτσων είναι σκληρή ή φθαρμένη (+1)",
+            translate(lang, "Armrest surface is hard/damaged (+1)", "Η επιφάνεια των μπράτσων είναι σκληρή ή φθαρμένη (+1)"),
             key="rosa_a3_hard",
         ):
             a3 += 1
         if st.checkbox(
-            "Armrests are too far apart (+1)" if lang == "en"
-            else "Τα μπράτσα απέχουν υπερβολικά μεταξύ τους (+1)",
+            translate(lang, "Armrests are too far apart (+1)", "Τα μπράτσα απέχουν υπερβολικά μεταξύ τους (+1)"),
             key="rosa_a3_wide",
         ):
             a3 += 1
         if st.checkbox(
-            "Armrests are non-adjustable (+1)" if lang == "en"
-            else "Τα μπράτσα δεν ρυθμίζονται (+1)",
+            translate(lang, "Armrests are non-adjustable (+1)", "Τα μπράτσα δεν ρυθμίζονται (+1)"),
             key="rosa_a3_nonadj",
         ):
             a3 += 1
 
-        st.markdown("#### A.4 · Back support" if lang == "en" else "#### A.4 · Στήριξη πλάτης")
+        st.markdown(translate(lang, "#### A.4 · Back support", "#### A.4 · Στήριξη πλάτης"))
         a4_choice = st.radio(
-            "Select back-support condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει τη στήριξη της πλάτης",
+            translate(lang, "Select back-support condition", "Επίλεξε την κατάσταση που περιγράφει τη στήριξη της πλάτης"),
             ["adequate", "no_lumbar", "bad_angle", "no_back_support"],
             format_func=lambda v: {
-                "adequate": "Adequate lumbar support; backrest about 95–110° (+1)" if lang == "en"
-                            else "Επαρκής οσφυϊκή στήριξη και κλίση πλάτης περίπου 95–110° (+1)",
-                "no_lumbar": "No lumbar support OR lumbar support not positioned in the small of the back (+2)" if lang == "en"
-                             else "Δεν υπάρχει οσφυϊκή στήριξη ή δεν είναι σωστά τοποθετημένη στην οσφυϊκή περιοχή (+2)",
-                "bad_angle": "Backrest angled too far back (>110°) or too far forward (<95°) (+2)" if lang == "en"
-                             else "Η πλάτη είναι υπερβολικά πίσω (>110°) ή υπερβολικά μπροστά (<95°) (+2)",
-                "no_back_support": "No back support / stool / worker leaning forward without support (+3)" if lang == "en"
-                                   else "Χωρίς στήριξη πλάτης, π.χ. σκαμπό ή εργασία με τον κορμό μπροστά χωρίς στήριξη (+3)",
+                "adequate": translate(lang, "Adequate lumbar support; backrest about 95–110° (+1)", "Επαρκής οσφυϊκή στήριξη και κλίση πλάτης περίπου 95–110° (+1)"),
+                "no_lumbar": translate(lang, "No lumbar support OR lumbar support not positioned in the small of the back (+2)", "Δεν υπάρχει οσφυϊκή στήριξη ή δεν είναι σωστά τοποθετημένη στην οσφυϊκή περιοχή (+2)"),
+                "bad_angle": translate(lang, "Backrest angled too far back (>110°) or too far forward (<95°) (+2)", "Η πλάτη είναι υπερβολικά πίσω (>110°) ή υπερβολικά μπροστά (<95°) (+2)"),
+                "no_back_support": translate(lang, "No back support / stool / worker leaning forward without support (+3)", "Χωρίς στήριξη πλάτης, π.χ. σκαμπό ή εργασία με τον κορμό μπροστά χωρίς στήριξη (+3)"),
             }[v],
             key="rosa_a4_primary",
         )
         a4 = {"adequate": 1, "no_lumbar": 2, "bad_angle": 2, "no_back_support": 3}[a4_choice]
         if st.checkbox(
-            "Work surface too high; shoulders shrugged (+1)" if lang == "en"
-            else "Η επιφάνεια εργασίας είναι πολύ ψηλά και προκαλεί ανύψωση των ώμων (+1)",
+            translate(lang, "Work surface too high; shoulders shrugged (+1)", "Η επιφάνεια εργασίας είναι πολύ ψηλά και προκαλεί ανύψωση των ώμων (+1)"),
             key="rosa_a4_highdesk",
         ):
             a4 += 1
         if st.checkbox(
-            "Backrest is non-adjustable (+1)" if lang == "en"
-            else "Η πλάτη της καρέκλας δεν ρυθμίζεται (+1)",
+            translate(lang, "Backrest is non-adjustable (+1)", "Η πλάτη της καρέκλας δεν ρυθμίζεται (+1)"),
             key="rosa_a4_nonadj",
         ):
             a4 += 1
@@ -1052,52 +988,47 @@ with tabs[5]:
         a_cols[1].metric("A.2", a2)
         a_cols[2].metric("A.3", a3)
         a_cols[3].metric("A.4", a4)
-        a_cols[4].metric("Duration" if lang == "en" else "Διάρκεια", f"{dur_chair:+d}")
+        a_cols[4].metric(translate(lang, "Duration", "Διάρκεια"), f"{dur_chair:+d}")
 
         st.divider()
 
         # -----------------------------
         # Section B — Monitor & Phone
         # -----------------------------
-        st.markdown("### B · Monitor & phone" if lang == "en" else "### B · Οθόνη & τηλέφωνο")
+        st.markdown(translate(lang, "### B · Monitor & phone", "### B · Οθόνη & τηλέφωνο"))
 
-        st.markdown("#### B.1 · Monitor" if lang == "en" else "#### B.1 · Οθόνη")
+        st.markdown(translate(lang, "#### B.1 · Monitor", "#### B.1 · Οθόνη"))
         b1_primary = st.radio(
-            "Select monitor-height condition" if lang == "en" else "Επίλεξε την κατάσταση που περιγράφει καλύτερα το ύψος της οθόνης",
+            translate(lang, "Select monitor-height condition", "Επίλεξε την κατάσταση που περιγράφει καλύτερα το ύψος της οθόνης"),
             [1, 2, 3],
             format_func=lambda v: {
-                1: "Arm's-length distance (about 40–75 cm) and screen at eye level (+1)" if lang == "en"
-                   else "Απόσταση περίπου όσο το μήκος του χεριού (40–75 cm) και οθόνη στο ύψος των ματιών (+1)",
-                2: "Monitor too low (below ~30° viewing angle) (+2)" if lang == "en"
-                   else "Η οθόνη είναι πολύ χαμηλά (κάτω από περίπου 30°) (+2)",
-                3: "Monitor too high, producing neck extension (+3)" if lang == "en"
-                   else "Η οθόνη είναι πολύ ψηλά και προκαλεί έκταση του αυχένα (+3)",
+                1: translate(lang, "Arm's-length distance (about 40–75 cm) and screen at eye level (+1)", "Απόσταση περίπου όσο το μήκος του χεριού (40–75 cm) και οθόνη στο ύψος των ματιών (+1)"),
+                2: translate(lang, "Monitor too low (below ~30° viewing angle) (+2)", "Η οθόνη είναι πολύ χαμηλά (κάτω από περίπου 30°) (+2)"),
+                3: translate(lang, "Monitor too high, producing neck extension (+3)", "Η οθόνη είναι πολύ ψηλά και προκαλεί έκταση του αυχένα (+3)"),
             }[v],
             key="rosa_b1_primary",
         )
         b1 = b1_primary
-        if st.checkbox("Monitor too far away (+1)" if lang == "en" else "Η οθόνη βρίσκεται πολύ μακριά (+1)", key="rosa_b1_far"):
+        if st.checkbox(translate(lang, "Monitor too far away (+1)", "Η οθόνη βρίσκεται πολύ μακριά (+1)"), key="rosa_b1_far"):
             b1 += 1
-        if st.checkbox("Neck rotation >30° (+1)" if lang == "en" else "Στροφή αυχένα >30° (+1)", key="rosa_b1_twist"):
+        if st.checkbox(translate(lang, "Neck rotation >30° (+1)", "Στροφή αυχένα >30° (+1)"), key="rosa_b1_twist"):
             b1 += 1
-        if st.checkbox("Glare on screen (+1)" if lang == "en" else "Θάμβωση / αντανακλάσεις στην οθόνη (+1)", key="rosa_b1_glare"):
+        if st.checkbox(translate(lang, "Glare on screen (+1)", "Θάμβωση / αντανακλάσεις στην οθόνη (+1)"), key="rosa_b1_glare"):
             b1 += 1
-        if st.checkbox("Documents used without a document holder (+1)" if lang == "en" else "Χρήση εγγράφων χωρίς βάση στήριξης εγγράφων (+1)", key="rosa_b1_docs"):
+        if st.checkbox(translate(lang, "Documents used without a document holder (+1)", "Χρήση εγγράφων χωρίς βάση στήριξης εγγράφων (+1)"), key="rosa_b1_docs"):
             b1 += 1
         dur_monitor = duration_selector("dur_monitor")
 
-        st.markdown("#### B.2 · Phone" if lang == "en" else "#### B.2 · Τηλέφωνο")
+        st.markdown(translate(lang, "#### B.2 · Phone", "#### B.2 · Τηλέφωνο"))
         b2 = 1
         st.caption(
-            "Baseline: headset or one-hand phone use with a neutral neck posture (+1). Add any conditions that apply."
-            if lang == "en"
-            else "Βασική συνθήκη: headset ή χρήση τηλεφώνου με το ένα χέρι και ουδέτερη θέση αυχένα (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+            translate(lang, "Baseline: headset or one-hand phone use with a neutral neck posture (+1). Add any conditions that apply.", "Βασική συνθήκη: headset ή χρήση τηλεφώνου με το ένα χέρι και ουδέτερη θέση αυχένα (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν.")
         )
-        if st.checkbox("Phone is too far to reach (>30 cm) (+2)" if lang == "en" else "Το τηλέφωνο βρίσκεται πολύ μακριά (>30 cm) (+2)", key="rosa_b2_far"):
+        if st.checkbox(translate(lang, "Phone is too far to reach (>30 cm) (+2)", "Το τηλέφωνο βρίσκεται πολύ μακριά (>30 cm) (+2)"), key="rosa_b2_far"):
             b2 += 2
-        if st.checkbox("Phone held between neck and shoulder (+2)" if lang == "en" else "Το τηλέφωνο συγκρατείται μεταξύ αυχένα και ώμου (+2)", key="rosa_b2_hold"):
+        if st.checkbox(translate(lang, "Phone held between neck and shoulder (+2)", "Το τηλέφωνο συγκρατείται μεταξύ αυχένα και ώμου (+2)"), key="rosa_b2_hold"):
             b2 += 2
-        if st.checkbox("No hands-free option available (+1)" if lang == "en" else "Δεν υπάρχει δυνατότητα hands-free / ακουστικών (+1)", key="rosa_b2_hands"):
+        if st.checkbox(translate(lang, "No hands-free option available (+1)", "Δεν υπάρχει δυνατότητα hands-free / ακουστικών (+1)"), key="rosa_b2_hands"):
             b2 += 1
         dur_phone = duration_selector("dur_phone")
 
@@ -1106,45 +1037,40 @@ with tabs[5]:
         # -----------------------------
         # Section C — Mouse & Keyboard
         # -----------------------------
-        st.markdown("### C · Mouse & keyboard" if lang == "en" else "### C · Ποντίκι & πληκτρολόγιο")
+        st.markdown(translate(lang, "### C · Mouse & keyboard", "### C · Ποντίκι & πληκτρολόγιο"))
 
-        st.markdown("#### C.1 · Mouse" if lang == "en" else "#### C.1 · Ποντίκι")
+        st.markdown(translate(lang, "#### C.1 · Mouse", "#### C.1 · Ποντίκι"))
         c1r = 1
         st.caption(
-            "Baseline: mouse in line with the shoulder (+1). Add any conditions that apply."
-            if lang == "en"
-            else "Βασική συνθήκη: το ποντίκι βρίσκεται στην ίδια γραμμή με τον ώμο (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+            translate(lang, "Baseline: mouse in line with the shoulder (+1). Add any conditions that apply.", "Βασική συνθήκη: το ποντίκι βρίσκεται στην ίδια γραμμή με τον ώμο (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν.")
         )
-        if st.checkbox("Reaching to use the mouse (+2)" if lang == "en" else "Χρειάζεται τέντωμα του χεριού για χρήση του ποντικιού (+2)", key="rosa_c1_reach"):
+        if st.checkbox(translate(lang, "Reaching to use the mouse (+2)", "Χρειάζεται τέντωμα του χεριού για χρήση του ποντικιού (+2)"), key="rosa_c1_reach"):
             c1r += 2
-        if st.checkbox("Mouse and keyboard are on different surfaces/heights (+2)" if lang == "en" else "Ποντίκι και πληκτρολόγιο βρίσκονται σε διαφορετικές επιφάνειες/ύψη (+2)", key="rosa_c1_diff"):
+        if st.checkbox(translate(lang, "Mouse and keyboard are on different surfaces/heights (+2)", "Ποντίκι και πληκτρολόγιο βρίσκονται σε διαφορετικές επιφάνειες/ύψη (+2)"), key="rosa_c1_diff"):
             c1r += 2
-        if st.checkbox("Pinch grip on mouse (+1)" if lang == "en" else "Το ποντίκι χρησιμοποιείται με λαβή τύπου pinch grip (+1)", key="rosa_c1_pinch"):
+        if st.checkbox(translate(lang, "Pinch grip on mouse (+1)", "Το ποντίκι χρησιμοποιείται με λαβή τύπου pinch grip (+1)"), key="rosa_c1_pinch"):
             c1r += 1
-        if st.checkbox("Palmrest in front of the mouse (+1)" if lang == "en" else "Υπάρχει στήριγμα παλάμης μπροστά από το ποντίκι (+1)", key="rosa_c1_palm"):
+        if st.checkbox(translate(lang, "Palmrest in front of the mouse (+1)", "Υπάρχει στήριγμα παλάμης μπροστά από το ποντίκι (+1)"), key="rosa_c1_palm"):
             c1r += 1
         dur_mouse = duration_selector("dur_mouse")
 
-        st.markdown("#### C.2 · Keyboard" if lang == "en" else "#### C.2 · Πληκτρολόγιο")
+        st.markdown(translate(lang, "#### C.2 · Keyboard", "#### C.2 · Πληκτρολόγιο"))
         c2r = 1
         st.caption(
-            "Baseline: wrists straight and shoulders relaxed (+1). Add any conditions that apply."
-            if lang == "en"
-            else "Βασική συνθήκη: οι καρποί είναι ευθείς/ουδέτεροι και οι ώμοι χαλαροί (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν."
+            translate(lang, "Baseline: wrists straight and shoulders relaxed (+1). Add any conditions that apply.", "Βασική συνθήκη: οι καρποί είναι ευθείς/ουδέτεροι και οι ώμοι χαλαροί (+1). Πρόσθεσε όσα από τα παρακάτω ισχύουν.")
         )
         if st.checkbox(
-            "Wrist extension / positive keyboard angle (>15° wrist extension) (+2)" if lang == "en"
-            else "Έκταση καρπού / θετική κλίση πληκτρολογίου (>15° έκταση καρπού) (+2)",
+            translate(lang, "Wrist extension / positive keyboard angle (>15° wrist extension) (+2)", "Έκταση καρπού / θετική κλίση πληκτρολογίου (>15° έκταση καρπού) (+2)"),
             key="rosa_c2_ext",
         ):
             c2r += 2
-        if st.checkbox("Wrist deviation while typing (+1)" if lang == "en" else "Απόκλιση καρπού κατά την πληκτρολόγηση (+1)", key="rosa_c2_dev"):
+        if st.checkbox(translate(lang, "Wrist deviation while typing (+1)", "Απόκλιση καρπού κατά την πληκτρολόγηση (+1)"), key="rosa_c2_dev"):
             c2r += 1
-        if st.checkbox("Keyboard too high; shoulders shrugged (+1)" if lang == "en" else "Το πληκτρολόγιο είναι πολύ ψηλά και οι ώμοι ανυψώνονται (+1)", key="rosa_c2_high"):
+        if st.checkbox(translate(lang, "Keyboard too high; shoulders shrugged (+1)", "Το πληκτρολόγιο είναι πολύ ψηλά και οι ώμοι ανυψώνονται (+1)"), key="rosa_c2_high"):
             c2r += 1
-        if st.checkbox("Reaching to overhead items (+1)" if lang == "en" else "Χρειάζεται προσέγγιση αντικειμένων πάνω από το ύψος των ώμων (+1)", key="rosa_c2_over"):
+        if st.checkbox(translate(lang, "Reaching to overhead items (+1)", "Χρειάζεται προσέγγιση αντικειμένων πάνω από το ύψος των ώμων (+1)"), key="rosa_c2_over"):
             c2r += 1
-        if st.checkbox("Keyboard platform is non-adjustable (+1)" if lang == "en" else "Η βάση/επιφάνεια του πληκτρολογίου δεν ρυθμίζεται (+1)", key="rosa_c2_nonadj"):
+        if st.checkbox(translate(lang, "Keyboard platform is non-adjustable (+1)", "Η βάση/επιφάνεια του πληκτρολογίου δεν ρυθμίζεται (+1)"), key="rosa_c2_nonadj"):
             c2r += 1
         dur_keyboard = duration_selector("dur_keyboard")
 
@@ -1155,11 +1081,11 @@ with tabs[5]:
         )
 
         st.divider()
-        st.markdown("### " + ("ROSA results" if lang == "en" else "Αποτελέσματα ROSA"))
+        st.markdown("### " + (translate(lang, "ROSA results", "Αποτελέσματα ROSA")))
         r1, r2, r3 = st.columns(3)
-        r1.metric("Chair ROSA" if lang == "en" else "ROSA καρέκλας", f"{rosa['chair']} / 10")
-        r2.metric("Monitor & peripherals" if lang == "en" else "Οθόνη & περιφερειακά", f"{rosa['monitor_peripherals']} / 10")
-        r3.metric("ROSA final" if lang == "en" else "Τελικό ROSA", f"{rosa['final']} / 10")
+        r1.metric(translate(lang, "Chair ROSA", "ROSA καρέκλας"), f"{rosa['chair']} / 10")
+        r2.metric(translate(lang, "Monitor & peripherals", "Οθόνη & περιφερειακά"), f"{rosa['monitor_peripherals']} / 10")
+        r3.metric(translate(lang, "ROSA final", "Τελικό ROSA"), f"{rosa['final']} / 10")
 
         st.caption(
             f"Section B: {rosa['section_b']} · Section C: {rosa['section_c']}"
@@ -1169,15 +1095,11 @@ with tabs[5]:
 
         if rosa["final"] >= 5:
             st.error(
-                "ROSA action level reached (≥5): further ergonomic investigation/intervention indicated."
-                if lang == "en"
-                else "Επιτεύχθηκε το επίπεδο δράσης ROSA (≥5): ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση."
+                translate(lang, "ROSA action level reached (≥5): further ergonomic investigation/intervention indicated.", "Επιτεύχθηκε το επίπεδο δράσης ROSA (≥5): ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση.")
             )
         else:
             st.success(
-                "ROSA below the validated action level of 5. This is not a clinical 'low disease risk' category."
-                if lang == "en"
-                else "Το ROSA βρίσκεται κάτω από το τεκμηριωμένο επίπεδο δράσης 5. Αυτό δεν σημαίνει κλινικά «χαμηλό κίνδυνο νόσου»."
+                translate(lang, "ROSA below the validated action level of 5. This is not a clinical 'low disease risk' category.", "Το ROSA βρίσκεται κάτω από το τεκμηριωμένο επίπεδο δράσης 5. Αυτό δεν σημαίνει κλινικά «χαμηλό κίνδυνο νόσου».")
             )
     else:
         rosa = {
@@ -1185,9 +1107,7 @@ with tabs[5]:
             "monitor_peripherals": 0, "final": 0, "action": "not_assessed"
         }
         st.caption(
-            "Mark ROSA as completed before a score is included in the report."
-            if lang == "en"
-            else "Σημείωσε ότι η αξιολόγηση ROSA ολοκληρώθηκε ώστε η βαθμολογία να συμπεριληφθεί στην αναφορά."
+            translate(lang, "Mark ROSA as completed before a score is included in the report.", "Σημείωσε ότι η αξιολόγηση ROSA ολοκληρώθηκε ώστε η βαθμολογία να συμπεριληφθεί στην αναφορά.")
         )
 
 # ---------------------------------------------------------------------
@@ -1272,7 +1192,7 @@ with tabs[6]:
     st.info(t["evidence_note"])
 
     with st.expander(
-        "Findings from this assessment" if lang == "en" else "Ευρήματα αυτής της αξιολόγησης",
+        translate(lang, "Findings from this assessment", "Ευρήματα αυτής της αξιολόγησης"),
         expanded=False,
     ):
         if findings:
@@ -1281,22 +1201,16 @@ with tabs[6]:
                 st.write("")
         else:
             st.success(
-                "No priority exposure finding was generated from the entered data."
-                if lang == "en"
-                else "Δεν προέκυψε εύρημα έκθεσης υψηλής προτεραιότητας από τα δεδομένα που καταχωρίστηκαν."
+                translate(lang, "No priority exposure finding was generated from the entered data.", "Δεν προέκυψε εύρημα έκθεσης υψηλής προτεραιότητας από τα δεδομένα που καταχωρίστηκαν.")
             )
 
     st.markdown(
         "### " + (
-            "Research evidence by body region"
-            if lang == "en"
-            else "Επιστημονικά ευρήματα ανά περιοχή σώματος"
+            translate(lang, "Research evidence by body region", "Επιστημονικά ευρήματα ανά περιοχή σώματος")
         )
     )
     st.caption(
-        "Each section keeps evidence for the same body region together. Every study starts with a plain-language explanation; statistical details are optional."
-        if lang == "en"
-        else "Οι έρευνες για την ίδια περιοχή σώματος εμφανίζονται μαζί. Κάθε μελέτη ξεκινά με απλή εξήγηση και οι στατιστικές λεπτομέρειες ανοίγουν μόνο αν τις χρειάζεσαι."
+        translate(lang, "Each section keeps evidence for the same body region together. Every study starts with a plain-language explanation; statistical details are optional.", "Οι έρευνες για την ίδια περιοχή σώματος εμφανίζονται μαζί. Κάθε μελέτη ξεκινά με απλή εξήγηση και οι στατιστικές λεπτομέρειες ανοίγουν μόνο αν τις χρειάζεσαι.")
     )
 
     if relevant_evidence:
@@ -1307,19 +1221,15 @@ with tabs[6]:
                 st.write("")
     else:
         st.caption(
-            "No evidence cards are triggered until relevant exposure/symptom information is entered."
-            if lang == "en"
-            else "Δεν εμφανίζονται σχετικές μελέτες μέχρι να καταχωριστούν στοιχεία έκθεσης ή συμπτωμάτων."
+            translate(lang, "No evidence cards are triggered until relevant exposure/symptom information is entered.", "Δεν εμφανίζονται σχετικές μελέτες μέχρι να καταχωριστούν στοιχεία έκθεσης ή συμπτωμάτων.")
         )
 
     with st.expander(
-        "Full v2 evidence library" if lang == "en" else "Πλήρης βιβλιοθήκη επιστημονικής τεκμηρίωσης v2",
+        translate(lang, "Full v2 evidence library", "Πλήρης βιβλιοθήκη επιστημονικής τεκμηρίωσης v2"),
         expanded=False,
     ):
         st.caption(
-            "The full library is also organised by body region. Research estimates are not combined into a single disease-risk score."
-            if lang == "en"
-            else "Η πλήρης βιβλιοθήκη είναι επίσης οργανωμένη ανά περιοχή σώματος. Τα αποτελέσματα των μελετών δεν συνδυάζονται σε μία ενιαία βαθμολογία κινδύνου νόσου."
+            translate(lang, "The full library is also organised by body region. Research estimates are not combined into a single disease-risk score.", "Η πλήρης βιβλιοθήκη είναι επίσης οργανωμένη ανά περιοχή σώματος. Τα αποτελέσματα των μελετών δεν συνδυάζονται σε μία ενιαία βαθμολογία κινδύνου νόσου.")
         )
         for region_label, region_items in group_evidence_by_region(list(EVIDENCE.values()), lang):
             st.markdown(f"### {region_label}")
@@ -1333,7 +1243,7 @@ with tabs[6]:
 with tabs[7]:
     st.subheader(t["summary_title"])
 
-    subject_display = subject_id.strip() or ("Unidentified worker" if lang == "en" else "Χωρίς αναγνωριστικό")
+    subject_display = subject_id.strip() or (translate(lang, "Unidentified worker", "Χωρίς αναγνωριστικό"))
     stage_label = (
         "1st Assessment" if assessment_stage == "baseline" and lang == "en"
         else "2nd Assessment / Reassessment" if assessment_stage == "followup" and lang == "en"
@@ -1343,11 +1253,11 @@ with tabs[7]:
 
     st.markdown(
         f"""<div class="ef-summary">
-        <div class="ef-kicker">{"ASSESSMENT SUMMARY" if lang == "en" else "ΣΥΝΟΨΗ ΑΞΙΟΛΟΓΗΣΗΣ"}</div>
+        <div class="ef-kicker">{translate(lang, "ASSESSMENT SUMMARY", "ΣΥΝΟΨΗ ΑΞΙΟΛΟΓΗΣΗΣ")}</div>
         <h3 style="margin:.25rem 0!important">{subject_display}</h3>
-        <div><b>{"Stage" if lang == "en" else "Στάδιο"}:</b> {stage_label} &nbsp;·&nbsp; <b>{"Date" if lang == "en" else "Ημερομηνία"}:</b> {assessment_date}</div>
+        <div><b>{translate(lang, "Stage", "Στάδιο")}:</b> {stage_label} &nbsp;·&nbsp; <b>{translate(lang, "Date", "Ημερομηνία")}:</b> {assessment_date}</div>
         <div style="margin-top:8px;color:#5b6475">
-        {"This report summarises identified ergonomic exposures, reported symptoms, ROSA results and preventive actions. It does not calculate an individual probability of disease." if lang == "en" else "Η αναφορά συνοψίζει τους εργονομικούς παράγοντες έκθεσης, τα αναφερόμενα συμπτώματα, το ROSA και τα προτεινόμενα μέτρα πρόληψης/βελτίωσης. Δεν υπολογίζει προσωπική πιθανότητα εμφάνισης πάθησης."}
+        {translate(lang, "This report summarises identified ergonomic exposures, reported symptoms, ROSA results and preventive actions. It does not calculate an individual probability of disease.", "Η αναφορά συνοψίζει τους εργονομικούς παράγοντες έκθεσης, τα αναφερόμενα συμπτώματα, το ROSA και τα προτεινόμενα μέτρα πρόληψης/βελτίωσης. Δεν υπολογίζει προσωπική πιθανότητα εμφάνισης πάθησης.")}
         </div></div>""",
         unsafe_allow_html=True,
     )
@@ -1356,40 +1266,34 @@ with tabs[7]:
     attention_count = sum(f.status == "attention" for f in findings)
     symptom_count = sum(int(item.get("severity", 0) or 0) > 0 for item in symptom_details.values())
 
-    st.markdown("### " + ("Overall picture" if lang == "en" else "Συνολική εικόνα"))
+    st.markdown("### " + (translate(lang, "Overall picture", "Συνολική εικόνα")))
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("ROSA", f"{rosa['final']} / 10" if rosa["final"] > 0 else ("Not assessed" if lang == "en" else "Δεν αξιολογήθηκε"))
+    m1.metric("ROSA", f"{rosa['final']} / 10" if rosa["final"] > 0 else (translate(lang, "Not assessed", "Δεν αξιολογήθηκε")))
     m2.metric(
-        "High-priority issues" if lang == "en" else "Θέματα άμεσης προτεραιότητας",
+        translate(lang, "High-priority issues", "Θέματα άμεσης προτεραιότητας"),
         priority_count,
     )
     m3.metric(
-        "Issues needing attention" if lang == "en" else "Θέματα που χρειάζονται προσοχή",
+        translate(lang, "Issues needing attention", "Θέματα που χρειάζονται προσοχή"),
         attention_count,
     )
     m4.metric(
-        "Symptomatic regions" if lang == "en" else "Περιοχές με συμπτώματα",
+        translate(lang, "Symptomatic regions", "Περιοχές με συμπτώματα"),
         symptom_count,
     )
 
     if rosa["final"] >= 5:
         st.warning(
-            "ROSA reached the validated action level (≥5), so further ergonomic investigation and intervention are indicated."
-            if lang == "en"
-            else "Το ROSA έφτασε το τεκμηριωμένο επίπεδο δράσης (≥5), επομένως ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση."
+            translate(lang, "ROSA reached the validated action level (≥5), so further ergonomic investigation and intervention are indicated.", "Το ROSA έφτασε το τεκμηριωμένο επίπεδο δράσης (≥5), επομένως ενδείκνυται περαιτέρω εργονομική διερεύνηση και παρέμβαση.")
         )
     elif rosa["final"] > 0:
         st.info(
-            "ROSA is below the action level of 5. This does not mean that all ergonomic issues or symptoms are absent."
-            if lang == "en"
-            else "Το ROSA βρίσκεται κάτω από το επίπεδο δράσης 5. Αυτό δεν σημαίνει ότι απουσιάζουν όλα τα εργονομικά ζητήματα ή τα συμπτώματα."
+            translate(lang, "ROSA is below the action level of 5. This does not mean that all ergonomic issues or symptoms are absent.", "Το ROSA βρίσκεται κάτω από το επίπεδο δράσης 5. Αυτό δεν σημαίνει ότι απουσιάζουν όλα τα εργονομικά ζητήματα ή τα συμπτώματα.")
         )
 
-    st.markdown("### " + ("Musculoskeletal profile & proposed action" if lang == "en" else "Μυοσκελετικό προφίλ & προτεινόμενη ενέργεια"))
+    st.markdown("### " + (translate(lang, "Musculoskeletal profile & proposed action", "Μυοσκελετικό προφίλ & προτεινόμενη ενέργεια")))
     st.caption(
-        "The proposed action combines reported symptoms, functional/work impact and relevant ergonomic findings. It is a workflow recommendation, not a diagnosis or individual prognosis."
-        if lang == "en"
-        else "Η προτεινόμενη ενέργεια συνδυάζει τα αναφερόμενα συμπτώματα, τη λειτουργική/εργασιακή επίδραση και τα σχετικά εργονομικά ευρήματα. Αποτελεί πρόταση διαχείρισης και όχι διάγνωση ή ατομική πρόγνωση."
+        translate(lang, "The proposed action combines reported symptoms, functional/work impact and relevant ergonomic findings. It is a workflow recommendation, not a diagnosis or individual prognosis.", "Η προτεινόμενη ενέργεια συνδυάζει τα αναφερόμενα συμπτώματα, τη λειτουργική/εργασιακή επίδραση και τα σχετικά εργονομικά ευρήματα. Αποτελεί πρόταση διαχείρισης και όχι διάγνωση ή ατομική πρόγνωση.")
     )
     if symptom_details:
         profile_rows = []
@@ -1404,11 +1308,11 @@ with tabs[7]:
 
             work_bits = []
             if interference is True:
-                work_bits.append("affects work" if lang == "en" else "επηρεάζει την εργασία")
+                work_bits.append(translate(lang, "affects work", "επηρεάζει την εργασία"))
             elif interference is False:
-                work_bits.append("no reported interference" if lang == "en" else "δεν αναφέρθηκε επίδραση")
+                work_bits.append(translate(lang, "no reported interference", "δεν αναφέρθηκε επίδραση"))
             if work_modification is True:
-                work_bits.append("task/pace modified" if lang == "en" else "αλλαγή ρυθμού/εργασίας")
+                work_bits.append(translate(lang, "task/pace modified", "αλλαγή ρυθμού/εργασίας"))
             if absence_days > 0:
                 work_bits.append(f"{absence_days} absence day(s)/4 weeks" if lang == "en" else f"{absence_days} ημέρες απουσίας/4 εβδομάδες")
 
@@ -1419,73 +1323,67 @@ with tabs[7]:
                 symptom_text += f" · {frequency}"
 
             profile_rows.append({
-                ("Region" if lang == "en" else "Περιοχή"): label,
-                ("Symptoms" if lang == "en" else "Συμπτώματα"): symptom_text,
-                ("Work impact" if lang == "en" else "Επίδραση στην εργασία"): " · ".join(work_bits) if work_bits else "—",
-                ("Ergonomic exposure/findings" if lang == "en" else "Εργονομική έκθεση / ευρήματα"): region_exposure_text(region, ctx),
-                ("Proposed action" if lang == "en" else "Προτεινόμενη ενέργεια"): region_action_text(region, item, ctx),
+                (translate(lang, "Region", "Περιοχή")): label,
+                (translate(lang, "Symptoms", "Συμπτώματα")): symptom_text,
+                (translate(lang, "Work impact", "Επίδραση στην εργασία")): " · ".join(work_bits) if work_bits else "—",
+                (translate(lang, "Ergonomic exposure/findings", "Εργονομική έκθεση / ευρήματα")): region_exposure_text(region, ctx),
+                (translate(lang, "Proposed action", "Προτεινόμενη ενέργεια")): region_action_text(region, item, ctx),
             })
         st.dataframe(profile_rows, use_container_width=True, hide_index=True)
         st.caption(
-            "*The ≥6 h/day sitting flag is an operational screening flag, not a validated causal threshold."
-            if lang == "en"
-            else "*Η ένδειξη ≥6 ώρες/ημέρα καθιστικής εργασίας είναι λειτουργική ένδειξη screening και όχι επικυρωμένο αιτιώδες όριο."
+            translate(lang, "*The ≥6 h/day sitting flag is an operational screening flag, not a validated causal threshold.", "*Η ένδειξη ≥6 ώρες/ημέρα καθιστικής εργασίας είναι λειτουργική ένδειξη screening και όχι επικυρωμένο αιτιώδες όριο.")
         )
     else:
-        st.caption("No musculoskeletal symptoms were reported." if lang == "en" else "Δεν αναφέρθηκαν μυοσκελετικά συμπτώματα.")
+        st.caption(translate(lang, "No musculoskeletal symptoms were reported.", "Δεν αναφέρθηκαν μυοσκελετικά συμπτώματα."))
 
     if digital_eye_strain:
         st.markdown(
-            "- **Digital eye strain / visual fatigue reported**"
-            if lang == "en"
-            else "- **Αναφέρθηκε κόπωση ματιών από τη χρήση της οθόνης**"
+            translate(lang, "- **Digital eye strain / visual fatigue reported**", "- **Αναφέρθηκε κόπωση ματιών από τη χρήση της οθόνης**")
         )
 
-    st.markdown("### " + ("Identified ergonomic factors" if lang == "en" else "Εντοπισμένοι εργονομικοί παράγοντες"))
+    st.markdown("### " + (translate(lang, "Identified ergonomic factors", "Εντοπισμένοι εργονομικοί παράγοντες")))
     if findings:
         priority_findings = [f for f in findings if f.status == "priority"]
         attention_findings = [f for f in findings if f.status == "attention"]
         information_findings = [f for f in findings if f.status == "information"]
 
         if priority_findings:
-            st.markdown("#### " + ("Immediate priority" if lang == "en" else "Άμεση προτεραιότητα"))
+            st.markdown("#### " + (translate(lang, "Immediate priority", "Άμεση προτεραιότητα")))
             for f in priority_findings:
                 finding_card(f, lang)
                 st.write("")
         if attention_findings:
-            st.markdown("#### " + ("Needs attention" if lang == "en" else "Χρειάζεται προσοχή"))
+            st.markdown("#### " + (translate(lang, "Needs attention", "Χρειάζεται προσοχή")))
             for f in attention_findings:
                 finding_card(f, lang)
                 st.write("")
         if information_findings:
-            with st.expander("Additional context" if lang == "en" else "Πρόσθετες πληροφορίες", expanded=False):
+            with st.expander(translate(lang, "Additional context", "Πρόσθετες πληροφορίες"), expanded=False):
                 for f in information_findings:
                     finding_card(f, lang)
                     st.write("")
     else:
         st.success(
-            "No priority ergonomic exposure was identified from the entered information."
-            if lang == "en"
-            else "Δεν εντοπίστηκε εργονομικός παράγοντας υψηλής προτεραιότητας από τα στοιχεία που καταχωρίστηκαν."
+            translate(lang, "No priority ergonomic exposure was identified from the entered information.", "Δεν εντοπίστηκε εργονομικός παράγοντας υψηλής προτεραιότητας από τα στοιχεία που καταχωρίστηκαν.")
         )
 
-    st.markdown("### " + ("Preventive and improvement measures" if lang == "en" else "Μέτρα πρόληψης και βελτίωσης"))
+    st.markdown("### " + (translate(lang, "Preventive and improvement measures", "Μέτρα πρόληψης και βελτίωσης")))
     now_recs = [r for r in recommendations if r.priority == "now"]
     soon_recs = [r for r in recommendations if r.priority == "soon"]
     maintain_recs = [r for r in recommendations if r.priority == "maintain"]
 
     if now_recs:
-        st.markdown("#### " + ("Implement first" if lang == "en" else "Να εφαρμοστούν πρώτα"))
+        st.markdown("#### " + (translate(lang, "Implement first", "Να εφαρμοστούν πρώτα")))
         for r in now_recs:
             recommendation_card(r, lang)
             st.write("")
     if soon_recs:
-        st.markdown("#### " + ("Next actions" if lang == "en" else "Επόμενες ενέργειες"))
+        st.markdown("#### " + (translate(lang, "Next actions", "Επόμενες ενέργειες")))
         for r in soon_recs:
             recommendation_card(r, lang)
             st.write("")
     if maintain_recs:
-        with st.expander("Good practices to maintain" if lang == "en" else "Καλές πρακτικές που πρέπει να διατηρηθούν", expanded=False):
+        with st.expander(translate(lang, "Good practices to maintain", "Καλές πρακτικές που πρέπει να διατηρηθούν"), expanded=False):
             for r in maintain_recs:
                 recommendation_card(r, lang)
                 st.write("")
@@ -1496,13 +1394,11 @@ with tabs[7]:
     comparison_payload = None
     if assessment_stage == "followup":
         st.divider()
-        st.markdown("### " + ("Before vs after interventions" if lang == "en" else "Σύγκριση πριν και μετά τις παρεμβάσεις"))
+        st.markdown("### " + (translate(lang, "Before vs after interventions", "Σύγκριση πριν και μετά τις παρεμβάσεις")))
 
         if baseline_report is None:
             st.warning(
-                "Upload the initial assessment JSON in the Worker tab to generate the before/after comparison."
-                if lang == "en"
-                else "Ανέβασε το JSON της αρχικής αξιολόγησης στην καρτέλα «Εργαζόμενος» για να δημιουργηθεί η σύγκριση πριν/μετά."
+                translate(lang, "Upload the initial assessment JSON in the Worker tab to generate the before/after comparison.", "Ανέβασε το JSON της αρχικής αξιολόγησης στην καρτέλα «Εργαζόμενος» για να δημιουργηθεί η σύγκριση πριν/μετά.")
             )
         else:
             baseline_findings = baseline_report.get("findings", []) or []
@@ -1512,40 +1408,38 @@ with tabs[7]:
             baseline_rosa = int(baseline_rosa_obj.get("final", baseline_assessment.get("rosa_final", 0)) or 0)
 
             st.caption(
-                "The comparison evaluates change in ergonomic exposure indicators, symptoms and ROSA. It does not estimate a change in personal disease probability."
-                if lang == "en"
-                else "Η σύγκριση αξιολογεί τη μεταβολή σε εργονομικούς δείκτες έκθεσης, συμπτώματα και ROSA. Δεν εκτιμά μεταβολή στην προσωπική πιθανότητα εμφάνισης πάθησης."
+                translate(lang, "The comparison evaluates change in ergonomic exposure indicators, symptoms and ROSA. It does not estimate a change in personal disease probability.", "Η σύγκριση αξιολογεί τη μεταβολή σε εργονομικούς δείκτες έκθεσης, συμπτώματα και ROSA. Δεν εκτιμά μεταβολή στην προσωπική πιθανότητα εμφάνισης πάθησης.")
             )
 
             c1, c2, c3 = st.columns(3)
             c1.metric(
-                "ROSA after" if lang == "en" else "ROSA μετά",
+                translate(lang, "ROSA after", "ROSA μετά"),
                 f"{rosa['final']} / 10",
                 (f"{rosa['final'] - baseline_rosa:+d} vs before" if lang == "en" else f"{rosa['final'] - baseline_rosa:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
             c2.metric(
-                "High-priority issues after" if lang == "en" else "Θέματα άμεσης προτεραιότητας μετά",
+                translate(lang, "High-priority issues after", "Θέματα άμεσης προτεραιότητας μετά"),
                 priority_count,
                 (f"{priority_count - baseline_priority:+d} vs before" if lang == "en" else f"{priority_count - baseline_priority:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
             c3.metric(
-                "Attention issues after" if lang == "en" else "Θέματα που χρειάζονται προσοχή μετά",
+                translate(lang, "Attention issues after", "Θέματα που χρειάζονται προσοχή μετά"),
                 attention_count,
                 (f"{attention_count - baseline_attention:+d} vs before" if lang == "en" else f"{attention_count - baseline_attention:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
 
             if interventions_notes.strip():
-                st.markdown("#### " + ("Interventions implemented" if lang == "en" else "Παρεμβάσεις που εφαρμόστηκαν"))
+                st.markdown("#### " + (translate(lang, "Interventions implemented", "Παρεμβάσεις που εφαρμόστηκαν")))
                 st.write(interventions_notes.strip())
 
             baseline_symptoms = baseline_assessment.get("symptom_details", {}) or {}
             current_symptoms = symptom_details or {}
             all_regions = list(dict.fromkeys(list(baseline_symptoms.keys()) + list(current_symptoms.keys())))
             if all_regions:
-                st.markdown("#### " + ("Change in symptoms" if lang == "en" else "Μεταβολή συμπτωμάτων"))
+                st.markdown("#### " + (translate(lang, "Change in symptoms", "Μεταβολή συμπτωμάτων")))
                 for region in all_regions:
                     before = baseline_symptoms.get(region, {}) or {}
                     after = current_symptoms.get(region, {}) or {}
@@ -1561,11 +1455,11 @@ with tabs[7]:
                     change = after_score - before_score
 
                     if change < 0:
-                        change_text = ("improved" if lang == "en" else "βελτίωση")
+                        change_text = (translate(lang, "improved", "βελτίωση"))
                     elif change > 0:
-                        change_text = ("increased symptoms" if lang == "en" else "αύξηση συμπτωμάτων")
+                        change_text = (translate(lang, "increased symptoms", "αύξηση συμπτωμάτων"))
                     else:
-                        change_text = ("no change" if lang == "en" else "χωρίς μεταβολή")
+                        change_text = (translate(lang, "no change", "χωρίς μεταβολή"))
 
                     comparison_text = (
                         f"""**{label}**  
@@ -1583,17 +1477,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
 
             # Compare selected ergonomic indicators with a known direction of improvement.
             harmful_flags = [
-                ("digital_eye_strain", "Digital eye strain" if lang == "en" else "Κόπωση ματιών από τη χρήση οθόνης"),
-                ("high_repetition", "High hand/wrist repetition" if lang == "en" else "Υψηλή επανάληψη κινήσεων χεριού/καρπού"),
-                ("hand_force", "Forceful hand/finger exertion" if lang == "en" else "Έντονη άσκηση δύναμης με χέρι/δάκτυλα"),
-                ("forearm_rotation", "Forearm rotation exposure" if lang == "en" else "Παρατεταμένη/επαναλαμβανόμενη στροφή αντιβραχίου"),
-                ("arm_elevation", "Sustained arm elevation" if lang == "en" else "Παρατεταμένη ανύψωση βραχίονα"),
-                ("glare", "Glare/reflections" if lang == "en" else "Θάμβωση/αντανακλάσεις"),
+                ("digital_eye_strain", translate(lang, "Digital eye strain", "Κόπωση ματιών από τη χρήση οθόνης")),
+                ("high_repetition", translate(lang, "High hand/wrist repetition", "Υψηλή επανάληψη κινήσεων χεριού/καρπού")),
+                ("hand_force", translate(lang, "Forceful hand/finger exertion", "Έντονη άσκηση δύναμης με χέρι/δάκτυλα")),
+                ("forearm_rotation", translate(lang, "Forearm rotation exposure", "Παρατεταμένη/επαναλαμβανόμενη στροφή αντιβραχίου")),
+                ("arm_elevation", translate(lang, "Sustained arm elevation", "Παρατεταμένη ανύψωση βραχίονα")),
+                ("glare", translate(lang, "Glare/reflections", "Θάμβωση/αντανακλάσεις")),
             ]
             beneficial_flags = [
-                ("active_breaks", "Active breaks / postural changes" if lang == "en" else "Ενεργά διαλείμματα / αλλαγές στάσης"),
-                ("keyboard_close", "Keyboard/mouse close to the body" if lang == "en" else "Πληκτρολόγιο/ποντίκι κοντά στο σώμα"),
-                ("forearm_support", "Forearm support" if lang == "en" else "Στήριξη αντιβραχίων"),
+                ("active_breaks", translate(lang, "Active breaks / postural changes", "Ενεργά διαλείμματα / αλλαγές στάσης")),
+                ("keyboard_close", translate(lang, "Keyboard/mouse close to the body", "Πληκτρολόγιο/ποντίκι κοντά στο σώμα")),
+                ("forearm_support", translate(lang, "Forearm support", "Στήριξη αντιβραχίων")),
             ]
 
             improvements = []
@@ -1648,20 +1542,20 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                     else f"{current_posture_issues} ευρήματα στάσης"
                 )
 
-            st.markdown("#### " + ("Observed improvements" if lang == "en" else "Βελτιώσεις που καταγράφηκαν"))
+            st.markdown("#### " + (translate(lang, "Observed improvements", "Βελτιώσεις που καταγράφηκαν")))
             if improvements:
                 for item in dict.fromkeys(improvements):
                     st.markdown(f"- ✅ {item}")
             else:
-                st.caption("No clear improvement was identified in the selected comparison indicators." if lang == "en" else "Δεν εντοπίστηκε σαφής βελτίωση στους συγκεκριμένους δείκτες σύγκρισης.")
+                st.caption(translate(lang, "No clear improvement was identified in the selected comparison indicators.", "Δεν εντοπίστηκε σαφής βελτίωση στους συγκεκριμένους δείκτες σύγκρισης."))
 
             if new_issues:
-                st.markdown("#### " + ("New issues identified" if lang == "en" else "Νέα ζητήματα που εντοπίστηκαν"))
+                st.markdown("#### " + (translate(lang, "New issues identified", "Νέα ζητήματα που εντοπίστηκαν")))
                 for item in dict.fromkeys(new_issues):
                     st.markdown(f"- 🆕 {item}")
 
             if remaining:
-                st.markdown("#### " + ("Issues still requiring attention" if lang == "en" else "Ζητήματα που εξακολουθούν να χρειάζονται προσοχή"))
+                st.markdown("#### " + (translate(lang, "Issues still requiring attention", "Ζητήματα που εξακολουθούν να χρειάζονται προσοχή")))
                 for item in dict.fromkeys(remaining):
                     st.markdown(f"- ⚠️ {item}")
 
@@ -1680,9 +1574,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             }
 
             st.info(
-                "A follow-up assessment is most useful when it is performed after the agreed measures have had enough time to be implemented and used in normal work."
-                if lang == "en"
-                else "Η επανεκτίμηση έχει μεγαλύτερη αξία όταν γίνεται αφού τα συμφωνημένα μέτρα έχουν εφαρμοστεί και έχουν χρησιμοποιηθεί για επαρκές διάστημα στην κανονική εργασία."
+                translate(lang, "A follow-up assessment is most useful when it is performed after the agreed measures have had enough time to be implemented and used in normal work.", "Η επανεκτίμηση έχει μεγαλύτερη αξία όταν γίνεται αφού τα συμφωνημένα μέτρα έχουν εφαρμοστεί και έχουν χρησιμοποιηθεί για επαρκές διάστημα στην κανονική εργασία.")
             )
 
     report_payload = {
@@ -1697,7 +1589,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
     report_json = json.dumps(report_payload, ensure_ascii=False, indent=2)
 
     st.divider()
-    st.markdown("### " + ("Save assessment" if lang == "en" else "Αποθήκευση αξιολόγησης"))
+    st.markdown("### " + (translate(lang, "Save assessment", "Αποθήκευση αξιολόγησης")))
 
     if sheets_ready:
         st.caption(
@@ -1714,13 +1606,11 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             )
         )
         consent = st.checkbox(
-            "I confirm that I am authorised to store these assessment data."
-            if lang == "en"
-            else "Επιβεβαιώνω ότι έχω την κατάλληλη εξουσιοδότηση για την αποθήκευση αυτών των δεδομένων αξιολόγησης.",
+            translate(lang, "I confirm that I am authorised to store these assessment data.", "Επιβεβαιώνω ότι έχω την κατάλληλη εξουσιοδότηση για την αποθήκευση αυτών των δεδομένων αξιολόγησης."),
             key="sheets_storage_consent",
         )
         if st.button(
-            "Save to Google Sheets" if lang == "en" else "Αποθήκευση στο Google Sheets",
+            translate(lang, "Save to Google Sheets", "Αποθήκευση στο Google Sheets"),
             type="primary",
             disabled=(not consent or not subject_id.strip()),
             key="save_to_google_sheets",
@@ -1749,12 +1639,10 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                 st.error(msg)
     else:
         st.warning(
-            "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving."
-            if lang == "en"
-            else "Το Google Sheet και η γέφυρα Apps Script είναι έτοιμα. Πρόσθεσε το Web App URL και το token στα Streamlit Secrets για να ενεργοποιηθεί η αυτόματη αποθήκευση."
+            translate(lang, "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving.", "Το Google Sheet και η γέφυρα Apps Script είναι έτοιμα. Πρόσθεσε το Web App URL και το token στα Streamlit Secrets για να ενεργοποιηθεί η αυτόματη αποθήκευση.")
         )
 
-    with st.expander("Backup / export" if lang == "en" else "Αντίγραφο ασφαλείας / εξαγωγή", expanded=False):
+    with st.expander(translate(lang, "Backup / export", "Αντίγραφο ασφαλείας / εξαγωγή"), expanded=False):
         st.download_button(
             t["download_json"],
             data=report_json.encode("utf-8"),
@@ -1765,7 +1653,5 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
 
 st.divider()
 st.caption(
-    "ErgoFit Intelligence v2 · Scientific architecture: evidence registry + separate exposure/symptom/intervention domains · Alpha build"
-    if lang == "en"
-    else "ErgoFit Intelligence v2 · Επιστημονική αρχιτεκτονική: μητρώο τεκμηρίωσης + ξεχωριστοί τομείς έκθεσης/συμπτωμάτων/παρεμβάσεων · Έκδοση alpha"
+    translate(lang, "ErgoFit Intelligence v2 · Scientific architecture: evidence registry + separate exposure/symptom/intervention domains · Alpha build", "ErgoFit Intelligence v2 · Επιστημονική αρχιτεκτονική: μητρώο τεκμηρίωσης + ξεχωριστοί τομείς έκθεσης/συμπτωμάτων/παρεμβάσεων · Έκδοση alpha")
 )
