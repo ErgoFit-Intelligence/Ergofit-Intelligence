@@ -1518,6 +1518,7 @@ with tabs[8]:
 
             baseline_symptoms = baseline_assessment.get("symptom_details", {}) or {}
             current_symptoms = symptom_details or {}
+            symptom_changes = []
             all_regions = list(dict.fromkeys(list(baseline_symptoms.keys()) + list(current_symptoms.keys())))
             if all_regions:
                 st.markdown("#### " + (translate(lang, "Change in symptoms", "Μεταβολή συμπτωμάτων")))
@@ -1561,6 +1562,20 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
 Επίδραση στην εργασία: {'Ναι' if before_work else 'Όχι'} → {'Ναι' if after_work else 'Όχι'}"""
                     )
                     st.markdown(comparison_text)
+                    symptom_changes.append({
+                        "region": region,
+                        "label": label,
+                        "before_score": before_score,
+                        "after_score": after_score,
+                        "change": change,
+                        "change_text": change_text,
+                        "before_duration": before.get("duration", "not_recorded"),
+                        "after_duration": after.get("duration", "not_recorded"),
+                        "before_frequency": before.get("frequency", "not_recorded"),
+                        "after_frequency": after.get("frequency", "not_recorded"),
+                        "before_work_impact": before_work,
+                        "after_work_impact": after_work,
+                    })
 
             # Compare selected ergonomic indicators with a known direction of improvement.
             harmful_flags = [
@@ -1663,6 +1678,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                 "baseline_attention_findings": baseline_attention,
                 "followup_attention_findings": attention_count,
                 "interventions_notes": interventions_notes,
+                "symptom_changes": symptom_changes,
                 "improvements": list(dict.fromkeys(improvements)),
                 "new_issues": list(dict.fromkeys(new_issues)),
                 "remaining_issues": list(dict.fromkeys(remaining)),
