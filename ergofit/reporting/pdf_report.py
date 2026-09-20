@@ -179,8 +179,13 @@ def _region_action(region: str, item: dict[str, Any], ctx: dict[str, Any], lang:
         or item.get("previous_episode") is True
         or item.get("frequency") == "daily"
     )
-    no_specific = _t(lang, "No specific", "Δεν εντοπίστηκε", "Ni ugotovljeno")
-    exposure_present = not _region_exposure(region, ctx, lang).startswith(no_specific)
+    no_factor = _t(
+        lang,
+        "No specific ergonomic factor identified",
+        "Δεν εντοπίστηκε ειδικός εργονομικός παράγοντας",
+        "Ni ugotovljenega specifičnega ergonomskega dejavnika",
+    )
+    exposure_present = _region_exposure(region, ctx, lang) != no_factor
 
     if has_symptom and (work_impact or persistent_or_recurrent):
         return _t(
