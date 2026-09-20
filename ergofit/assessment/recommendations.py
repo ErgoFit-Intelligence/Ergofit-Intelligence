@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from ergofit.slovenian import translate
 from ergofit.models import Finding, Recommendation
 
 
 def build_recommendations(ctx: dict, findings: list[Finding], lang: str = "en") -> list[Recommendation]:
     recs: list[Recommendation] = []
-    tr = lambda en, el: en if lang == "en" else el
+    tr = lambda en, el: translate(lang, en, el)
     titles = {f.title for f in findings}
     regions = set(ctx.get("symptom_regions", []))
 
