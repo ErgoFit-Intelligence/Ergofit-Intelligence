@@ -319,6 +319,120 @@ NOTES_EL = {
     "channak_2022_chairs": "Η σωστή προσαρμογή της καρέκλας παραμένει εργονομικός στόχος, αλλά η αντικατάσταση καρέκλας από μόνη της δεν αποτελεί τεκμηριωμένη θεραπεία πόνου.",
 }
 
+
+POPULATION_SL = {
+    "rijal_2026_cans_4h": "Redni uporabniki računalnika; prospektivne kohorte s spremljanjem ≥1 leto",
+    "dzakpasu_2021_lbp_sitting": "Zaposleni in splošna odrasla populacija; skupaj 79 raziskav",
+    "dzakpasu_2021_neck_shoulder_sitting": "Zaposleni in splošna odrasla populacija; poklicna podskupina",
+    "mahdavi_2022_lbp_sitting": "Odrasli; 49 opazovalnih raziskav v pregledu, 27 v meta-analizi",
+    "jun_2017_neck_office": "Pisarniški zaposleni; prospektivne kohorte in randomizirane intervencije",
+    "hassan_2022_cts_repetition": "17 poklicnih kohort; 1.051.707 zaposlenih in 9.270 primerov sindroma karpalnega kanala",
+    "hassan_2022_cts_force": "Poklicne kohorte s klinično ocenjenim sindromom karpalnega kanala",
+    "hassan_2022_cts_hal": "Poklicne kohorte s klinično ocenjenim sindromom karpalnega kanala",
+    "hassan_2022_cts_si": "Poklicne kohorte s klinično ocenjenim sindromom karpalnega kanala",
+    "bretschneider_2022_le_si": "5 prospektivnih raziskav; 5.036 zaposlenih in 318 klinično ocenjenih primerov lateralnega epikondilitisa",
+    "bretschneider_2022_le_rotation": "5 prospektivnih raziskav; 5.036 zaposlenih in 318 klinično ocenjenih primerov lateralnega epikondilitisa",
+    "jahn_2023_lbp_posture": "Zaposleni iz različnih poklicev; kohortne in študije primerov s kontrolami",
+    "shoulder_arm_elevation": "Evropske poklicne populacije, predvsem fizično ali mešano delo",
+    "shiri_2015_cts_bmi_overweight": "1.379.372 oseb, predvsem iz zahodnih/evropskih splošnih populacij",
+    "shiri_2015_cts_bmi_obese": "1.379.372 oseb, predvsem iz zahodnih/evropskih splošnih populacij",
+    "hoe_2018_arm_support_mouse": "15 randomiziranih raziskav, skupaj 2.165 pisarniških zaposlenih",
+    "waongenngarm_2018_breaks": "8 randomiziranih in 3 nerandomizirane raziskave pri pisarniških zaposlenih",
+    "eisele_2023_back_multicomponent": "24 randomiziranih/klastersko randomiziranih raziskav, 7.080 pisarniških zaposlenih",
+    "yaghoubitajani_2026_microexercise": "19 randomiziranih raziskav, 2.732 sedečih zaposlenih",
+    "runge_2024_sleep_msk": "16 objav iz 11 populacij, 116.746 odraslih; ne specifično pisarniški zaposleni",
+    "channak_2022_chairs": "14 raziskav, večinoma pri sedečem delu, z različnimi zasnovami",
+}
+
+STUDY_TYPE_SL = {
+    "Systematic review and meta-analysis of prospective cohorts": "Sistematični pregled in meta-analiza prospektivnih kohort",
+    "Systematic review and meta-analysis": "Sistematični pregled in meta-analiza",
+    "Systematic review of prospective office-worker evidence": "Sistematični pregled prospektivnih dokazov pri pisarniških zaposlenih",
+    "Systematic review/meta-analysis of prospective cohorts": "Sistematični pregled/meta-analiza prospektivnih kohort",
+    "Systematic review of prospective studies": "Sistematični pregled prospektivnih raziskav",
+    "Systematic review and meta-analysis of occupational studies": "Sistematični pregled in meta-analiza poklicnih raziskav",
+    "Meta-analysis of 58 studies": "Meta-analiza 58 raziskav",
+    "Cochrane review of office-worker RCTs": "Cochrane pregled randomiziranih raziskav pri pisarniških zaposlenih",
+    "Systematic review of controlled office-worker trials": "Sistematični pregled kontroliranih raziskav pri pisarniških zaposlenih",
+    "Systematic review and network meta-analysis of office-worker RCTs": "Sistematični pregled in mrežna meta-analiza randomiziranih raziskav pri pisarniških zaposlenih",
+    "Systematic review/meta-analysis of RCTs": "Sistematični pregled/meta-analiza randomiziranih raziskav",
+    "Systematic review/meta-analysis of prospective adult cohorts": "Sistematični pregled/meta-analiza prospektivnih kohort odraslih",
+    "Systematic review": "Sistematični pregled",
+}
+
+TEMPORAL_SL = {
+    "Prospective": "Prospektivna zasnova",
+    "Predominantly cross-sectional for this pooled estimate": "Za to združeno oceno pretežno presečni podatki",
+    "Mostly cross-sectional": "Večinoma presečna zasnova",
+    "Longitudinal/case-control synthesis": "Sinteza longitudinalnih raziskav in raziskav primerov s kontrolami",
+    "Prospective/case-control": "Prospektivne raziskave in raziskave primerov s kontrolami",
+    "Mixed designs": "Mešane zasnove",
+    "Randomized intervention": "Randomizirana intervencija",
+    "Intervention": "Intervencijske raziskave",
+    "Mixed intervention/observational": "Mešane intervencijske in opazovalne raziskave",
+}
+
+CERTAINTY_SL = {
+    "Moderate": "Zmerna",
+    "Low for causal inference": "Nizka za sklepanje o vzročnosti",
+    "Mixed / factor-specific": "Mešana; odvisna od dejavnika",
+    "High GRADE": "Visoka po GRADE",
+    "High-quality evidence": "Dokazi visoke kakovosti",
+    "Moderate-quality evidence": "Dokazi zmerne kakovosti",
+    "Moderate GRADE": "Zmerna po GRADE",
+    "Strong association; not office-specific": "Močna povezava; ni specifična za pisarniško delo",
+    "Moderate for selected comparison; overall evidence limitations": "Zmerna za izbrano primerjavo; skupni dokazi imajo omejitve",
+    "Moderate for active breaks/postural change and no productivity harm": "Zmerna za aktivne odmore/spremembe drže brez jasnega škodljivega vpliva na produktivnost",
+    "Mostly low/very low": "Večinoma nizka ali zelo nizka",
+    "Moderate GRADE for combined neck/shoulder pain": "Zmerna po GRADE za kombinirano bolečino v vratu/ramenih",
+    "Variable by analysis": "Različna glede na analizo",
+    "Very low to low GRADE": "Zelo nizka do nizka po GRADE",
+}
+
+APPLICABILITY_SL = {
+    "Direct for computer-worker CANS; not specific for CTS or isolated neck pain": "Neposredna za splošne težave vratu/ramen/zgornjih udov pri uporabnikih računalnika; ni specifična za sindrom karpalnega kanala ali izolirano bolečino v vratu",
+    "Partially direct; occupational pooled estimate is mainly cross-sectional": "Delno neposredna; poklicna združena ocena temelji predvsem na presečnih podatkih",
+    "Partially direct; pooled occupational association is mainly cross-sectional": "Delno neposredna; združena poklicna povezava temelji predvsem na presečnih podatkih",
+    "Partially direct; office-worker subgroup effect was smaller": "Delno neposredna; učinek v podskupini pisarniških zaposlenih je bil manjši",
+    "Direct": "Neposredna",
+    "Indirect for ordinary desk work unless true high-repetition exposure is present": "Posredna za običajno pisarniško delo, razen ob dejanski visoki ponavljajočnosti",
+    "Indirect for ordinary desk work; relevant only if meaningful force exposure exists": "Posredna za običajno pisarniško delo; relevantna le ob pomembni izpostavljenosti sili",
+    "Indirect unless task exposure matches high HAL": "Posredna, razen če izpostavljenost pri nalogi ustreza visokemu HAL",
+    "Indirect unless task is appropriate for Strain Index assessment": "Posredna, razen če je naloga primerna za oceno s Strain Index",
+    "Indirect unless task exposure is appropriate for Strain Index": "Posredna, razen če je izpostavljenost primerna za oceno s Strain Index",
+    "Indirect; only if substantial forearm-rotation exposure is actually present": "Posredna; relevantna le ob dejansko pomembni rotaciji podlakti",
+    "Indirect; mostly not office-specific": "Posredna; večina raziskav ni specifična za pisarniško delo",
+    "Indirect for typical office work": "Posredna za tipično pisarniško delo",
+    "Indirect/general susceptibility factor": "Posredna; splošni dejavnik dovzetnosti, ne izpostavljenost delovnega mesta",
+    "High; sedentary-worker population, though not exclusively office workers": "Visoka; populacija sedečih zaposlenih, čeprav ne izključno pisarniških",
+    "Indirect contextual/prognostic evidence": "Posredna; kontekstualni/prognostični dokazi",
+    "Direct/mostly seated-work context": "Neposredna oziroma pretežno relevantna za sedeče delo",
+}
+
+NOTES_SL = {
+    "rijal_2026_cans_4h": "Uporablja se kot splošni kazalnik izpostavljenosti za vrat in zgornji ud, ne kot koeficient za napoved sindroma karpalnega kanala.",
+    "dzakpasu_2021_lbp_sitting": "Združena ocena ne potrjuje univerzalnega vzročnega praga ≥6 ur sedečega dela.",
+    "dzakpasu_2021_neck_shoulder_sitting": "Gre za povezavo, ne za individualno napoved bolezni.",
+    "mahdavi_2022_lbp_sitting": "Sedeča izpostavljenost se uporablja kot spremenljiv kontekst, ne kot validiran prag bolezni.",
+    "jun_2017_neck_office": "Poročali so o povezavah z nizkim zadovoljstvom pri delu, majhno raznolikostjo nalog in nekaterimi položaji tipkovnice; za številne druge dejavnike so bili rezultati omejeni ali nasprotujoči.",
+    "hassan_2022_cts_repetition": "Potrebna je dejanska ocena mehanske izpostavljenosti; ur uporabe računalnika ni primerno uporabljati kot nadomestek.",
+    "hassan_2022_cts_force": "Heterogenost te analize je bila zelo nizka.",
+    "hassan_2022_cts_hal": "Heterogenost te analize je bila zelo nizka.",
+    "hassan_2022_cts_si": "Heterogenost te analize je bila nizka.",
+    "bretschneider_2022_le_si": "Primerneje je ocenjevati dejansko mehansko izpostavljenost kot uporabljati samo ure uporabe miške.",
+    "bretschneider_2022_le_rotation": "Pregled je opisal pomembno izpostavljenost, kot so dolga obdobja rotacije podlakti ali veliki koti v pomembnem delu delovnega časa.",
+    "jahn_2023_lbp_posture": "Posameznega opaženega kota telesa ni primerno pretvarjati v ta kazalnik povezave.",
+    "shoulder_arm_elevation": "Uporablja se le ob dejanski izpostavljenosti dvignjeni roki.",
+    "shiri_2015_cts_bmi_overweight": "Gre za splošni dejavnik dovzetnosti in ne za ergonomsko izpostavljenost.",
+    "shiri_2015_cts_bmi_obese": "Gre za splošni dejavnik dovzetnosti in ne za ergonomsko izpostavljenost.",
+    "hoe_2018_arm_support_mouse": "Rezultat velja za specifično kombinacijo ukrepov in se ne posplošuje na vso ergonomsko opremo.",
+    "waongenngarm_2018_breaks": "Dokazi ne določajo enega idealnega intervala odmora za vse.",
+    "eisele_2023_back_multicomponent": "Podpira manjšo korist večkomponentnih pristopov; številne posamezne primerjave so pokazale majhen ali nejasen učinek.",
+    "yaghoubitajani_2026_microexercise": "Za izolirano bolečino v vratu je bila med raziskavami velika variabilnost.",
+    "runge_2024_sleep_msk": "Povezava je verjetno dvosmerna in ne validira številčne »zaščitne« ocene glede na število ur spanja.",
+    "channak_2022_chairs": "Ustrezna prilagoditev stola ostaja ergonomski cilj, vendar sama zamenjava stola ni dokazano zdravljenje bolečine.",
+}
+
 def group_evidence_by_region(items: list[EvidenceItem], lang: str = "en") -> list[tuple[str, list[EvidenceItem]]]:
     grouped: dict[str, list[EvidenceItem]] = {key: [] for key in EVIDENCE_REGION_ORDER}
     for item in items:
@@ -433,15 +547,22 @@ def evidence_card(e: EvidenceItem, lang: str = "en") -> None:
                 st.markdown(f"**Σημαντική διευκρίνιση:** {notes}")
             st.markdown(f"**Πηγή:** [{e.source_label}]({e.source_url})")
         elif lang == "sl":
+            population = POPULATION_SL.get(e.id, e.population)
+            study_type = STUDY_TYPE_SL.get(e.study_type, e.study_type)
+            temporal = TEMPORAL_SL.get(e.temporal_design, e.temporal_design)
+            certainty = CERTAINTY_SL.get(e.certainty, e.certainty)
+            applicability = APPLICABILITY_SL.get(e.office_applicability, e.office_applicability)
+            notes = NOTES_SL.get(e.id, e.notes)
+
             st.markdown(f"**Statistični rezultat:** {_technical_effect(e, lang)}")
             st.caption("To je ocena na ravni skupine in ne individualna verjetnost za tega zaposlenega.")
-            st.markdown(f"**Populacija:** {e.population}")
-            st.markdown(f"**Zasnova raziskave:** {e.study_type}")
-            st.markdown(f"**Časovna zasnova:** {e.temporal_design}")
-            st.markdown(f"**Gotovost dokazov:** {e.certainty}")
-            st.markdown(f"**Uporabnost za pisarniške zaposlene:** {e.office_applicability}")
-            if e.notes:
-                st.markdown(f"**Pomembna opomba:** {e.notes}")
+            st.markdown(f"**Populacija:** {population}")
+            st.markdown(f"**Zasnova raziskave:** {study_type}")
+            st.markdown(f"**Časovna zasnova:** {temporal}")
+            st.markdown(f"**Gotovost dokazov:** {certainty}")
+            st.markdown(f"**Uporabnost za pisarniške zaposlene:** {applicability}")
+            if notes:
+                st.markdown(f"**Pomembna opomba:** {notes}")
             st.markdown(f"**Vir:** [{e.source_label}]({e.source_url})")
         else:
             st.markdown(f"**Statistical result:** {_technical_effect(e, lang)}")
