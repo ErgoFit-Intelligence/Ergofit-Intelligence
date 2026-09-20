@@ -41,6 +41,21 @@ SL_TEXT = {
     "I confirm that I am authorised to store these assessment data.": "Potrjujem, da sem pooblaščen/-a za shranjevanje teh podatkov ocene.",
     "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving.": "Google Sheet in povezava Apps Script sta pripravljena. Za samodejno shranjevanje dodaj URL spletne aplikacije in žeton v Streamlit Secrets.",
 
+    "Google Sheets automatic connection is not active in the deployed app yet. Until it is activated, the 1st assessment can be loaded from its JSON backup.": "Samodejna povezava z Google Sheets v objavljeni aplikaciji še ni aktivna. Do aktivacije lahko prvo oceno naložiš iz varnostne kopije JSON.",
+    "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance.": "Slovenska različica uporablja terminologijo, usklajeno z evropskimi ergonomskimi načeli za delo z zasloni in standardi EN/ISO; lokalne zakonske zahteve je treba preveriti ločeno.",
+    "0 = not measured. OSHA uses 90–120° as a neutral reference.": "0 = ni izmerjeno. Kot 90–120° se uporablja kot orientacijska nevtralna referenca, ne kot univerzalni klinični prag.",
+    "The visual worksheet shown below is the TuMeke rendition based on ROSA.": "Spodnji vizualni obrazec je prikaz ROSA po različici TuMeke.",
+    "Upload the initial assessment JSON in the Worker tab to generate the before/after comparison.": "Za primerjavo pred/po naloži JSON prve ocene v razdelku zaposlenega.",
+    "Working posture changes regularly; prolonged static sitting is avoided.": "Delovna drža se redno spreminja; dolgotrajnemu statičnemu sedenju se izogiba.",
+    "The back is supported and the trunk is not held for prolonged periods in a markedly bent or twisted posture.": "Hrbet je podprt in trup ni dalj časa v izrazito upognjenem ali zasukanem položaju.",
+    "Shoulders are relaxed and not elevated.": "Ramena so sproščena in niso dvignjena.",
+    "Elbows remain close to the body.": "Komolci ostajajo blizu telesa.",
+    "During keyboard use, elbows are about 90–120°.": "Med uporabo tipkovnice so komolci približno v območju 90–120°.",
+    "Wrists and hands remain straight and in-line with the forearms.": "Zapestja in roke ostajajo v nevtralnem položaju ter poravnani s podlaktmi.",
+    "Forearms are adequately supported without elevating the shoulders.": "Podlakti so ustrezno podprte brez dvigovanja ramen.",
+    "Feet are fully supported on the floor or on a stable footrest.": "Stopala so v celoti podprta na tleh ali na stabilni opori za noge.",
+    "There is adequate clearance for the thighs, knees, legs and feet.": "Na voljo je dovolj prostora za stegna, kolena, goleni in stopala.",
+
     # Symptom history / functional impact
     "<1 week": "<1 teden",
     "1–6 weeks": "1–6 tednov",
