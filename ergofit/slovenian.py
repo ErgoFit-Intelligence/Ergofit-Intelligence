@@ -36,6 +36,8 @@ SL_TEXT = {
     "Issues needing attention": "Težave, ki zahtevajo pozornost",
     "Symptomatic regions": "Območja s simptomi",
     "Save assessment": "Shrani oceno",
+    "Individual assessment report": "Individualno poročilo ocene",
+    "Photos are optional. If added, they will appear in the individual PDF report with their comments.": "Fotografije niso obvezne. Če jih dodaš, bodo skupaj s komentarji vključene v individualno PDF poročilo.",
     "Save to Google Sheets": "Shrani v Google Sheets",
     "Backup / export": "Varnostna kopija / izvoz",
     "I confirm that I am authorised to store these assessment data.": "Potrjujem, da sem pooblaščen/-a za shranjevanje teh podatkov ocene.",
