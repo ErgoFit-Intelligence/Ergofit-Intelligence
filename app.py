@@ -276,7 +276,9 @@ height = p1.number_input(t["height"], min_value=140.0, max_value=210.0, value=17
 weight = p2.number_input(t["weight"], min_value=40.0, max_value=200.0, value=75.0, step=0.5, key="client_weight")
 bmi_value = bmi(weight, height)
 st.caption(
-    f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
+    f"ITM: {bmi_value:.1f} kg/m² — prikazan kot zdravstveni kontekst, ne kot ergonomska ocena."
+    if lang == "sl"
+    else f"BMI: {bmi_value:.1f} kg/m² — shown as health context, not as an ergonomic score."
     if lang == "en"
     else f"ΔΜΣ: {bmi_value:.1f} kg/m² — εμφανίζεται ως στοιχείο υγείας και όχι ως εργονομική βαθμολογία."
 )
@@ -287,10 +289,9 @@ assessment_stage = st.radio(
     translate(lang, "Choose assessment", "Επίλεξε αξιολόγηση"),
     ["baseline", "followup"],
     format_func=lambda x: (
-        "1st Assessment" if x == "baseline" and lang == "en"
-        else "2nd Assessment / Reassessment" if x == "followup" and lang == "en"
-        else "1η Αξιολόγηση" if x == "baseline"
-        else "2η Αξιολόγηση / Επαναξιολόγηση"
+        translate(lang, "1st Assessment", "1η Αξιολόγηση")
+        if x == "baseline"
+        else translate(lang, "2nd Assessment / Reassessment", "2η Αξιολόγηση / Επαναξιολόγηση")
     ),
     horizontal=True,
     key="assessment_stage",
@@ -318,7 +319,9 @@ if assessment_stage == "followup":
             except Exception as exc:
                 previous = []
                 st.error(
-                    f"Could not read Google Sheets: {exc}"
+                    f"Google Sheets ni bilo mogoče prebrati: {exc}"
+                    if lang == "sl"
+                    else f"Could not read Google Sheets: {exc}"
                     if lang == "en"
                     else f"Δεν ήταν δυνατή η ανάγνωση του Google Sheets: {exc}"
                 )
@@ -346,7 +349,9 @@ if assessment_stage == "followup":
                 except Exception as exc:
                     baseline_report = None
                     st.error(
-                        f"Could not load the selected assessment: {exc}"
+                        f"Izbrane ocene ni bilo mogoče naložiti: {exc}"
+                        if lang == "sl"
+                        else f"Could not load the selected assessment: {exc}"
                         if lang == "en"
                         else f"Δεν ήταν δυνατή η φόρτωση της επιλεγμένης αξιολόγησης: {exc}"
                     )
@@ -400,10 +405,9 @@ if assessment_stage == "followup":
     )
 
 stage_heading = (
-    "1st Assessment" if assessment_stage == "baseline" and lang == "en"
-    else "2nd Assessment / Reassessment" if assessment_stage == "followup" and lang == "en"
-    else "1η Αξιολόγηση" if assessment_stage == "baseline"
-    else "2η Αξιολόγηση / Επαναξιολόγηση"
+    translate(lang, "1st Assessment", "1η Αξιολόγηση")
+    if assessment_stage == "baseline"
+    else translate(lang, "2nd Assessment / Reassessment", "2η Αξιολόγηση / Επαναξιολόγηση")
 )
 st.markdown(f"### {stage_heading}")
 st.caption(
@@ -438,7 +442,11 @@ with tabs[0]:
     anthro = reference_from_stature(height, sex, pop_direct, elbow_direct, eye_direct)
     st.markdown("#### " + (translate(lang, "Body-fit references", "Σωματομετρικές τιμές αναφοράς")))
     a1, a2, a3 = st.columns(3)
-    _src = lambda s: s if lang == "en" else ("άμεση μέτρηση" if s == "direct" else "εκτίμηση")
+    _src = lambda s: (
+        s if lang == "en"
+        else ("neposredna meritev" if s == "direct" else "ocena") if lang == "sl"
+        else ("άμεση μέτρηση" if s == "direct" else "εκτίμηση")
+    )
     a1.metric(translate(lang, "Popliteal height", "Ύψος πίσω από το γόνατο"), f"{anthro.popliteal_cm:.1f} cm", _src(anthro.source_popliteal))
     a2.metric(translate(lang, "Seated elbow height", "Ύψος αγκώνα από την έδρα"), f"{anthro.seated_elbow_cm:.1f} cm", _src(anthro.source_elbow))
     a3.metric(translate(lang, "Seated eye height", "Ύψος ματιών από την έδρα"), f"{anthro.seated_eye_cm:.1f} cm", _src(anthro.source_eye))
@@ -520,7 +528,7 @@ with tabs[1]:
                 translate(lang, "Previous similar episode?", "Έχει υπάρξει παρόμοιο επεισόδιο στο παρελθόν;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
-                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                    t["yes"] if v else t["no"]
                 ),
                 key=f"previous_episode_{region}",
             )
@@ -528,7 +536,7 @@ with tabs[1]:
                 translate(lang, "Does it interfere with work?", "Επηρεάζει την εργασία;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
-                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                    t["yes"] if v else t["no"]
                 ),
                 key=f"interference_{region}",
             )
@@ -538,7 +546,7 @@ with tabs[1]:
                 translate(lang, "Do you change pace/task/posture because of it?", "Αλλάζεις ρυθμό, εργασία ή στάση εξαιτίας του συμπτώματος;"),
                 [None, True, False],
                 format_func=lambda v: "—" if v is None else (
-                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                    t["yes"] if v else t["no"]
                 ),
                 key=f"work_modification_{region}",
             )
@@ -640,7 +648,11 @@ with tabs[2]:
     r1.metric(
         translate(lang, "Seat/body reference", "Αναφορά ύψους έδρας"),
         f"{anthro.popliteal_cm:.1f} cm",
-        anthro.source_popliteal if lang == "en" else ("άμεση μέτρηση" if anthro.source_popliteal == "direct" else "εκτίμηση")
+        anthro.source_popliteal if lang == "en" else (
+            "neposredna meritev" if anthro.source_popliteal == "direct" else "ocena"
+        ) if lang == "sl" else (
+            "άμεση μέτρηση" if anthro.source_popliteal == "direct" else "εκτίμηση"
+        )
     )
     r2.metric(
         translate(lang, "Work-surface/elbow reference", "Αναφορά επιφάνειας εργασίας / αγκώνα"),
@@ -676,7 +688,11 @@ with tabs[3]:
         ca, cb = st.columns(2)
         for idx, (key, label) in enumerate(CHAIR_FIT_ITEMS):
             with (ca if idx < (len(CHAIR_FIT_ITEMS)+1)//2 else cb):
-                display_label = label if lang == "en" else CHAIR_FIT_LABELS_EL.get(key, label)
+                display_label = (
+                    CHAIR_FIT_LABELS_EL.get(key, label) if lang == "el"
+                    else CHAIR_FIT_LABELS_SL.get(key, label) if lang == "sl"
+                    else label
+                )
                 chair_results[key] = st.checkbox(display_label, value=False, key=f"chair_{key}")
         chair_failed = [key for key, ok in chair_results.items() if not ok]
         st.metric(translate(lang, "Items confirmed", "Κριτήρια που πληρούνται"), f"{len(CHAIR_FIT_ITEMS)-len(chair_failed)} / {len(CHAIR_FIT_ITEMS)}")
@@ -694,7 +710,11 @@ with tabs[3]:
         expanded=False,
     ):
         for k, v in EN1335_TYPE_A_REFERENCE.items():
-            label = k.replace("_", " ") if lang == "en" else EN1335_LABELS_EL.get(k, k)
+            label = (
+                EN1335_LABELS_EL.get(k, k) if lang == "el"
+                else EN1335_LABELS_SL.get(k, k) if lang == "sl"
+                else k.replace("_", " ")
+            )
             st.write(f"- **{label}:** {v}")
         st.caption(
             translate(lang, "Displayed for reference only; the screen above is not a product-certification procedure.", "Οι τιμές εμφανίζονται μόνο ως αναφορά. Η παραπάνω ενότητα δεν αποτελεί διαδικασία πιστοποίησης προϊόντος.")
@@ -768,14 +788,15 @@ with tabs[4]:
 
         posture_results: dict[str, bool | None] = {}
         for key, label_en, label_el in posture_checks:
-            result = yes_no_unknown(label_en if lang == "en" else label_el, f"posture_{key}")
+            display_posture_label = translate(lang, label_en, label_el)
+            result = yes_no_unknown(display_posture_label, f"posture_{key}")
             posture_results[key] = result
             if result is False:
                 posture_out.append({
                     "key": key,
-                    "label": label_en if lang == "en" else label_el,
+                    "label": display_posture_label,
                     "value": "needs_review",
-                    "reference": "ELINYAE" if lang == "el" else "OSHA",
+                    "reference": "ELINYAE" if lang == "el" else ("EU/EN-ISO" if lang == "sl" else "OSHA"),
                 })
 
         dynamic = posture_results.get("dynamic_posture")
@@ -802,7 +823,9 @@ with tabs[4]:
             )
             if elbow_angle_observed > 0:
                 st.caption(
-                    f"Recorded: {elbow_angle_observed}°. This value is documented, not converted into a disease-risk score."
+                    f"Zabeleženo: {elbow_angle_observed}°. Vrednost je dokumentirana in se ne pretvarja v oceno tveganja bolezni."
+                    if lang == "sl"
+                    else f"Recorded: {elbow_angle_observed}°. This value is documented, not converted into a disease-risk score."
                     if lang == "en"
                     else f"Καταγράφηκαν {elbow_angle_observed}°. Η μέτρηση τεκμηριώνεται αλλά δεν μετατρέπεται σε βαθμολογία κινδύνου νόσου."
                 )
@@ -1088,7 +1111,9 @@ with tabs[5]:
         r3.metric(translate(lang, "ROSA final", "Τελικό ROSA"), f"{rosa['final']} / 10")
 
         st.caption(
-            f"Section B: {rosa['section_b']} · Section C: {rosa['section_c']}"
+            f"Razdelek B: {rosa['section_b']} · Razdelek C: {rosa['section_c']}"
+            if lang == "sl"
+            else f"Section B: {rosa['section_b']} · Section C: {rosa['section_c']}"
             if lang == "en"
             else f"Ενότητα B: {rosa['section_b']} · Ενότητα C: {rosa['section_c']}"
         )
@@ -1245,10 +1270,9 @@ with tabs[7]:
 
     subject_display = subject_id.strip() or (translate(lang, "Unidentified worker", "Χωρίς αναγνωριστικό"))
     stage_label = (
-        "1st Assessment" if assessment_stage == "baseline" and lang == "en"
-        else "2nd Assessment / Reassessment" if assessment_stage == "followup" and lang == "en"
-        else "1η Αξιολόγηση" if assessment_stage == "baseline"
-        else "2η Αξιολόγηση / Επαναξιολόγηση"
+        translate(lang, "1st Assessment", "1η Αξιολόγηση")
+        if assessment_stage == "baseline"
+        else translate(lang, "2nd Assessment / Reassessment", "2η Αξιολόγηση / Επαναξιολόγηση")
     )
 
     st.markdown(
@@ -1314,7 +1338,13 @@ with tabs[7]:
             if work_modification is True:
                 work_bits.append(translate(lang, "task/pace modified", "αλλαγή ρυθμού/εργασίας"))
             if absence_days > 0:
-                work_bits.append(f"{absence_days} absence day(s)/4 weeks" if lang == "en" else f"{absence_days} ημέρες απουσίας/4 εβδομάδες")
+                work_bits.append(
+                    f"{absence_days} dni odsotnosti/4 tedne"
+                    if lang == "sl"
+                    else f"{absence_days} absence day(s)/4 weeks"
+                    if lang == "en"
+                    else f"{absence_days} ημέρες απουσίας/4 εβδομάδες"
+                )
 
             symptom_text = f"{severity}/10"
             if duration != "—":
@@ -1415,19 +1445,19 @@ with tabs[7]:
             c1.metric(
                 translate(lang, "ROSA after", "ROSA μετά"),
                 f"{rosa['final']} / 10",
-                (f"{rosa['final'] - baseline_rosa:+d} vs before" if lang == "en" else f"{rosa['final'] - baseline_rosa:+d} σε σχέση με πριν"),
+                (f"{rosa['final'] - baseline_rosa:+d} vs before" if lang == "en" else f"{rosa['final'] - baseline_rosa:+d} glede na prej" if lang == "sl" else f"{rosa['final'] - baseline_rosa:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
             c2.metric(
                 translate(lang, "High-priority issues after", "Θέματα άμεσης προτεραιότητας μετά"),
                 priority_count,
-                (f"{priority_count - baseline_priority:+d} vs before" if lang == "en" else f"{priority_count - baseline_priority:+d} σε σχέση με πριν"),
+                (f"{priority_count - baseline_priority:+d} vs before" if lang == "en" else f"{priority_count - baseline_priority:+d} glede na prej" if lang == "sl" else f"{priority_count - baseline_priority:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
             c3.metric(
                 translate(lang, "Attention issues after", "Θέματα που χρειάζονται προσοχή μετά"),
                 attention_count,
-                (f"{attention_count - baseline_attention:+d} vs before" if lang == "en" else f"{attention_count - baseline_attention:+d} σε σχέση με πριν"),
+                (f"{attention_count - baseline_attention:+d} vs before" if lang == "en" else f"{attention_count - baseline_attention:+d} glede na prej" if lang == "sl" else f"{attention_count - baseline_attention:+d} σε σχέση με πριν"),
                 delta_color="inverse",
             )
 
@@ -1462,6 +1492,12 @@ with tabs[7]:
                         change_text = (translate(lang, "no change", "χωρίς μεταβολή"))
 
                     comparison_text = (
+                        f"""**{label}**  
+Prej: {before_score}/10 · Potem: {after_score}/10 · **{change_text}**  
+Trajanje: {before_duration} → {after_duration} · Pogostost: {before_frequency} → {after_frequency}  
+Vpliv na delo: {'Da' if before_work else 'Ne'} → {'Da' if after_work else 'Ne'}"""
+                        if lang == "sl"
+                        else
                         f"""**{label}**  
 Before: {before_score}/10 · After: {after_score}/10 · **{change_text}**  
 Duration: {before_duration} → {after_duration} · Frequency: {before_frequency} → {after_frequency}  
@@ -1516,13 +1552,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             current_chair_issues = len(chair_failed or [])
             if current_chair_issues < baseline_chair_issues:
                 improvements.append(
-                    f"Chair fit/adjustability issues: {baseline_chair_issues} → {current_chair_issues}"
+                    f"Težave s prilagoditvijo/nastavljivostjo stola: {baseline_chair_issues} → {current_chair_issues}"
+                    if lang == "sl"
+                    else f"Chair fit/adjustability issues: {baseline_chair_issues} → {current_chair_issues}"
                     if lang == "en"
                     else f"Ζητήματα προσαρμογής/ρύθμισης καρέκλας: {baseline_chair_issues} → {current_chair_issues}"
                 )
             elif current_chair_issues > 0:
                 remaining.append(
-                    f"{current_chair_issues} chair fit/adjustability issue(s)"
+                    f"{current_chair_issues} težav s prilagoditvijo/nastavljivostjo stola"
+                    if lang == "sl"
+                    else f"{current_chair_issues} chair fit/adjustability issue(s)"
                     if lang == "en"
                     else f"{current_chair_issues} ζητήματα προσαρμογής/ρύθμισης καρέκλας"
                 )
@@ -1531,13 +1571,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             current_posture_issues = len(posture_out or [])
             if current_posture_issues < baseline_posture_issues:
                 improvements.append(
-                    f"Posture findings: {baseline_posture_issues} → {current_posture_issues}"
+                    f"Ugotovitve glede drže: {baseline_posture_issues} → {current_posture_issues}"
+                    if lang == "sl"
+                    else f"Posture findings: {baseline_posture_issues} → {current_posture_issues}"
                     if lang == "en"
                     else f"Ευρήματα στάσης: {baseline_posture_issues} → {current_posture_issues}"
                 )
             elif current_posture_issues > 0:
                 remaining.append(
-                    f"{current_posture_issues} posture finding(s)"
+                    f"{current_posture_issues} ugotovitev glede drže"
+                    if lang == "sl"
+                    else f"{current_posture_issues} posture finding(s)"
                     if lang == "en"
                     else f"{current_posture_issues} ευρήματα στάσης"
                 )
@@ -1594,6 +1638,12 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
     if sheets_ready:
         st.caption(
             (
+                "Prva ocena bo ustvarila zapis stranke in prvo vrstico bloka Pred/Po v Google Sheets."
+                if assessment_stage == "baseline"
+                else "Druga ocena bo povezana z isto stranko, izpolnila drugo vrstico in samodejno izračunala tretjo vrstico z razlikami."
+            )
+            if lang == "sl"
+            else (
                 "The 1st assessment will create the client record and the first line of the before/after block in Google Sheets."
                 if assessment_stage == "baseline"
                 else "The 2nd assessment will be linked to the same client, fill the second line and automatically calculate the third difference line."
@@ -1624,6 +1674,12 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                 st.session_state["last_saved_assessment_id"] = saved_id
                 st.success(
                     (
+                        f"Uspešno shranjeno · {saved_id}. Stranka in 1. ocena sta bili dodani v Google Sheets."
+                        if assessment_stage == "baseline"
+                        else f"Uspešno shranjeno · {saved_id}. 2. ocena in vrstica razlik Pred/Po sta bili posodobljeni."
+                    )
+                    if lang == "sl"
+                    else (
                         f"Saved successfully · {saved_id}. The client and 1st assessment were added to Google Sheets."
                         if assessment_stage == "baseline"
                         else f"Saved successfully · {saved_id}. The 2nd assessment and the before/after difference row were updated."
