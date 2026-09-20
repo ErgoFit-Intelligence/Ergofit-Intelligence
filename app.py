@@ -1354,7 +1354,7 @@ with tabs[7]:
 
     priority_count = sum(f.status == "priority" for f in findings)
     attention_count = sum(f.status == "attention" for f in findings)
-    symptom_count = len(symptom_details)
+    symptom_count = sum(int(item.get("severity", 0) or 0) > 0 for item in symptom_details.values())
 
     st.markdown("### " + ("Overall picture" if lang == "en" else "Συνολική εικόνα"))
     m1, m2, m3, m4 = st.columns(4)
