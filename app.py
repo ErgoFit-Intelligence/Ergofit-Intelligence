@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import hashlib
 from datetime import date
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from ergofit.backend import (
     save_assessment_webapp,
 )
 from ergofit.i18n import get_text
+from ergofit.reporting import build_assessment_pdf
 from ergofit.slovenian import translate
 from ergofit.science.anthropometry import bmi, reference_from_stature
 from ergofit.science.evidence_registry import EVIDENCE, get_many
@@ -417,7 +419,7 @@ st.caption(
 # Ordered workflow; Streamlit evaluates all tabs so later tabs can consume earlier values.
 tabs = st.tabs([
     t["tab_profile"], t["tab_symptoms"], t["tab_workstation"], t["tab_chair"],
-    t["tab_posture"], t["tab_rosa"], t["tab_evidence"], t["tab_summary"],
+    t["tab_posture"], t["tab_rosa"], t["tab_photos"], t["tab_evidence"], t["tab_summary"],
 ])
 
 # ---------------------------------------------------------------------
@@ -1138,6 +1140,49 @@ with tabs[5]:
         )
 
 # ---------------------------------------------------------------------
+# 7. Assessment photos & comments
+# ---------------------------------------------------------------------
+with tabs[6]:
+    st.subheader(t["photos_title"])
+    st.info(t["photos_note"])
+
+    uploaded_photos = st.file_uploader(
+        t["photo_upload"],
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True,
+        key="assessment_photos_upload",
+    )
+
+    assessment_photos: list[dict] = []
+    if uploaded_photos:
+        for idx, uploaded_photo in enumerate(uploaded_photos, start=1):
+            p1, p2 = st.columns([1.05, 1.95])
+            with p1:
+                st.image(uploaded_photo, caption=uploaded_photo.name, use_container_width=True)
+            with p2:
+                photo_comment = st.text_area(
+                    f"{t['photo_comment']} {idx}",
+                    placeholder=t["photo_comment_placeholder"],
+                    key=f"assessment_photo_comment_{idx}_{uploaded_photo.name}",
+                    height=120,
+                )
+            assessment_photos.append({
+                "name": uploaded_photo.name,
+                "mime": uploaded_photo.type or "image/jpeg",
+                "comment": photo_comment.strip(),
+                "data": uploaded_photo.getvalue(),
+            })
+            st.divider()
+    else:
+        st.caption(
+            translate(
+                lang,
+                "Photos are optional. If added, they will appear in the individual PDF report with their comments.",
+                "Οι φωτογραφίες είναι προαιρετικές. Αν προστεθούν, θα εμφανιστούν στο ατομικό PDF report μαζί με τα σχόλιά τους.",
+            )
+        )
+
+# ---------------------------------------------------------------------
 # Build context, findings and recommendations before evidence/summary tabs.
 # ---------------------------------------------------------------------
 ctx = {
@@ -1203,6 +1248,10 @@ ctx = {
     "chair_failed": chair_failed,
     "posture_out": posture_out,
     "movement_variability": movement_variability,
+    "photos": [
+        {"name": p.get("name", ""), "mime": p.get("mime", ""), "comment": p.get("comment", "")}
+        for p in assessment_photos
+    ],
     "rosa_final": rosa["final"],
     "rosa": rosa,
 }
@@ -1214,7 +1263,7 @@ relevant_evidence = get_many(relevant_evidence_ids)
 # ---------------------------------------------------------------------
 # 7. Evidence profile
 # ---------------------------------------------------------------------
-with tabs[6]:
+with tabs[7]:
     st.subheader(t["evidence_title"])
     st.info(t["evidence_note"])
 
@@ -1267,7 +1316,7 @@ with tabs[6]:
 # ---------------------------------------------------------------------
 # 8. Summary & Results
 # ---------------------------------------------------------------------
-with tabs[7]:
+with tabs[8]:
     st.subheader(t["summary_title"])
 
     subject_display = subject_id.strip() or (translate(lang, "Unidentified worker", "Χωρίς αναγνωριστικό"))
@@ -1624,7 +1673,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             )
 
     report_payload = {
-        "version": "2.2.0-alpha",
+        "version": "2.3.0-alpha",
         "intended_purpose": "Office ergonomic decision support; not diagnosis or individual disease-probability prediction",
         "assessment": ctx,
         "findings": [f.to_dict() for f in findings],
@@ -1633,6 +1682,54 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
         "comparison": comparison_payload,
     }
     report_json = json.dumps(report_payload, ensure_ascii=False, indent=2)
+
+    # Professional worker-level PDF report.
+    photo_digest = hashlib.sha256()
+    for p in assessment_photos:
+        photo_digest.update((p.get("name", "") + p.get("comment", "")).encode("utf-8"))
+        photo_digest.update(p.get("data", b""))
+    current_report_fingerprint = hashlib.sha256(
+        report_json.encode("utf-8") + photo_digest.digest() + lang.encode("utf-8")
+    ).hexdigest()
+
+    st.divider()
+    st.markdown(
+        "### " + translate(
+            lang,
+            "Individual assessment report",
+            "Ατομικό report αξιολόγησης",
+        )
+    )
+    st.caption(t["print_note"])
+
+    if st.button(t["create_pdf"], key="create_individual_pdf_report", type="primary"):
+        try:
+            pdf_bytes = build_assessment_pdf(
+                report_payload,
+                photos=assessment_photos,
+                logo_path=ASSETS / "logo.png",
+                lang=lang,
+            )
+            st.session_state["individual_pdf_report"] = pdf_bytes
+            st.session_state["individual_pdf_report_fingerprint"] = current_report_fingerprint
+            st.success(t["pdf_ready"])
+        except Exception as exc:
+            st.session_state.pop("individual_pdf_report", None)
+            st.session_state.pop("individual_pdf_report_fingerprint", None)
+            st.error(f"{t['pdf_error']} ({exc})")
+
+    if (
+        st.session_state.get("individual_pdf_report")
+        and st.session_state.get("individual_pdf_report_fingerprint") == current_report_fingerprint
+    ):
+        safe_subject = "".join(ch for ch in (subject_id.strip() or "assessment") if ch.isalnum() or ch in "-_") or "assessment"
+        st.download_button(
+            t["download_pdf"],
+            data=st.session_state["individual_pdf_report"],
+            file_name=f"ErgoFit_Report_{safe_subject}_{assessment_stage}.pdf",
+            mime="application/pdf",
+            key="download_individual_pdf_report",
+        )
 
     st.divider()
     st.markdown("### " + (translate(lang, "Save assessment", "Αποθήκευση αξιολόγησης")))
