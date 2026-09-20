@@ -18,6 +18,22 @@ jobs:
         run: pip install -r requirements.txt
       - name: Compile Python sources
         run: python -m compileall -q app.py ergofit
+      - name: Validate translation keys used by report workflow
+        run: |
+          python - <<'PY'
+          from ergofit.i18n import get_text
+
+          required = {
+              "tab_photos", "photos_title", "photos_note", "photo_upload",
+              "photo_comment", "photo_comment_placeholder", "create_pdf",
+              "download_pdf", "pdf_ready", "pdf_error", "print_note",
+          }
+          for lang in ("el", "en", "sl"):
+              text = get_text(lang)
+              missing = sorted(required - set(text))
+              assert not missing, f"{lang}: missing translation keys: {missing}"
+          print("Translation-key smoke test OK")
+          PY
       - name: Generate sample PDF report
         run: |
           python - <<'PY'
