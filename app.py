@@ -9,11 +9,10 @@ import streamlit as st
 
 from ergofit.assessment.engine import build_findings, evidence_ids_for_context
 from ergofit.assessment.recommendations import build_recommendations
-from ergofit.backend import submit_payload
-from ergofit.google_sheets import (
-    list_worker_assessments,
-    load_assessment_payload,
-    save_assessment,
+from ergofit.backend import (
+    list_assessments_webapp,
+    load_assessment_webapp,
+    save_assessment_webapp,
 )
 from ergofit.i18n import get_text
 from ergofit.science.anthropometry import bmi, reference_from_stature
@@ -74,12 +73,12 @@ def _google_sheets_config():
         cfg = dict(st.secrets.get("google_sheets", {}))
     except Exception:
         cfg = {}
-    spreadsheet_id = str(cfg.pop("spreadsheet_id", "") or "").strip()
-    required = {"type", "project_id", "private_key", "client_email", "token_uri"}
-    ready = bool(spreadsheet_id and required.issubset(cfg.keys()))
-    return ready, spreadsheet_id, cfg
+    webapp_url = str(cfg.get("webapp_url", "") or "").strip()
+    token = str(cfg.get("token", "") or "").strip()
+    ready = bool(webapp_url and token)
+    return ready, webapp_url, token
 
-sheets_ready, sheets_spreadsheet_id, sheets_credentials = _google_sheets_config()
+sheets_ready, sheets_webapp_url, sheets_token = _google_sheets_config()
 
 hero(t["hero_title"], t["hero_sub"])
 
@@ -196,9 +195,9 @@ if assessment_stage == "followup":
         if subject_id.strip():
             try:
                 previous = [
-                    r for r in list_worker_assessments(
-                        sheets_credentials,
-                        sheets_spreadsheet_id,
+                    r for r in list_assessments_webapp(
+                        sheets_webapp_url,
+                        sheets_token,
                         subject_id.strip(),
                     )
                     if str(r.get("assessment_stage", "")) == "baseline"
@@ -226,9 +225,9 @@ if assessment_stage == "followup":
                     key="selected_baseline_assessment",
                 )
                 try:
-                    baseline_report = load_assessment_payload(
-                        sheets_credentials,
-                        sheets_spreadsheet_id,
+                    baseline_report = load_assessment_webapp(
+                        sheets_webapp_url,
+                        sheets_token,
                         selected_baseline,
                     )
                 except Exception as exc:
@@ -1530,9 +1529,9 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             disabled=(not consent or not subject_id.strip()),
             key="save_to_google_sheets",
         ):
-            ok, msg, saved_id = save_assessment(
-                sheets_credentials,
-                sheets_spreadsheet_id,
+            ok, msg, saved_id = save_assessment_webapp(
+                sheets_webapp_url,
+                sheets_token,
                 report_payload,
             )
             if ok:
@@ -1554,9 +1553,9 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                 st.error(msg)
     else:
         st.warning(
-            "The Google Sheet is ready, but the deployed Streamlit app still needs its Google service-account credentials in Streamlit Secrets before automatic saving can start."
+            "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving."
             if lang == "en"
-            else "Το Google Sheet είναι έτοιμο, αλλά το deployed Streamlit app χρειάζεται ακόμη τα διαπιστευτήρια Google service account στα Streamlit Secrets για να ξεκινήσει η αυτόματη αποθήκευση."
+            else "Το Google Sheet και η γέφυρα Apps Script είναι έτοιμα. Πρόσθεσε το Web App URL και το token στα Streamlit Secrets για να ενεργοποιηθεί η αυτόματη αποθήκευση."
         )
 
     with st.expander("Backup / export" if lang == "en" else "Αντίγραφο ασφαλείας / εξαγωγή", expanded=False):
