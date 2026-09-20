@@ -9,11 +9,13 @@ from ergofit.models import EvidenceItem, Finding, Recommendation
 STATUS_LABELS = {
     "en": {"information": "Information", "attention": "Attention", "priority": "Priority"},
     "el": {"information": "Πληροφορία", "attention": "Χρειάζεται προσοχή", "priority": "Υψηλή προτεραιότητα"},
+    "sl": {"information": "Informacija", "attention": "Zahteva pozornost", "priority": "Visoka prioriteta"},
 }
 
 RECOMMENDATION_LABELS = {
     "en": {"now": "Act now", "soon": "Next step", "maintain": "Maintain / context"},
     "el": {"now": "Άμεση ενέργεια", "soon": "Επόμενο βήμα", "maintain": "Διατήρηση / πλαίσιο"},
+    "sl": {"now": "Ukrepaj zdaj", "soon": "Naslednji korak", "maintain": "Ohrani / kontekst"},
 }
 
 EVIDENCE_LABELS = {
@@ -32,6 +34,14 @@ EVIDENCE_LABELS = {
         "applicability": "Εφαρμοσιμότητα σε εργαζομένους γραφείου",
         "why": "Γιατί",
         "no_effect": "Δεν υπάρχει συγκεντρωτική εκτίμηση επίδρασης",
+    },
+    "sl": {
+        "population": "Populacija",
+        "design": "Zasnova raziskave",
+        "certainty": "Gotovost dokazov",
+        "applicability": "Uporabnost za pisarniške zaposlene",
+        "why": "Zakaj",
+        "no_effect": "Ni enotne združene ocene učinka",
     },
 }
 
@@ -96,6 +106,14 @@ EVIDENCE_REGION_LABELS = {
         "wrist_hand": "Wrist and hand",
         "general": "General factors and interventions",
     },
+    "sl": {
+        "low_back": "Križ / ledveni del",
+        "neck_shoulder": "Vrat in ramena",
+        "shoulder": "Rama",
+        "elbow": "Komolec",
+        "wrist_hand": "Zapestje in roka",
+        "general": "Splošni dejavniki in ukrepi",
+    },
 }
 
 OUTCOME_REGION = {
@@ -137,6 +155,31 @@ EVIDENCE_SIMPLE_EL = {
     "yaghoubitajani_2026_microexercise": "Μικρές ασκήσεις και προοδευτική ενδυνάμωση στον χώρο εργασίας μπορούν να μειώσουν τον συνδυασμένο πόνο αυχένα και ώμων σε καθιστικούς εργαζομένους. Το αποτέλεσμα δεν είναι ίδιο για κάθε άτομο ή κάθε τύπο αυχενικού πόνου.",
     "runge_2024_sleep_msk": "Τα προβλήματα ύπνου και ο χρόνιος μυοσκελετικός πόνος φαίνεται να συνδέονται αμφίδρομα. Ο ύπνος είναι σημαντικό στοιχείο του γενικού πλαισίου υγείας, αλλά δεν αποτελεί εργονομικό σκορ.",
     "channak_2022_chairs": "Η σωστή προσαρμογή της καρέκλας είναι σημαντική για την εργονομία, όμως οι μελέτες δεν δείχνουν με βεβαιότητα ότι η αντικατάσταση της καρέκλας από μόνη της προλαμβάνει ή θεραπεύει τον πόνο στη μέση.",
+}
+
+
+EVIDENCE_SIMPLE_SL = {
+    "rijal_2026_cans_4h": "Pri rednih uporabnikih računalnika je bila uporaba računalnika ali miške več kot 4 ure na dan povezana z več težavami v vratu, ramenih in zgornjih udih. To ne pomeni, da so 4 ure univerzalni prag ali da je mogoče napovedati določeno bolezen.",
+    "dzakpasu_2021_lbp_sitting": "Sedenje pri delu je bilo povezano z več poročili o bolečini v križu, vendar dokazi večinoma kažejo povezavo in ne dokazujejo, da sedenje samo povzroča bolečino.",
+    "dzakpasu_2021_neck_shoulder_sitting": "Sedenje pri delu je bilo povezano z več težavami v vratu in ramenih. To ne dokazuje, da je sedenje edini vzrok bolečine.",
+    "mahdavi_2022_lbp_sitting": "Dolgotrajno sedenje je bilo povezano z bolečino v križu, vendar je bila večina dokazov opazovalnih. V praksi so pomembnejši trajanje, spreminjanje položaja in celotna vsebina dela kot en sam urni prag.",
+    "jun_2017_neck_office": "Pri pisarniških zaposlenih na bolečino v vratu vpliva več dejavnikov, med drugim majhna raznolikost nalog in nizko zadovoljstvo pri delu. En sam dejavnik ne pojasni vseh težav z vratom.",
+    "hassan_2022_cts_repetition": "Resnično visoka ponavljajočnost gibov roke in zapestja pri delu je bila povezana z več klinično ocenjenega sindroma karpalnega kanala. Tega ni primerno samodejno prenesti na običajno uporabo tipkovnice ali miške.",
+    "hassan_2022_cts_force": "Velika sila roke ali prstov je bila povezana z več klinično ocenjenega sindroma karpalnega kanala. Običajno pisarniško delo praviloma zahteva precej manj sile.",
+    "hassan_2022_cts_hal": "Visoka aktivnost roke, merjena z ACGIH HAL, je bila povezana z več sindroma karpalnega kanala. Relevantna je le, kadar je naloga dejansko podobna visoko ponavljajočemu delu.",
+    "hassan_2022_cts_si": "Visok Strain Index je bil povezan z več sindroma karpalnega kanala pri delovnih nalogah. Splošnih ur uporabe računalnika ni primerno pretvarjati v Strain Index.",
+    "bretschneider_2022_le_si": "Večja mehanska izpostavljenost zgornjega uda, izražena s Strain Index nad 5,1, je bila povezana z lateralnim epikondilitisom. Uporabno je le za naloge, za katere je Strain Index primeren.",
+    "bretschneider_2022_le_rotation": "Pomembna in dolgotrajna rotacija podlakti je bila povezana z več lateralnega epikondilitisa. Gre za dejansko mehansko izpostavljenost, ne za splošno uporabo računalnika.",
+    "jahn_2023_lbp_posture": "Dolgotrajne nenevtralne delovne drže so bile povezane s kronično bolečino v križu v mešanih poklicnih populacijah. Posameznega kota telesa ni mogoče pretvoriti v osebno tveganje za bolečino.",
+    "shoulder_arm_elevation": "Dolgotrajno dvigovanje roke je bilo povezano z več specifičnimi motnjami rame, predvsem pri fizičnem ali mešanem delu. Uporabnost za tipično pisarniško delo je omejena, razen če takšna izpostavljenost dejansko obstaja.",
+    "shiri_2015_cts_bmi_overweight": "Višja telesna masa je bila v splošnih populacijah povezana s sindromom karpalnega kanala. Gre za zdravstveni kontekst, ne za ergonomsko izpostavljenost delovnega mesta.",
+    "shiri_2015_cts_bmi_obese": "Debelost je bila v splošnih populacijah močneje povezana s sindromom karpalnega kanala. To ni ergonomska ugotovitev in se ne pretvarja v ergonomsko oceno.",
+    "hoe_2018_arm_support_mouse": "Pri pisarniških zaposlenih je specifična kombinacija podpore roke in alternativne miške pokazala korist za nekatere izide vratu in ramen. To ne pomeni, da ima vsak ergonomski pripomoček enak učinek.",
+    "waongenngarm_2018_breaks": "Aktivni odmori in redno spreminjanje drže lahko zmanjšajo mišično-skeletno nelagodje brez jasne škode za produktivnost. En univerzalni interval odmora za vse ni dokazan.",
+    "eisele_2023_back_multicomponent": "Pri bolečini v križu lahko večkomponentni pristopi, ki združujejo ergonomijo in telesno dejavnost, prinesejo manjšo korist. Sama zamenjava stola ali ena nastavitev ni zdravljenje.",
+    "yaghoubitajani_2026_microexercise": "Kratke vaje na delovnem mestu in progresivna krepitev lahko zmanjšajo kombinirano bolečino v vratu in ramenih pri sedečih zaposlenih. Učinek ni enak pri vsaki osebi ali vsaki vrsti bolečine v vratu.",
+    "runge_2024_sleep_msk": "Težave s spanjem in kronična mišično-skeletna bolečina so verjetno dvosmerno povezane. Spanec je pomemben zdravstveni kontekst, vendar ni ergonomska ocena.",
+    "channak_2022_chairs": "Prilagoditev stola je ergonomsko pomembna, vendar dokazi ne kažejo jasno, da zamenjava stola sama preprečuje ali zdravi bolečino v križu.",
 }
 
 EVIDENCE_SIMPLE_EN = {
@@ -294,7 +337,11 @@ def group_evidence_by_region(items: list[EvidenceItem], lang: str = "en") -> lis
 
 def _technical_effect(e: EvidenceItem, lang: str) -> str:
     if e.estimate is None:
-        return "Δεν δίνεται ένας ενιαίος συγκεντρωτικός αριθμός." if lang == "el" else "No single pooled numerical estimate was reported."
+        if lang == "el":
+            return "Δεν δίνεται ένας ενιαίος συγκεντρωτικός αριθμός."
+        if lang == "sl":
+            return "Ni poročane enotne združene številčne ocene."
+        return "No single pooled numerical estimate was reported."
 
     if lang == "el":
         measure = {
@@ -310,6 +357,19 @@ def _technical_effect(e: EvidenceItem, lang: str) -> str:
             low = f"{e.ci_low:.2f}".replace(".", ",")
             high = f"{e.ci_high:.2f}".replace(".", ",")
             value += f" · 95% διάστημα εμπιστοσύνης: {low}–{high}"
+        return value
+
+    if lang == "sl":
+        measure = {
+            "RR": "Relativno tveganje (RR)",
+            "OR": "Razmerje obetov (OR)",
+            "HR": "Razmerje tveganj (HR)",
+            "SMD": "Standardizirana povprečna razlika (SMD)",
+            "Hedges g": "Hedges g",
+        }.get(e.effect_measure, e.effect_measure)
+        value = f"{measure}: {e.estimate:.2f}"
+        if e.ci_low is not None and e.ci_high is not None:
+            value += f" · 95% interval zaupanja: {e.ci_low:.2f}–{e.ci_high:.2f}"
         return value
 
     value = f"{e.effect_measure} {e.estimate:.2f}"
@@ -331,18 +391,21 @@ def finding_card(f: Finding, lang: str = "en") -> None:
 
 def evidence_card(e: EvidenceItem, lang: str = "en") -> None:
     labels = EVIDENCE_LABELS.get(lang, EVIDENCE_LABELS["en"])
-    title = e.title if lang == "en" else EVIDENCE_TITLE_EL.get(e.title, e.title)
-    simple = (EVIDENCE_SIMPLE_EN if lang == "en" else EVIDENCE_SIMPLE_EL).get(
-        e.id,
-        "This study is relevant to the selected exposure and outcome."
-        if lang == "en"
-        else "Η συγκεκριμένη μελέτη είναι σχετική με την έκθεση και την περιοχή που αξιολογείται.",
+    title = EVIDENCE_TITLE_EL.get(e.title, e.title) if lang == "el" else e.title
+    simple_map = EVIDENCE_SIMPLE_EL if lang == "el" else (EVIDENCE_SIMPLE_SL if lang == "sl" else EVIDENCE_SIMPLE_EN)
+    fallback_simple = (
+        "Η συγκεκριμένη μελέτη είναι σχετική με την έκθεση και την περιοχή που αξιολογείται."
+        if lang == "el"
+        else "Ta raziskava je relevantna za izbrano izpostavljenost in ocenjevani predel."
+        if lang == "sl"
+        else "This study is relevant to the selected exposure and outcome."
     )
+    simple = simple_map.get(e.id, fallback_simple)
 
     st.markdown(
         f"""
         <div class="ef-card">
-          <div class="ef-kicker">{"WHAT THE RESEARCH SAYS" if lang == "en" else "ΤΙ ΔΕΙΧΝΕΙ Η ΕΡΕΥΝΑ"}</div>
+          <div class="ef-kicker">{"WHAT THE RESEARCH SAYS" if lang == "en" else "KAJ KAŽEJO RAZISKAVE" if lang == "sl" else "ΤΙ ΔΕΙΧΝΕΙ Η ΕΡΕΥΝΑ"}</div>
           <h4>{html.escape(title)}</h4>
           <div style="font-size:1.02rem;line-height:1.58;margin-top:8px">{html.escape(simple)}</div>
         </div>
@@ -350,7 +413,7 @@ def evidence_card(e: EvidenceItem, lang: str = "en") -> None:
         unsafe_allow_html=True,
     )
 
-    with st.expander("Technical study details" if lang == "en" else "Τεχνικές λεπτομέρειες της μελέτης", expanded=False):
+    with st.expander("Technical study details" if lang == "en" else "Tehnične podrobnosti raziskave" if lang == "sl" else "Τεχνικές λεπτομέρειες της μελέτης", expanded=False):
         if lang == "el":
             population = POPULATION_EL.get(e.id, e.population)
             study_type = STUDY_TYPE_EL.get(e.study_type, e.study_type)
@@ -369,6 +432,17 @@ def evidence_card(e: EvidenceItem, lang: str = "en") -> None:
             if notes:
                 st.markdown(f"**Σημαντική διευκρίνιση:** {notes}")
             st.markdown(f"**Πηγή:** [{e.source_label}]({e.source_url})")
+        elif lang == "sl":
+            st.markdown(f"**Statistični rezultat:** {_technical_effect(e, lang)}")
+            st.caption("To je ocena na ravni skupine in ne individualna verjetnost za tega zaposlenega.")
+            st.markdown(f"**Populacija:** {e.population}")
+            st.markdown(f"**Zasnova raziskave:** {e.study_type}")
+            st.markdown(f"**Časovna zasnova:** {e.temporal_design}")
+            st.markdown(f"**Gotovost dokazov:** {e.certainty}")
+            st.markdown(f"**Uporabnost za pisarniške zaposlene:** {e.office_applicability}")
+            if e.notes:
+                st.markdown(f"**Pomembna opomba:** {e.notes}")
+            st.markdown(f"**Vir:** [{e.source_label}]({e.source_url})")
         else:
             st.markdown(f"**Statistical result:** {_technical_effect(e, lang)}")
             st.caption("This is a group-level research estimate, not an individual probability for this worker.")
