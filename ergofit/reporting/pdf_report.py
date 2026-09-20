@@ -14,7 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 NAVY = colors.HexColor("#0B1F3A")
 GOLD = colors.HexColor("#C6A15B")
@@ -234,8 +234,8 @@ def _photo_flowable(photo: dict[str, Any], styles: dict[str, ParagraphStyle]) ->
     with PILImage.open(img_io) as im:
         w, h = im.size
     img_io.seek(0)
-    max_w = 160 * mm
-    max_h = 105 * mm
+    max_w = 145 * mm
+    max_h = 90 * mm
     scale = min(max_w / w, max_h / h, 1)
     img = Image(img_io, width=w * scale, height=h * scale)
     img.hAlign = "CENTER"
@@ -572,8 +572,10 @@ def build_assessment_pdf(
             photo_items = _photo_flowable(photo, styles)
             if not photo_items:
                 continue
-            story += [Paragraph(f"{_t(lang, 'Photo', 'Φωτογραφία', 'Fotografija')} {idx}", styles["h2"])]
-            story += photo_items
+            story += [KeepTogether([
+                Paragraph(f"{_t(lang, 'Photo', 'Φωτογραφία', 'Fotografija')} {idx}", styles["h2"]),
+                *photo_items,
+            ])]
 
     if comparison:
         story += _section_title(_t(lang, "Before vs after interventions", "Σύγκριση πριν και μετά τις παρεμβάσεις", "Primerjava pred in po ukrepih"), styles)
