@@ -9,6 +9,37 @@ def build_recommendations(ctx: dict, findings: list[Finding], lang: str = "en") 
     titles = {f.title for f in findings}
     regions = set(ctx.get("symptom_regions", []))
 
+    symptom_details = ctx.get("symptom_details", {}) or {}
+    functionally_relevant_symptoms = []
+    for region, item in symptom_details.items():
+        if not isinstance(item, dict):
+            continue
+        if int(item.get("severity", 0) or 0) <= 0:
+            continue
+        if (
+            item.get("interference") is True
+            or item.get("work_modification") is True
+            or int(item.get("absence_days_4w", 0) or 0) > 0
+            or item.get("duration") == ">12_weeks"
+            or item.get("previous_episode") is True
+            or item.get("frequency") == "daily"
+        ):
+            functionally_relevant_symptoms.append(item.get("label", region))
+
+    if functionally_relevant_symptoms:
+        recs.append(Recommendation(
+            priority="soon",
+            title=tr("Follow up symptoms with functional/work impact", "Επανέλεγχος συμπτωμάτων με λειτουργική/εργασιακή επίδραση"),
+            action=tr(
+                "Address relevant ergonomic exposures, document symptom/function change at reassessment, and use the appropriate occupational-health or clinical pathway if symptoms persist, worsen, or materially limit work.",
+                "Αντιμετώπισε τις σχετικές εργονομικές εκθέσεις, κατέγραψε τη μεταβολή συμπτωμάτων/λειτουργικότητας στην επαναξιολόγηση και ακολούθησε την κατάλληλη οδό ιατρικής/επαγγελματικής υγείας αν τα συμπτώματα επιμένουν, επιδεινώνονται ή περιορίζουν ουσιαστικά την εργασία."
+            ),
+            rationale=tr(
+                "This is a functional follow-up rule, not a disease-probability prediction. Pain intensity alone is not used as a validated prognostic cutoff.",
+                "Πρόκειται για κανόνα λειτουργικής παρακολούθησης και όχι για πρόβλεψη πιθανότητας νόσου. Η ένταση του πόνου από μόνη της δεν χρησιμοποιείται ως επικυρωμένο προγνωστικό όριο."
+            ),
+        ))
+
     if int(ctx.get("rosa_final", 0)) >= 5:
         recs.append(Recommendation(
             priority="now",
@@ -33,8 +64,8 @@ def build_recommendations(ctx: dict, findings: list[Finding], lang: str = "en") 
         for t in titles
     ):
         recs.append(Recommendation(
-            priority="now",
-            title=tr("Correct workstation fit before adding accessories", "Διόρθωσε πρώτα την προσαρμογή της θέσης εργασίας"),
+            priority="soon",
+            title=tr("Correct workstation fit before adding accessories", "Διόρθωσε την προσαρμογή της θέσης εργασίας"),
             action=tr(
                 "Adjust seat height, work-surface relationship and monitor placement using direct body measurements and observed posture. Re-check after adjustment.",
                 "Ρύθμισε το ύψος της έδρας, τη σχέση με την επιφάνεια εργασίας και τη θέση της οθόνης χρησιμοποιώντας άμεσες σωματομετρικές μετρήσεις και παρατήρηση της στάσης. Επανέλεγξε μετά τη ρύθμιση."
@@ -47,7 +78,7 @@ def build_recommendations(ctx: dict, findings: list[Finding], lang: str = "en") 
 
     if ctx.get("glare") or ctx.get("digital_eye_strain"):
         recs.append(Recommendation(
-            priority="now",
+            priority="soon",
             title=tr("Review the visual workstation", "Έλεγξε το οπτικό περιβάλλον εργασίας"),
             action=tr(
                 "Reduce glare/reflections, confirm viewing distance and display position, and follow the organisation's eyesight/occupational-health pathway if visual symptoms persist.",
