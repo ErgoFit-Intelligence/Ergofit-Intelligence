@@ -18,20 +18,27 @@ def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
             label = item.get("label", region)
             severity = int(item.get("severity", 0))
             interference = bool(item.get("interference", False))
-            status = "priority" if severity >= 7 or interference else "attention"
+            duration = str(item.get("duration", "not_recorded") or "not_recorded")
+            frequency = str(item.get("frequency", "not_recorded") or "not_recorded")
+            previous_episode = item.get("previous_episode")
+            work_modification = item.get("work_modification")
+            absence_days = int(item.get("absence_days_4w", 0) or 0)
+            functional_impact = interference or work_modification is True or absence_days > 0
+            persistent_or_recurrent = duration == ">12_weeks" or previous_episode is True or frequency == "daily"
+            status = "attention" if functional_impact or persistent_or_recurrent else "information"
             findings.append(Finding(
                 domain="Symptoms",
                 title=tr(f"Symptom: {label}", f"Σύμπτωμα: {label}"),
                 status=status,
                 detail=tr(
-                    f"Intensity {severity}/10; work interference: {'yes' if interference else 'no'}. This is symptom information, not a diagnosis.",
-                    f"Ένταση {severity}/10· επηρεάζει την εργασία: {'ναι' if interference else 'όχι'}. Πρόκειται για πληροφορία συμπτωμάτων και όχι για διάγνωση."
+                    f"Intensity {severity}/10; duration {duration}; frequency {frequency}; work interference: {'yes' if interference else 'no/unknown'}; work absence (last 4 weeks): {absence_days} day(s). No single pain-intensity cutoff is used as a validated prognostic threshold.",
+                    f"Ένταση {severity}/10· διάρκεια {duration}· συχνότητα {frequency}· επίδραση στην εργασία: {'ναι' if interference else 'όχι/δεν καταγράφηκε'}· απουσία από την εργασία τις τελευταίες 4 εβδομάδες: {absence_days} ημέρα/ημέρες. Δεν χρησιμοποιείται κανένα μεμονωμένο όριο έντασης πόνου ως επικυρωμένο προγνωστικό threshold."
                 ),
                 modifiable=False,
             ))
     elif regions:
         severity = int(ctx.get("symptom_severity", 0))
-        status = "priority" if severity >= 7 or ctx.get("symptom_interference") else "attention"
+        status = "attention" if ctx.get("symptom_interference") else "information"
         findings.append(Finding(
             domain="Symptoms",
             title=tr("Current/recent musculoskeletal symptoms", "Τρέχοντα/πρόσφατα μυοσκελετικά συμπτώματα"),
@@ -262,10 +269,10 @@ def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
                 f"{len(chair_failed)} chair fit/adjustability issue(s)",
                 f"{len(chair_failed)} ζήτημα/ζητήματα προσαρμογής ή ρύθμισης καρέκλας"
             ),
-            status="attention" if len(chair_failed) < 4 else "priority",
+            status="attention",
             detail=tr(
-                "Chair findings are engineering/fit findings. Chair replacement alone should not be presented as a validated treatment for back pain.",
-                "Τα ευρήματα της καρέκλας αφορούν σχεδιασμό και προσαρμογή. Η αντικατάσταση της καρέκλας από μόνη της δεν πρέπει να παρουσιάζεται ως επικυρωμένη θεραπεία για πόνο στη μέση."
+                "Chair findings are engineering/fit findings. The number of failed items is not treated as a validated clinical-priority threshold, and chair replacement alone should not be presented as a validated treatment for back pain.",
+                "Τα ευρήματα της καρέκλας αφορούν σχεδιασμό και προσαρμογή. Ο αριθμός των σημείων που δεν πληρούνται δεν αντιμετωπίζεται ως επικυρωμένο κλινικό όριο προτεραιότητας και η αντικατάσταση της καρέκλας από μόνη της δεν πρέπει να παρουσιάζεται ως επικυρωμένη θεραπεία για πόνο στη μέση."
             ),
             evidence_ids=("channak_2022_chairs",),
         ))
