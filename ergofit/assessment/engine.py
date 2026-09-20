@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ergofit.slovenian import translate
 from ergofit.models import Finding
 from ergofit.science.anthropometry import bmi_band
 from ergofit.science.standards import MONITOR_DISTANCE_REFERENCE_CM
@@ -7,7 +8,7 @@ from ergofit.science.standards import MONITOR_DISTANCE_REFERENCE_CM
 
 def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
     findings: list[Finding] = []
-    tr = lambda en, el: en if lang == "en" else el
+    tr = lambda en, el: translate(lang, en, el)
 
     # Symptoms are recorded separately by body region; they are findings, not diagnoses.
     regions = ctx.get("symptom_regions", [])
