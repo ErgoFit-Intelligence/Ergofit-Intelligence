@@ -392,8 +392,31 @@ def translate(lang: str, en: str, el: str) -> str:
         return f"{n} ugotovitev glede meril drže"
     if en.startswith("BMI category:"):
         return en.replace("BMI category:", "Kategorija ITM:", 1)
+    if en.startswith("Reported regions: "):
+        return (
+            en.replace("Reported regions: ", "Navedeni predeli: ", 1)
+              .replace("; intensity ", "; intenzivnost ")
+              .replace("This is symptom information, not a diagnosis.", "Gre za podatke o simptomih, ne za diagnozo.")
+        )
     if en.startswith("Measured ") and " vs reference " in en:
-        return en.replace("Measured ", "Izmerjeno ", 1).replace(" vs reference ", " v primerjavi z referenco ", 1)
+        value = en.replace("Measured ", "Izmerjeno ", 1).replace(" vs reference ", " v primerjavi z referenco ", 1)
+        value = value.replace(
+            "The ±2.5 cm flag is an operational fitting tolerance, not a disease threshold.",
+            "Odstopanje ±2,5 cm je operativna toleranca prilagoditve in ne prag bolezni.",
+        )
+        value = value.replace(
+            "Treat this as a fit prompt and confirm shoulder/elbow posture directly.",
+            "Obravnavaj kot opozorilo za prilagoditev in neposredno preveri položaj rame in komolca.",
+        )
+        return value
+    if en.startswith("Measured ") and "Reference guidance commonly places the display roughly" in en:
+        m = re.match(r"Measured ([0-9.]+) cm\. Reference guidance commonly places the display roughly ([0-9]+)–([0-9]+) cm away, adjusted for display size, visual needs and task\.", en)
+        if m:
+            measured, lo, hi = m.groups()
+            return (
+                f"Izmerjeno {measured} cm. Referenčne smernice zaslon običajno umeščajo približno "
+                f"{lo}–{hi} cm od oči, ob prilagoditvi glede na velikost zaslona, vidne potrebe in nalogo."
+            )
     if en.startswith("Flagged: "):
         return en.replace("Flagged: ", "Ugotovljeno: ", 1).replace(
             "These belong in a complete display-screen assessment and are not converted into MSD probability points.",
