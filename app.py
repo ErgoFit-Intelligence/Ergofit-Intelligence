@@ -127,6 +127,105 @@ def rosa_checkbox(label_el: str, label_en: str, points: int, key: str) -> int:
     return points if st.checkbox(f"{label} (+{points})", key=key) else 0
 
 
+def symptom_duration_label(value: str) -> str:
+    labels = {
+        "not_recorded": "—",
+        "<1_week": "<1 week" if lang == "en" else "<1 εβδομάδα",
+        "1_6_weeks": "1–6 weeks" if lang == "en" else "1–6 εβδομάδες",
+        "6_12_weeks": "6–12 weeks" if lang == "en" else "6–12 εβδομάδες",
+        ">12_weeks": ">12 weeks" if lang == "en" else ">12 εβδομάδες",
+    }
+    return labels.get(value, "—")
+
+
+def symptom_frequency_label(value: str) -> str:
+    labels = {
+        "not_recorded": "—",
+        "occasional": "Occasional" if lang == "en" else "Περιστασιακά",
+        "1_2_days_week": "1–2 days/week" if lang == "en" else "1–2 ημέρες/εβδομάδα",
+        "3_5_days_week": "3–5 days/week" if lang == "en" else "3–5 ημέρες/εβδομάδα",
+        "daily": "Daily / almost daily" if lang == "en" else "Καθημερινά / σχεδόν καθημερινά",
+    }
+    return labels.get(value, "—")
+
+
+def region_exposure_text(region: str, ctx: dict) -> str:
+    factors: list[str] = []
+    rosa_final = int((ctx.get("rosa") or {}).get("final", ctx.get("rosa_final", 0)) or 0)
+    posture_keys = {item.get("key") for item in (ctx.get("posture_out") or []) if isinstance(item, dict)}
+    chair_issues = bool(ctx.get("chair_failed"))
+
+    if region in {"Neck", "Shoulder(s)"}:
+        if max(float(ctx.get("computer_hours", 0)), float(ctx.get("mouse_hours", 0))) > 4:
+            factors.append("computer/mouse >4 h" if lang == "en" else "Η/Υ ή ποντίκι >4 ώρες")
+        if ctx.get("forearm_support") is False:
+            factors.append("limited forearm support" if lang == "en" else "περιορισμένη στήριξη αντιβραχίων")
+        if region == "Shoulder(s)" and ctx.get("arm_elevation"):
+            factors.append("sustained arm elevation" if lang == "en" else "παρατεταμένη ανύψωση βραχίονα")
+        if {"shoulders_relaxed", "elbows_close", "forearms_supported"} & posture_keys:
+            factors.append("posture finding" if lang == "en" else "εύρημα στάσης")
+    elif region == "Elbow / forearm / wrist / hand":
+        if ctx.get("high_repetition"):
+            factors.append("high repetition" if lang == "en" else "υψηλή επανάληψη")
+        if ctx.get("hand_force"):
+            factors.append("hand force" if lang == "en" else "δύναμη χεριού")
+        if ctx.get("forearm_rotation"):
+            factors.append("forearm rotation" if lang == "en" else "στροφή αντιβραχίου")
+        if ctx.get("forearm_support") is False:
+            factors.append("limited forearm support" if lang == "en" else "περιορισμένη στήριξη αντιβραχίων")
+    elif region == "Low back":
+        if float(ctx.get("sitting_hours", 0)) >= 6:
+            factors.append("high sitting exposure*" if lang == "en" else "υψηλή καθιστική έκθεση*")
+        if ctx.get("long_sitting_bout") in {"60–120 min", ">120 min"}:
+            factors.append("long static bouts" if lang == "en" else "μεγάλα στατικά διαστήματα")
+        if chair_issues:
+            factors.append("chair-fit findings" if lang == "en" else "ευρήματα προσαρμογής καρέκλας")
+        if {"dynamic_posture", "back_supported"} & posture_keys:
+            factors.append("posture/movement finding" if lang == "en" else "εύρημα στάσης/κίνησης")
+    elif region == "Lower limbs":
+        if {"feet_supported", "leg_clearance"} & posture_keys:
+            factors.append("support/clearance finding" if lang == "en" else "εύρημα στήριξης/ελεύθερου χώρου")
+
+    if rosa_final >= 5 and region in {"Neck", "Shoulder(s)", "Elbow / forearm / wrist / hand", "Low back"}:
+        factors.append("ROSA action level" if lang == "en" else "ROSA σε επίπεδο δράσης")
+
+    if not factors:
+        return "No specific ergonomic factor identified" if lang == "en" else "Δεν εντοπίστηκε ειδικός εργονομικός παράγοντας"
+    return " · ".join(dict.fromkeys(factors))
+
+
+def region_action_text(region: str, item: dict, ctx: dict) -> str:
+    severity = int(item.get("severity", 0) or 0)
+    has_symptom = severity > 0
+    work_impact = (
+        item.get("interference") is True
+        or item.get("work_modification") is True
+        or int(item.get("absence_days_4w", 0) or 0) > 0
+    )
+    persistent_or_recurrent = (
+        item.get("duration") == ">12_weeks"
+        or item.get("previous_episode") is True
+        or item.get("frequency") == "daily"
+    )
+    exposure_present = not region_exposure_text(region, ctx).startswith(
+        "No specific" if lang == "en" else "Δεν εντοπίστηκε"
+    )
+
+    if has_symptom and (work_impact or persistent_or_recurrent):
+        return (
+            "Ergonomic intervention + follow-up; consider clinical/occupational-health review if persistent or worsening"
+            if lang == "en"
+            else "Εργονομική παρέμβαση + επανέλεγχος· εξέταση από κατάλληλο επαγγελματία υγείας αν επιμένει ή επιδεινώνεται"
+        )
+    if has_symptom and exposure_present:
+        return "Ergonomic review + symptom monitoring" if lang == "en" else "Εργονομικός έλεγχος + παρακολούθηση συμπτωμάτων"
+    if has_symptom:
+        return "Monitor symptoms and reassess if they persist/worsen" if lang == "en" else "Παρακολούθηση συμπτωμάτων και επανέλεγχος αν επιμένουν/επιδεινώνονται"
+    if exposure_present:
+        return "Prevention / exposure management" if lang == "en" else "Πρόληψη / διαχείριση έκθεσης"
+    return "Maintain current conditions" if lang == "en" else "Διατήρηση καλών συνθηκών"
+
+
 # ---------------------------------------------------------------------
 # Client profile — shared by both assessments
 # ---------------------------------------------------------------------
@@ -396,25 +495,84 @@ with tabs[1]:
                 key=f"severity_{region}",
             )
 
-            st.caption(
-                "Does this symptom interfere with work?"
-                if lang == "en"
-                else "Επηρεάζει αυτό το σύμπτωμα την εργασία;"
+            c1, c2 = st.columns(2)
+            duration = c1.selectbox(
+                "How long has this problem been present?" if lang == "en" else "Πόσο καιρό υπάρχει αυτό το πρόβλημα;",
+                ["not_recorded", "<1_week", "1_6_weeks", "6_12_weeks", ">12_weeks"],
+                format_func=lambda v: {
+                    "not_recorded": "— Not recorded —" if lang == "en" else "— Δεν καταγράφηκε —",
+                    "<1_week": "<1 week" if lang == "en" else "<1 εβδομάδα",
+                    "1_6_weeks": "1–6 weeks" if lang == "en" else "1–6 εβδομάδες",
+                    "6_12_weeks": "6–12 weeks" if lang == "en" else "6–12 εβδομάδες",
+                    ">12_weeks": ">12 weeks" if lang == "en" else ">12 εβδομάδες",
+                }[v],
+                key=f"duration_{region}",
             )
-            interference = st.radio(
-                f"Work interference — {region_label}",
-                [False, True],
-                format_func=lambda v: ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι"),
-                horizontal=True,
-                label_visibility="collapsed",
+            frequency = c2.selectbox(
+                "How often is it present?" if lang == "en" else "Πόσο συχνά εμφανίζεται;",
+                ["not_recorded", "occasional", "1_2_days_week", "3_5_days_week", "daily"],
+                format_func=lambda v: {
+                    "not_recorded": "— Not recorded —" if lang == "en" else "— Δεν καταγράφηκε —",
+                    "occasional": "Occasionally" if lang == "en" else "Περιστασιακά",
+                    "1_2_days_week": "1–2 days/week" if lang == "en" else "1–2 ημέρες/εβδομάδα",
+                    "3_5_days_week": "3–5 days/week" if lang == "en" else "3–5 ημέρες/εβδομάδα",
+                    "daily": "Daily / almost daily" if lang == "en" else "Καθημερινά / σχεδόν καθημερινά",
+                }[v],
+                key=f"frequency_{region}",
+            )
+
+            c1, c2 = st.columns(2)
+            previous_episode = c1.selectbox(
+                "Previous similar episode?" if lang == "en" else "Έχει υπάρξει παρόμοιο επεισόδιο στο παρελθόν;",
+                [None, True, False],
+                format_func=lambda v: "—" if v is None else (
+                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                ),
+                key=f"previous_episode_{region}",
+            )
+            interference = c2.selectbox(
+                "Does it interfere with work?" if lang == "en" else "Επηρεάζει την εργασία;",
+                [None, True, False],
+                format_func=lambda v: "—" if v is None else (
+                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                ),
                 key=f"interference_{region}",
+            )
+
+            c1, c2 = st.columns(2)
+            work_modification = c1.selectbox(
+                "Do you change pace/task/posture because of it?" if lang == "en" else "Αλλάζεις ρυθμό, εργασία ή στάση εξαιτίας του συμπτώματος;",
+                [None, True, False],
+                format_func=lambda v: "—" if v is None else (
+                    ("Yes" if v else "No") if lang == "en" else ("Ναι" if v else "Όχι")
+                ),
+                key=f"work_modification_{region}",
+            )
+            absence_days_4w = c2.number_input(
+                "Work absence due to this symptom in the last 4 weeks (days)" if lang == "en"
+                else "Απουσία από την εργασία λόγω του συμπτώματος τις τελευταίες 4 εβδομάδες (ημέρες)",
+                min_value=0,
+                max_value=28,
+                value=0,
+                step=1,
+                key=f"absence_days_{region}",
             )
 
             symptom_details[region] = {
                 "label": region_label,
                 "severity": severity,
+                "duration": duration,
+                "frequency": frequency,
+                "previous_episode": previous_episode,
                 "interference": interference,
+                "work_modification": work_modification,
+                "absence_days_4w": absence_days_4w,
             }
+            st.caption(
+                "These fields describe the symptom history and functional impact. They are not converted into a personal disease-probability score."
+                if lang == "en"
+                else "Τα πεδία αυτά περιγράφουν την πορεία του συμπτώματος και τη λειτουργική του επίδραση. Δεν μετατρέπονται σε προσωπική πιθανότητα νόσου."
+            )
             st.divider()
 
     symptom_severity = max((d["severity"] for d in symptom_details.values()), default=0)
@@ -1227,20 +1385,52 @@ with tabs[7]:
             else "Το ROSA βρίσκεται κάτω από το επίπεδο δράσης 5. Αυτό δεν σημαίνει ότι απουσιάζουν όλα τα εργονομικά ζητήματα ή τα συμπτώματα."
         )
 
-    st.markdown("### " + ("Reported symptoms" if lang == "en" else "Αναφερόμενα συμπτώματα"))
+    st.markdown("### " + ("Musculoskeletal profile & proposed action" if lang == "en" else "Μυοσκελετικό προφίλ & προτεινόμενη ενέργεια"))
+    st.caption(
+        "The proposed action combines reported symptoms, functional/work impact and relevant ergonomic findings. It is a workflow recommendation, not a diagnosis or individual prognosis."
+        if lang == "en"
+        else "Η προτεινόμενη ενέργεια συνδυάζει τα αναφερόμενα συμπτώματα, τη λειτουργική/εργασιακή επίδραση και τα σχετικά εργονομικά ευρήματα. Αποτελεί πρόταση διαχείρισης και όχι διάγνωση ή ατομική πρόγνωση."
+    )
     if symptom_details:
+        profile_rows = []
         for region, item in symptom_details.items():
             label = item.get("label", region)
-            severity = int(item.get("severity", 0))
-            interference = bool(item.get("interference", False))
-            st.markdown(
-                f"- **{label}:** {severity}/10 · " +
-                (
-                    ("affects work" if interference else "does not affect work")
-                    if lang == "en"
-                    else ("επηρεάζει την εργασία" if interference else "δεν επηρεάζει την εργασία")
-                )
-            )
+            severity = int(item.get("severity", 0) or 0)
+            duration = symptom_duration_label(item.get("duration", "not_recorded"))
+            frequency = symptom_frequency_label(item.get("frequency", "not_recorded"))
+            interference = item.get("interference")
+            work_modification = item.get("work_modification")
+            absence_days = int(item.get("absence_days_4w", 0) or 0)
+
+            work_bits = []
+            if interference is True:
+                work_bits.append("affects work" if lang == "en" else "επηρεάζει την εργασία")
+            elif interference is False:
+                work_bits.append("no reported interference" if lang == "en" else "δεν αναφέρθηκε επίδραση")
+            if work_modification is True:
+                work_bits.append("task/pace modified" if lang == "en" else "αλλαγή ρυθμού/εργασίας")
+            if absence_days > 0:
+                work_bits.append(f"{absence_days} absence day(s)/4 weeks" if lang == "en" else f"{absence_days} ημέρες απουσίας/4 εβδομάδες")
+
+            symptom_text = f"{severity}/10"
+            if duration != "—":
+                symptom_text += f" · {duration}"
+            if frequency != "—":
+                symptom_text += f" · {frequency}"
+
+            profile_rows.append({
+                ("Region" if lang == "en" else "Περιοχή"): label,
+                ("Symptoms" if lang == "en" else "Συμπτώματα"): symptom_text,
+                ("Work impact" if lang == "en" else "Επίδραση στην εργασία"): " · ".join(work_bits) if work_bits else "—",
+                ("Ergonomic exposure/findings" if lang == "en" else "Εργονομική έκθεση / ευρήματα"): region_exposure_text(region, ctx),
+                ("Proposed action" if lang == "en" else "Προτεινόμενη ενέργεια"): region_action_text(region, item, ctx),
+            })
+        st.dataframe(profile_rows, use_container_width=True, hide_index=True)
+        st.caption(
+            "*The ≥6 h/day sitting flag is an operational screening flag, not a validated causal threshold."
+            if lang == "en"
+            else "*Η ένδειξη ≥6 ώρες/ημέρα καθιστικής εργασίας είναι λειτουργική ένδειξη screening και όχι επικυρωμένο αιτιώδες όριο."
+        )
     else:
         st.caption("No musculoskeletal symptoms were reported." if lang == "en" else "Δεν αναφέρθηκαν μυοσκελετικά συμπτώματα.")
 
@@ -1364,6 +1554,10 @@ with tabs[7]:
                     after_score = int(after.get("severity", 0) or 0)
                     before_work = bool(before.get("interference", False))
                     after_work = bool(after.get("interference", False))
+                    before_duration = symptom_duration_label(before.get("duration", "not_recorded"))
+                    after_duration = symptom_duration_label(after.get("duration", "not_recorded"))
+                    before_frequency = symptom_frequency_label(before.get("frequency", "not_recorded"))
+                    after_frequency = symptom_frequency_label(after.get("frequency", "not_recorded"))
                     change = after_score - before_score
 
                     if change < 0:
@@ -1376,11 +1570,13 @@ with tabs[7]:
                     comparison_text = (
                         f"""**{label}**  
 Before: {before_score}/10 · After: {after_score}/10 · **{change_text}**  
+Duration: {before_duration} → {after_duration} · Frequency: {before_frequency} → {after_frequency}  
 Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'}"""
                         if lang == "en"
                         else
                         f"""**{label}**  
 Πριν: {before_score}/10 · Μετά: {after_score}/10 · **{change_text}**  
+Διάρκεια: {before_duration} → {after_duration} · Συχνότητα: {before_frequency} → {after_frequency}  
 Επίδραση στην εργασία: {'Ναι' if before_work else 'Όχι'} → {'Ναι' if after_work else 'Όχι'}"""
                     )
                     st.markdown(comparison_text)
@@ -1490,7 +1686,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             )
 
     report_payload = {
-        "version": "2.1.0-alpha",
+        "version": "2.2.0-alpha",
         "intended_purpose": "Office ergonomic decision support; not diagnosis or individual disease-probability prediction",
         "assessment": ctx,
         "findings": [f.to_dict() for f in findings],
