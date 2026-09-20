@@ -17,6 +17,8 @@ def build_findings(ctx: dict, lang: str = "en") -> list[Finding]:
             item = symptom_details.get(region, {})
             label = item.get("label", region)
             severity = int(item.get("severity", 0))
+            if severity <= 0:
+                continue
             interference = bool(item.get("interference", False))
             duration = str(item.get("duration", "not_recorded") or "not_recorded")
             frequency = str(item.get("frequency", "not_recorded") or "not_recorded")
