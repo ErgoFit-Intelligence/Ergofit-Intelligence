@@ -842,9 +842,11 @@ with tabs[5]:
     st.subheader(t["rosa_title"])
     st.info(t["rosa_note"])
     st.caption(
-        "Scoring follows the ROSA worksheet structure developed by Sonne, Villalta & Andrews. "
-        translate(lang, "The visual worksheet shown below is the TuMeke rendition based on ROSA.", "Η βαθμολόγηση ακολουθεί τη δομή του ROSA των Sonne, Villalta & Andrews. ")
-        "Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA."
+        translate(
+            lang,
+            "Scoring follows the ROSA worksheet structure developed by Sonne, Villalta & Andrews. The visual worksheet shown below is the TuMeke rendition based on ROSA.",
+            "Η βαθμολόγηση ακολουθεί τη δομή του ROSA των Sonne, Villalta & Andrews. Ο οπτικός οδηγός που εμφανίζεται παρακάτω είναι η έκδοση worksheet της TuMeke που βασίζεται στο ROSA.",
+        )
     )
 
     ROSA_BANNER_PATH = ASSETS / "rosa_banner.jpg"
