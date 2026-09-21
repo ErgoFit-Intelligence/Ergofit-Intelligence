@@ -1689,7 +1689,7 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             )
 
     report_payload = {
-        "version": "2.3.0-alpha",
+        "version": "2.3.1-alpha",
         "intended_purpose": "Office ergonomic decision support; not diagnosis or individual disease-probability prediction",
         "assessment": ctx,
         "findings": [f.to_dict() for f in findings],
@@ -1712,43 +1712,17 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
     st.markdown(
         "### " + translate(
             lang,
-            "Individual assessment report",
-            "Ατομικό report αξιολόγησης",
+            "Complete assessment",
+            "Ολοκλήρωση αξιολόγησης",
         )
     )
-    st.caption(t["print_note"])
-
-    if st.button(t["create_pdf"], key="create_individual_pdf_report", type="primary"):
-        try:
-            pdf_bytes = build_assessment_pdf(
-                report_payload,
-                photos=assessment_photos,
-                logo_path=ASSETS / "logo.png",
-                lang=lang,
-            )
-            st.session_state["individual_pdf_report"] = pdf_bytes
-            st.session_state["individual_pdf_report_fingerprint"] = current_report_fingerprint
-            st.success(t["pdf_ready"])
-        except Exception as exc:
-            st.session_state.pop("individual_pdf_report", None)
-            st.session_state.pop("individual_pdf_report_fingerprint", None)
-            st.error(f"{t['pdf_error']} ({exc})")
-
-    if (
-        st.session_state.get("individual_pdf_report")
-        and st.session_state.get("individual_pdf_report_fingerprint") == current_report_fingerprint
-    ):
-        safe_subject = "".join(ch for ch in (subject_id.strip() or "assessment") if ch.isalnum() or ch in "-_") or "assessment"
-        st.download_button(
-            t["download_pdf"],
-            data=st.session_state["individual_pdf_report"],
-            file_name=f"ErgoFit_Report_{safe_subject}_{assessment_stage}.pdf",
-            mime="application/pdf",
-            key="download_individual_pdf_report",
+    st.caption(
+        translate(
+            lang,
+            "One action saves the assessment to Google Sheets and creates the branded individual PDF report.",
+            "Με μία ενέργεια η αξιολόγηση αποθηκεύεται στο Google Sheets και δημιουργείται το επαγγελματικό ατομικό PDF report.",
         )
-
-    st.divider()
-    st.markdown("### " + (translate(lang, "Save assessment", "Αποθήκευση αξιολόγησης")))
+    )
 
     if sheets_ready:
         st.caption(
@@ -1770,16 +1744,71 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
                 else "Η 2η αξιολόγηση θα συνδεθεί με τον ίδιο πελάτη, θα συμπληρώσει τη δεύτερη γραμμή και θα υπολογίσει αυτόματα την τρίτη γραμμή με τις διαφορές."
             )
         )
-        consent = st.checkbox(
-            translate(lang, "I confirm that I am authorised to store these assessment data.", "Επιβεβαιώνω ότι έχω την κατάλληλη εξουσιοδότηση για την αποθήκευση αυτών των δεδομένων αξιολόγησης."),
-            key="sheets_storage_consent",
+    else:
+        st.warning(
+            translate(
+                lang,
+                "Google Sheets storage is not currently available, so the assessment cannot be fully completed. You can still create the PDF from Backup actions below.",
+                "Η αποθήκευση στο Google Sheets δεν είναι διαθέσιμη αυτή τη στιγμή, οπότε η αξιολόγηση δεν μπορεί να ολοκληρωθεί πλήρως. Μπορείς ακόμη να δημιουργήσεις το PDF από τις Εφεδρικές ενέργειες παρακάτω.",
+            )
         )
-        if st.button(
-            translate(lang, "Save to Google Sheets", "Αποθήκευση στο Google Sheets"),
-            type="primary",
-            disabled=(not consent or not subject_id.strip()),
-            key="save_to_google_sheets",
-        ):
+
+    consent = st.checkbox(
+        translate(
+            lang,
+            "I confirm that I am authorised to store these assessment data.",
+            "Επιβεβαιώνω ότι έχω την κατάλληλη εξουσιοδότηση για την αποθήκευση αυτών των δεδομένων αξιολόγησης.",
+        ),
+        key="sheets_storage_consent",
+    )
+
+    completed_current = (
+        st.session_state.get("completed_assessment_fingerprint") == current_report_fingerprint
+        and bool(st.session_state.get("last_saved_assessment_id"))
+        and st.session_state.get("individual_pdf_report_fingerprint") == current_report_fingerprint
+        and bool(st.session_state.get("individual_pdf_report"))
+    )
+
+    if completed_current:
+        st.success(
+            translate(
+                lang,
+                f"Assessment completed successfully · {st.session_state.get('last_saved_assessment_id')}. It is saved in Google Sheets and the PDF report is ready.",
+                f"Η αξιολόγηση ολοκληρώθηκε επιτυχώς · {st.session_state.get('last_saved_assessment_id')}. Έχει αποθηκευτεί στο Google Sheets και το PDF report είναι έτοιμο.",
+            )
+        )
+
+    complete_disabled = (
+        completed_current
+        or not sheets_ready
+        or not consent
+        or not subject_id.strip()
+    )
+
+    if st.button(
+        translate(lang, "Complete assessment", "Ολοκλήρωση αξιολόγησης"),
+        key="complete_assessment",
+        type="primary",
+        disabled=complete_disabled,
+        use_container_width=True,
+    ):
+        pdf_ok = False
+        try:
+            pdf_bytes = build_assessment_pdf(
+                report_payload,
+                photos=assessment_photos,
+                logo_path=ASSETS / "logo.png",
+                lang=lang,
+            )
+            st.session_state["individual_pdf_report"] = pdf_bytes
+            st.session_state["individual_pdf_report_fingerprint"] = current_report_fingerprint
+            pdf_ok = True
+        except Exception as exc:
+            st.session_state.pop("individual_pdf_report", None)
+            st.session_state.pop("individual_pdf_report_fingerprint", None)
+            st.error(f"{t['pdf_error']} ({exc})")
+
+        if pdf_ok:
             ok, msg, saved_id = save_assessment_webapp(
                 sheets_webapp_url,
                 sheets_token,
@@ -1787,40 +1816,115 @@ Work impact: {'Yes' if before_work else 'No'} → {'Yes' if after_work else 'No'
             )
             if ok:
                 st.session_state["last_saved_assessment_id"] = saved_id
+                st.session_state["completed_assessment_fingerprint"] = current_report_fingerprint
                 st.success(
-                    (
-                        f"Uspešno shranjeno · {saved_id}. Stranka in 1. ocena sta bili dodani v Google Sheets."
-                        if assessment_stage == "baseline"
-                        else f"Uspešno shranjeno · {saved_id}. 2. ocena in vrstica razlik Pred/Po sta bili posodobljeni."
-                    )
-                    if lang == "sl"
-                    else (
-                        f"Saved successfully · {saved_id}. The client and 1st assessment were added to Google Sheets."
-                        if assessment_stage == "baseline"
-                        else f"Saved successfully · {saved_id}. The 2nd assessment and the before/after difference row were updated."
-                    )
-                    if lang == "en"
-                    else (
-                        f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}. Ο πελάτης και η 1η αξιολόγηση καταχωρίστηκαν στο Google Sheets."
-                        if assessment_stage == "baseline"
-                        else f"Η αξιολόγηση αποθηκεύτηκε επιτυχώς · {saved_id}. Η 2η αξιολόγηση και η γραμμή διαφορών Πριν/Μετά ενημερώθηκαν."
+                    translate(
+                        lang,
+                        f"Assessment completed successfully · {saved_id}. Saved to Google Sheets and PDF report created.",
+                        f"Η αξιολόγηση ολοκληρώθηκε επιτυχώς · {saved_id}. Αποθηκεύτηκε στο Google Sheets και δημιουργήθηκε το PDF report.",
                     )
                 )
             else:
-                st.error(msg)
-    else:
-        st.warning(
-            translate(lang, "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving.", "Το Google Sheet και η γέφυρα Apps Script είναι έτοιμα. Πρόσθεσε το Web App URL και το token στα Streamlit Secrets για να ενεργοποιηθεί η αυτόματη αποθήκευση.")
+                st.error(
+                    translate(
+                        lang,
+                        f"The PDF report was created, but saving to Google Sheets failed: {msg}",
+                        f"Το PDF report δημιουργήθηκε, αλλά η αποθήκευση στο Google Sheets απέτυχε: {msg}",
+                    )
+                )
+
+    if (
+        st.session_state.get("individual_pdf_report")
+        and st.session_state.get("individual_pdf_report_fingerprint") == current_report_fingerprint
+    ):
+        safe_subject = "".join(
+            ch for ch in (subject_id.strip() or "assessment")
+            if ch.isalnum() or ch in "-_"
+        ) or "assessment"
+        st.download_button(
+            t["download_pdf"],
+            data=st.session_state["individual_pdf_report"],
+            file_name=f"ErgoFit_Report_{safe_subject}_{assessment_stage}.pdf",
+            mime="application/pdf",
+            key="download_individual_pdf_report",
+            use_container_width=True,
         )
 
-    with st.expander(translate(lang, "Backup / export", "Αντίγραφο ασφαλείας / εξαγωγή"), expanded=False):
+    st.caption(
+        translate(
+            lang,
+            "If you change any assessment answer after completion, the completion button becomes available again so the updated assessment can be saved and a new report generated.",
+            "Αν αλλάξεις οποιαδήποτε απάντηση μετά την ολοκλήρωση, το κουμπί ενεργοποιείται ξανά ώστε να αποθηκευτεί η ενημερωμένη αξιολόγηση και να δημιουργηθεί νέο report.",
+        )
+    )
+
+    with st.expander(
+        translate(lang, "Backup actions / export", "Εφεδρικές ενέργειες / εξαγωγή"),
+        expanded=False,
+    ):
+        st.caption(
+            translate(
+                lang,
+                "Use these only if you need to create the PDF or save the assessment separately.",
+                "Χρησιμοποίησέ τα μόνο αν χρειάζεται να δημιουργήσεις το PDF ή να αποθηκεύσεις την αξιολόγηση ξεχωριστά.",
+            )
+        )
+
+        col_pdf, col_sheet = st.columns(2)
+
+        with col_pdf:
+            if st.button(
+                t["create_pdf"],
+                key="create_individual_pdf_report_backup",
+                use_container_width=True,
+            ):
+                try:
+                    pdf_bytes = build_assessment_pdf(
+                        report_payload,
+                        photos=assessment_photos,
+                        logo_path=ASSETS / "logo.png",
+                        lang=lang,
+                    )
+                    st.session_state["individual_pdf_report"] = pdf_bytes
+                    st.session_state["individual_pdf_report_fingerprint"] = current_report_fingerprint
+                    st.success(t["pdf_ready"])
+                except Exception as exc:
+                    st.session_state.pop("individual_pdf_report", None)
+                    st.session_state.pop("individual_pdf_report_fingerprint", None)
+                    st.error(f"{t['pdf_error']} ({exc})")
+
+        with col_sheet:
+            if st.button(
+                translate(lang, "Save only to Google Sheets", "Μόνο αποθήκευση στο Google Sheets"),
+                key="save_to_google_sheets_backup",
+                disabled=(not sheets_ready or not consent or not subject_id.strip()),
+                use_container_width=True,
+            ):
+                ok, msg, saved_id = save_assessment_webapp(
+                    sheets_webapp_url,
+                    sheets_token,
+                    report_payload,
+                )
+                if ok:
+                    st.session_state["last_saved_assessment_id"] = saved_id
+                    st.success(
+                        translate(
+                            lang,
+                            f"Saved successfully to Google Sheets · {saved_id}.",
+                            f"Αποθηκεύτηκε επιτυχώς στο Google Sheets · {saved_id}.",
+                        )
+                    )
+                else:
+                    st.error(msg)
+
         st.download_button(
             t["download_json"],
             data=report_json.encode("utf-8"),
             file_name=f"ergofit_v2_{subject_id.strip() or 'assessment'}_{assessment_stage}.json",
             mime="application/json",
+            use_container_width=True,
         )
-        st.caption(t["print_note"])
+
 
 st.divider()
 st.caption(
