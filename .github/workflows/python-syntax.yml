@@ -38,65 +38,215 @@ jobs:
         run: |
           python - <<'PY'
           from io import BytesIO
-          from PIL import Image
+          from PIL import Image, ImageDraw, ImageFilter
           from ergofit.reporting import build_assessment_pdf
 
-          img = Image.new("RGB", (800, 500), "#0B1F3A")
-          bio = BytesIO()
-          img.save(bio, format="JPEG")
+          def office_scene(kind: int) -> bytes:
+              w, h = 1400, 900
+              im = Image.new("RGB", (w, h), "#e8edf3")
+              d = ImageDraw.Draw(im)
+              # wall / window
+              d.rectangle((0, 0, w, 560), fill=("#dfe8f1" if kind != 3 else "#f3e8d8"))
+              d.rectangle((930, 80, 1320, 440), fill=("#cfe4f7" if kind != 3 else "#fff2b8"))
+              d.line((1125, 80, 1125, 440), fill="#ffffff", width=8)
+              d.line((930, 260, 1320, 260), fill="#ffffff", width=8)
+              # floor
+              d.rectangle((0, 560, w, h), fill="#c7b8a3")
+              # desk
+              desk_y = 520 if kind != 2 else 500
+              d.rounded_rectangle((220, desk_y, 1120, desk_y+75), 14, fill="#8b6b4f")
+              d.rectangle((300, desk_y+70, 345, 860), fill="#6f5844")
+              d.rectangle((995, desk_y+70, 1040, 860), fill="#6f5844")
+              # monitor
+              mon_x = 520 if kind != 1 else 500
+              mon_y = 260 if kind != 1 else 350
+              d.rounded_rectangle((mon_x, mon_y, mon_x+360, mon_y+215), 12, fill="#1f2a35")
+              d.rectangle((mon_x+18, mon_y+18, mon_x+342, mon_y+197), fill="#cfe0ef")
+              d.rectangle((mon_x+168, mon_y+215, mon_x+192, desk_y), fill="#4f5d68")
+              d.rectangle((mon_x+110, desk_y-20, mon_x+250, desk_y+6), fill="#4f5d68")
+              # keyboard / mouse position
+              kb_x = 600 if kind != 3 else 820
+              d.rounded_rectangle((kb_x, desk_y+14, kb_x+260, desk_y+44), 8, fill="#d7dbe0")
+              mouse_x = kb_x+300
+              d.ellipse((mouse_x, desk_y+13, mouse_x+55, desk_y+58), fill="#c8ccd2")
+              # chair
+              cx = 440 if kind != 2 else 520
+              cy = 610
+              d.rounded_rectangle((cx-90, cy-160, cx+110, cy+70), 28, fill="#394657")
+              d.rounded_rectangle((cx-100, cy+40, cx+120, cy+115), 22, fill="#445266")
+              d.rectangle((cx, cy+115, cx+20, 820), fill="#303944")
+              d.line((cx+10, 820, cx-85, 865), fill="#303944", width=10)
+              d.line((cx+10, 820, cx+105, 865), fill="#303944", width=10)
+              if kind == 2:
+                  # exaggerated high armrests
+                  d.rectangle((cx-125, cy-40, cx-90, cy+85), fill="#303944")
+                  d.rectangle((cx+110, cy-40, cx+145, cy+85), fill="#303944")
+              # worker silhouette
+              head_x, head_y = cx+25, 380 if kind != 1 else 425
+              d.ellipse((head_x-38, head_y-38, head_x+38, head_y+38), fill="#d9b49a")
+              d.rounded_rectangle((head_x-48, head_y+34, head_x+54, head_y+220), 30, fill="#7187a2")
+              # arms toward keyboard
+              hand_target_x = kb_x+40
+              d.line((head_x+25, head_y+90, hand_target_x, desk_y+25), fill="#d9b49a", width=22)
+              d.line((head_x-15, head_y+95, hand_target_x+75, desk_y+28), fill="#d9b49a", width=22)
+              # subtle photo-like noise/blur
+              im = im.filter(ImageFilter.GaussianBlur(radius=0.8))
+              out=BytesIO(); im.save(out, format="JPEG", quality=88); return out.getvalue()
 
           payload = {
               "version": "2.3.0-alpha",
               "assessment": {
-                  "subject_id": "TEST-001",
-                  "company": "Demo Company",
-                  "department": "Office",
-                  "job_title": "Administrator",
+                  "subject_id": "DEMO-MOD-017",
+                  "company": "Demo Office Solutions",
+                  "department": "Finance & Administration",
+                  "job_title": "Administrative Coordinator",
                   "assessment_stage": "baseline",
-                  "assessment_date": "2026-09-20",
-                  "age": 36,
+                  "assessment_date": "2026-09-21",
+                  "age": 38,
                   "sex": "female",
-                  "height": 168,
-                  "weight": 69,
+                  "height": 167,
+                  "weight": 68,
                   "bmi": 24.4,
-                  "computer_hours": 7,
-                  "sitting_hours": 6,
+                  "computer_hours": 7.0,
+                  "mouse_hours": 5.5,
+                  "sitting_hours": 6.5,
+                  "long_sitting_bout": "60–120 min",
                   "active_breaks": False,
+                  "keyboard_close": False,
+                  "forearm_support": False,
+                  "glare": True,
+                  "digital_eye_strain": True,
+                  "high_repetition": False,
+                  "hand_force": False,
+                  "forearm_rotation": False,
+                  "arm_elevation": False,
                   "symptom_details": {
                       "Neck": {
-                          "label": "Neck",
-                          "severity": 6,
-                          "duration": ">12_weeks",
-                          "frequency": "daily",
-                          "interference": True,
+                          "label": "Αυχένας",
+                          "severity": 4,
+                          "duration": "1_6_weeks",
+                          "frequency": "3_5_days_week",
+                          "previous_episode": False,
+                          "interference": False,
+                          "work_modification": False,
+                          "absence_days_4w": 0,
+                      },
+                      "Low back": {
+                          "label": "Οσφύς / μέση",
+                          "severity": 5,
+                          "duration": "6_12_weeks",
+                          "frequency": "1_2_days_week",
+                          "previous_episode": True,
+                          "interference": False,
                           "work_modification": True,
                           "absence_days_4w": 0,
-                      }
+                      },
+                      "Shoulder(s)": {
+                          "label": "Ώμος/ώμοι",
+                          "severity": 2,
+                          "duration": "<1_week",
+                          "frequency": "occasional",
+                          "previous_episode": False,
+                          "interference": False,
+                          "work_modification": False,
+                          "absence_days_4w": 0,
+                      },
                   },
-                  "chair_failed": ["seat_depth_fit"],
-                  "posture_out": [{"key": "shoulders_relaxed"}],
-                  "rosa": {"chair": 4, "section_b": 4, "section_c": 3, "monitor_peripherals": 4, "final": 5, "action": "action"},
-                  "rosa_final": 5,
+                  "chair_failed": ["seat_depth_fit", "armrests_fit"],
+                  "posture_out": [
+                      {"key": "dynamic_posture", "label": "Περιορισμένη εναλλαγή στάσης", "value": "needs_review", "reference": "ELINYAE"},
+                      {"key": "forearms_supported", "label": "Περιορισμένη στήριξη αντιβραχίων", "value": "needs_review", "reference": "ELINYAE"},
+                  ],
+                  "rosa": {
+                      "chair": 4,
+                      "section_b": 3,
+                      "section_c": 4,
+                      "monitor_peripherals": 3,
+                      "final": 4,
+                      "action": "below_action_level",
+                  },
+                  "rosa_final": 4,
               },
               "findings": [
-                  {"status": "priority", "title": "ROSA action level reached", "detail": "Further ergonomic review is indicated."}
+                  {
+                      "status": "attention",
+                      "title": "Περιορισμένη στήριξη αντιβραχίων",
+                      "detail": "Η διάταξη πληκτρολογίου/ποντικιού και τα μπράτσα της καρέκλας δεν επιτρέπουν σταθερή, άνετη στήριξη των αντιβραχίων."
+                  },
+                  {
+                      "status": "attention",
+                      "title": "Μεγάλα διαστήματα χωρίς αλλαγή στάσης",
+                      "detail": "Αναφέρονται διαστήματα 60–120 λεπτών χωρίς ουσιαστική μεταβολή στάσης ή θέσης."
+                  },
+                  {
+                      "status": "attention",
+                      "title": "Θάμβωση / αντανακλάσεις στην οθόνη",
+                      "detail": "Η θέση της οθόνης σε σχέση με το παράθυρο δημιουργεί πιθανότητα ενοχλητικών αντανακλάσεων."
+                  },
+                  {
+                      "status": "information",
+                      "title": "ROSA κάτω από το επίπεδο δράσης",
+                      "detail": "Τελικό ROSA 4. Το αποτέλεσμα δεν αποκλείει επιμέρους εργονομικά ευρήματα ή συμπτώματα."
+                  },
               ],
               "recommendations": [
-                  {"priority": "now", "title": "Adjust workstation", "action": "Review monitor and chair fit.", "rationale": "Reduce modifiable exposure."}
+                  {
+                      "priority": "soon",
+                      "title": "Βελτίωση θέσης πληκτρολογίου και ποντικιού",
+                      "action": "Μετακίνησε πληκτρολόγιο και ποντίκι πιο κοντά στο σώμα και εξασφάλισε άνετη στήριξη αντιβραχίων χωρίς ανύψωση ώμων.",
+                      "rationale": "Στόχος είναι η μείωση περιττού reaching και στατικής επιβάρυνσης ώμου/άνω άκρου."
+                  },
+                  {
+                      "priority": "soon",
+                      "title": "Περισσότερη εναλλαγή στάσης",
+                      "action": "Ενσωμάτωσε συχνότερες μικρές αλλαγές θέσης και σύντομα ενεργά διαλείμματα που ταιριάζουν στη ροή εργασίας.",
+                      "rationale": "Δεν χρησιμοποιείται ένα υποχρεωτικό καθολικό interval· στόχος είναι να μειωθούν τα παρατεταμένα στατικά διαστήματα."
+                  },
+                  {
+                      "priority": "soon",
+                      "title": "Μείωση αντανακλάσεων",
+                      "action": "Ρύθμισε τη θέση/γωνία της οθόνης ή τη σκίαση ώστε να περιοριστούν οι αντανακλάσεις από το παράθυρο.",
+                      "rationale": "Η οπτική άνεση αποτελεί ξεχωριστό μέρος της DSE αξιολόγησης."
+                  },
+                  {
+                      "priority": "maintain",
+                      "title": "Διατήρηση ουδέτερης θέσης άνω άκρων",
+                      "action": "Διατήρησε τους αγκώνες κοντά στο σώμα και τους καρπούς όσο γίνεται σε ουδέτερη θέση.",
+                      "rationale": "Η μεταβλητότητα και η άνετη υποστήριξη είναι προτιμότερες από μία άκαμπτη 'τέλεια' στάση."
+                  },
               ],
               "comparison": {},
           }
+
+          photos = [
+              {
+                  "name": "01_monitor_position.jpg",
+                  "comment": "Η οθόνη βρίσκεται σχετικά χαμηλά και ελαφρώς μακριά από τον εργαζόμενο. Προτείνεται μικρή ανύψωση και επανέλεγχος της απόστασης θέασης.",
+                  "data": office_scene(1),
+              },
+              {
+                  "name": "02_chair_armrests.jpg",
+                  "comment": "Τα μπράτσα της καρέκλας περιορίζουν την προσέγγιση στο γραφείο, με αποτέλεσμα ο εργαζόμενος να κάθεται λίγο πιο πίσω από την επιφάνεια εργασίας.",
+                  "data": office_scene(2),
+              },
+              {
+                  "name": "03_keyboard_mouse_glare.jpg",
+                  "comment": "Το πληκτρολόγιο και το ποντίκι βρίσκονται πιο μακριά από το σώμα και υπάρχει πιθανή θάμβωση από το παράθυρο στο πλάι της οθόνης.",
+                  "data": office_scene(3),
+              },
+          ]
+
           pdf = build_assessment_pdf(
               payload,
-              photos=[{"name": "workstation.jpg", "comment": "Monitor position documented.", "data": bio.getvalue()}],
+              photos=photos,
               logo_path="assets/logo.png",
               lang="el",
           )
           assert pdf.startswith(b"%PDF-"), "PDF signature missing"
-          assert len(pdf) > 10000, "PDF unexpectedly small"
+          assert len(pdf) > 20000, "PDF unexpectedly small"
           with open("sample_report.pdf", "wb") as f:
               f.write(pdf)
-          print(f"PDF smoke test OK: {len(pdf)} bytes")
+          print(f"PDF moderate demo OK: {len(pdf)} bytes")
           PY
       - name: Upload sample report
         uses: actions/upload-artifact@v4
