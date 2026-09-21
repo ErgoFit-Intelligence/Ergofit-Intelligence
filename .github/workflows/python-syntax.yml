@@ -59,7 +59,7 @@ jobs:
               d.rectangle((995, desk_y+70, 1040, 860), fill="#6f5844")
               # monitor
               mon_x = 520 if kind != 1 else 500
-              mon_y = 260 if kind != 1 else 350
+              mon_y = 260 if kind != 1 else 290
               d.rounded_rectangle((mon_x, mon_y, mon_x+360, mon_y+215), 12, fill="#1f2a35")
               d.rectangle((mon_x+18, mon_y+18, mon_x+342, mon_y+197), fill="#cfe0ef")
               d.rectangle((mon_x+168, mon_y+215, mon_x+192, desk_y), fill="#4f5d68")
