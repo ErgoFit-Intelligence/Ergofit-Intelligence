@@ -43,6 +43,13 @@ SL_TEXT = {
     "I confirm that I am authorised to store these assessment data.": "Potrjujem, da sem pooblaščen/-a za shranjevanje teh podatkov ocene.",
     "The Google Sheet and Apps Script bridge are ready. Add the Web App URL and token to Streamlit Secrets to activate automatic saving.": "Google Sheet in povezava Apps Script sta pripravljena. Za samodejno shranjevanje dodaj URL spletne aplikacije in žeton v Streamlit Secrets.",
 
+    "Complete assessment": "Zaključi oceno",
+    "One action saves the assessment to Google Sheets and creates the branded individual PDF report.": "Z enim dejanjem se ocena shrani v Google Sheets in ustvari individualno PDF poročilo z blagovno znamko ErgoFit.",
+    "Google Sheets storage is not currently available, so the assessment cannot be fully completed. You can still create the PDF from Backup actions below.": "Shranjevanje v Google Sheets trenutno ni na voljo, zato ocene ni mogoče v celoti zaključiti. PDF lahko še vedno ustvariš v spodnjih rezervnih možnostih.",
+    "If you change any assessment answer after completion, the completion button becomes available again so the updated assessment can be saved and a new report generated.": "Če po zaključku spremeniš kateri koli odgovor, se gumb za zaključek znova omogoči, da se posodobljena ocena shrani in ustvari novo poročilo.",
+    "Backup actions / export": "Rezervna dejanja / izvoz",
+    "Use these only if you need to create the PDF or save the assessment separately.": "Uporabi samo, če moraš PDF ustvariti ali oceno shraniti ločeno.",
+    "Save only to Google Sheets": "Shrani samo v Google Sheets",
     "Google Sheets automatic connection is not active in the deployed app yet. Until it is activated, the 1st assessment can be loaded from its JSON backup.": "Samodejna povezava z Google Sheets v objavljeni aplikaciji še ni aktivna. Do aktivacije lahko prvo oceno naložiš iz varnostne kopije JSON.",
     "Greek version: terminology and criteria follow ELINYAE office/DSE guidance. English version follows OSHA Computer Workstations guidance.": "Slovenska različica uporablja terminologijo, usklajeno z evropskimi ergonomskimi načeli za delo z zasloni in standardi EN/ISO; lokalne zakonske zahteve je treba preveriti ločeno.",
     "0 = not measured. OSHA uses 90–120° as a neutral reference.": "0 = ni izmerjeno. Kot 90–120° se uporablja kot orientacijska nevtralna referenca, ne kot univerzalni klinični prag.",
